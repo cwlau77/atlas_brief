@@ -11,11 +11,20 @@ from backend.models import Article
 
 logger = logging.getLogger("briefing.rss")
 
+# Deliberately spans regions: a "global briefing" product fed only by Western
+# outlets can't surface cross-region framing differences. All feeds verified
+# live on 2026-07-06; English-language regional outlets still carry their own
+# framing bias — an accepted limitation short of multilingual ingestion.
 RSS_FEEDS: list[tuple[str, str]] = [
     ("BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml"),
     ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
     ("The Guardian World", "https://www.theguardian.com/world/rss"),
     ("NPR World", "https://feeds.npr.org/1004/rss.xml"),
+    ("The Hindu", "https://www.thehindu.com/news/international/feeder/default.rss"),
+    ("Deutsche Welle", "https://rss.dw.com/rdf/rss-en-world"),
+    ("France 24", "https://www.france24.com/en/rss"),
+    ("AllAfrica", "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf"),
+    ("Straits Times", "https://www.straitstimes.com/news/world/rss.xml"),
 ]
 
 def _entry_to_article(outlet: str, entry) -> Article | None:
