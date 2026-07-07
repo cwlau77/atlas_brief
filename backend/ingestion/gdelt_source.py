@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import random
-from datetime import datetime
+import time
+from datetime import datetime, timezone
 from typing import Optional
 
 import httpx
@@ -18,6 +19,20 @@ GDELT_DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc"
 # often trip this limit. One retry with jittered backoff resolves most 429s
 # without blowing the request timeout budget.
 _GDELT_RETRY_DELAY_SECONDS = 5.5
+
+# Process-global pacer: concurrent briefing requests must not fire GDELT calls
+# closer together than the per-IP limit allows, or they 429 each other.
+_pace_lock = asyncio.Lock()
+_last_request_at = 0.0
+
+
+async def _pace() -> None:
+    global _last_request_at
+    async with _pace_lock:
+        wait = settings.gdelt_min_interval_seconds - (time.monotonic() - _last_request_at)
+        if wait > 0:
+            await asyncio.sleep(wait)
+        _last_request_at = time.monotonic()
 
 
 async def fetch_gdelt(focus: str, client: Optional[httpx.AsyncClient] = None) -> list[Article]:
@@ -41,6 +56,7 @@ async def fetch_gdelt(focus: str, client: Optional[httpx.AsyncClient] = None) ->
     try:
         for attempt in (1, 2):
             try:
+                await _pace()
                 resp = await client.get(GDELT_DOC_API, params=params)
                 resp.raise_for_status()
                 payload = resp.json()
@@ -89,8 +105,8 @@ async def fetch_gdelt(focus: str, client: Optional[httpx.AsyncClient] = None) ->
         raw_ts = item.get("seendate")
         if raw_ts:
             try:
-                # GDELT seendate format: YYYYMMDDTHHMMSSZ
-                published_at = datetime.strptime(raw_ts, "%Y%m%dT%H%M%SZ")
+                # GDELT seendate format: YYYYMMDDTHHMMSSZ (the trailing Z is UTC)
+                published_at = datetime.strptime(raw_ts, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
             except ValueError:
                 published_at = None
 

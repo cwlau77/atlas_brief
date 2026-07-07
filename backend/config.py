@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     huggingface_api_key: Optional[str] = None
 
     max_articles_per_source: int = 15
+    # GDELT allows ~1 request per 5s per IP; all outbound GDELT calls from this
+    # process are serialized and spaced by at least this many seconds.
+    gdelt_min_interval_seconds: float = 5.5
     dedup_similarity_threshold: float = 0.85
     relevance_similarity_threshold: float = 0.30
     hours_lookback: int = 24
