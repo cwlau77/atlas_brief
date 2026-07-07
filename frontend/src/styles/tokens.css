@@ -1,0 +1,54 @@
+/* ============================================================
+   Atlas Brief — design tokens
+   The cartographer's desk: midnight chart band, parchment page.
+   ============================================================ */
+:root {
+  /* Ink (deep navy) — chart band, headings, body text */
+  --ink: #16233a;
+  --ink-soft: #2e415e;
+  --ink-faint: #5b6b83;
+  --ink-wash: #8fa0b8;
+
+  /* Parchment — page base and cards */
+  --parchment: #f4eee1;
+  --parchment-deep: #e9dfc8;
+  --card: #faf6ec;
+
+  /* Accents */
+  --terracotta: #b04a2e;       /* primary action, pins, signal points */
+  --terracotta-deep: #8f3a23;
+  --teal: #256d63;             /* links, data highlights */
+  --teal-bright: #2f877a;
+  --gold: #a97e2f;             /* tension indicators */
+
+  /* Severity — priority alerts (backend: critical | high | elevated) */
+  --alert-critical: #a33325;
+  --alert-high: #b9741f;
+  --alert-elevated: #2f6f8f;
+
+  /* Lines & texture */
+  --line: #d9cdb4;             /* hairline rules, graticule on parchment */
+  --line-strong: #c4b48e;
+  --chart-line: rgba(244, 238, 225, 0.14); /* graticule on navy */
+
+  /* Glass (only over the chart band) */
+  --glass-bg: rgba(250, 246, 236, 0.86);
+  --glass-border: rgba(217, 205, 180, 0.6);
+
+  /* Type */
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-body: 'Libre Franklin', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Shape & depth */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-card: 0 1px 2px rgba(22, 35, 58, 0.06), 0 2px 10px rgba(22, 35, 58, 0.08);
+  --shadow-float: 0 8px 18px rgba(11, 19, 34, 0.28), 0 24px 48px rgba(11, 19, 34, 0.22);
+  --shadow-press: inset 0 1px 3px rgba(22, 35, 58, 0.18);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-quick: 160ms;
+  --dur-reveal: 520ms;
+}
