@@ -17,7 +17,7 @@ services:
       # proxy makes production traffic same-origin, so this is a backup layer.
       # Set to the real Vercel URL after the first deploy.
       - key: ALLOWED_ORIGINS
-        value: "https://atlas-brief.vercel.app,http://localhost:5173"
+        value: "https://atlasbrief-nine.vercel.app,http://localhost:5173"
       # Without an Anthropic key the API returns 503 instead of fabricated
       # keyword-matched "analysis". Set true only for keyless demos.
       - key: DEMO_MODE

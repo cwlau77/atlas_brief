@@ -66,19 +66,36 @@ Change the threshold and the suite will tell you what it costs.
 
 ## Deploy
 
-**Backend (Render):** `render.yaml` is canonical. Set `ANTHROPIC_API_KEY` and
-`NEWSAPI_KEY` in the dashboard; update `ALLOWED_ORIGINS` to the real Vercel URL
-after the first frontend deploy. Free tier sleeps when idle — the frontend
-warns users about the up-to-a-minute wake-up honestly.
+**Backend (Render):** live at `https://guaihack-global-brief-gen-1-491x.onrender.com`.
+`render.yaml` describes the intended config, but **this service was created as
+a plain manual Web Service, not via Render's Blueprint flow** — which means it
+only reads whatever you type directly into the dashboard's Build/Start Command
+fields, not the rest of `render.yaml` (env var defaults, Python version pin,
+etc.). Concretely, these must be set by hand in the **Environment** tab, not
+just edited in this file:
 
-**Frontend (Vercel):** import the repo and set the project's **Root Directory
-to `frontend`** (Settings → Build & Deployment). This is required — the repo
-root has a `requirements.txt` for Render, which otherwise makes Vercel
-misdetect the whole project as a Python function and fail the build. With the
-root set to `frontend/`, Vercel sees a plain Vite app and reads
-`frontend/vercel.json` for the `/api/*` rewrite. **Verify the rewrite
-destination matches your actual Render URL** (currently assumed to be
-`https://guaihack-global-brief-gen.onrender.com`).
+- `ANTHROPIC_API_KEY`, `NEWSAPI_KEY` — required secrets.
+- `PYTHON_VERSION` = `3.11.11` — required. Without it Render defaults to a
+  newer Python where `pydantic-core` has no prebuilt wheel and fails to
+  compile from source.
+- `ALLOWED_ORIGINS` = `https://atlasbrief-nine.vercel.app,http://localhost:5173`.
+
+Every other `render.yaml` env var (rate limiting, GDELT pacing, thresholds,
+etc.) falls back to the matching default already baked into
+`backend/config.py`, so the app runs correctly without them — but they won't
+reflect edits to `render.yaml` until this service is migrated to a real
+Blueprint deploy (delete + **New +** → **Blueprint** → select this repo), which
+is the recommended cleanup once things are stable.
+
+Free tier sleeps when idle — the frontend warns users about the up-to-a-minute
+wake-up honestly.
+
+**Frontend (Vercel):** live at `https://atlasbrief-nine.vercel.app`. Project's
+**Root Directory is set to `frontend`** (Settings → Build & Deployment) — this
+is required, since the repo root has a `requirements.txt` for Render, which
+otherwise makes Vercel misdetect the whole project as a Python function and
+fail the build. `frontend/vercel.json` supplies the `/api/*` rewrite,
+currently pointed at the real Render URL above.
 
 ## Environment variables (backend)
 
