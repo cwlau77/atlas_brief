@@ -1,0 +1,57 @@
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.stat-tile {
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.stat-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 0.9rem;
+}
+
+.chart-box {
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.chart-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
+}
+
+.chart-canvas {
+  position: relative;
+  height: 220px;
+}
+
+.chart-empty {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  padding: 2rem 0;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .chart-row { grid-template-columns: 1fr; }
+}

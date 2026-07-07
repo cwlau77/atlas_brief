@@ -1,0 +1,79 @@
+.brief-form {
+  padding: 1.25rem 1.4rem 1.35rem;
+}
+
+.brief-form-label {
+  margin-bottom: 0.75rem;
+}
+
+.brief-form-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.brief-form-field {
+  position: relative;
+  flex: 1 1 16rem;
+}
+
+.brief-form-pin {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--terracotta);
+  pointer-events: none;
+}
+
+.brief-form input[type='text'] {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+  transition: border-color var(--dur-quick) var(--ease-out), box-shadow var(--dur-quick) var(--ease-out);
+}
+
+.brief-form input[type='text']:focus {
+  outline: none;
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--terracotta) 18%, transparent);
+}
+
+.brief-form select {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.7rem;
+}
+
+.brief-form-stage {
+  margin-top: 0.85rem;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  letter-spacing: 0.02em;
+}
+
+.stage-beacon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--terracotta);
+  flex-shrink: 0;
+  animation: beacon-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes beacon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--terracotta) 45%, transparent); }
+  55% { box-shadow: 0 0 0 7px transparent; }
+}

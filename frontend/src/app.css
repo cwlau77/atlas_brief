@@ -1,0 +1,170 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- hero: the chart band ---------- */
+.hero {
+  background: var(--ink);
+  color: var(--parchment);
+  position: relative;
+  overflow: hidden;
+  /* graticule: faint lat/long grid over the midnight sea */
+  background-image:
+    linear-gradient(var(--chart-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--chart-line) 1px, transparent 1px),
+    radial-gradient(ellipse at 75% 40%, rgba(47, 135, 122, 0.14), transparent 55%),
+    radial-gradient(ellipse at 15% 85%, rgba(176, 74, 46, 0.12), transparent 50%);
+  background-size: 72px 72px, 72px 72px, auto, auto;
+}
+
+.hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3.2rem 1.5rem 3.4rem;
+  display: grid;
+  grid-template-columns: minmax(340px, 1.05fr) 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.hero-kicker {
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  color: var(--terracotta);
+  margin-bottom: 0.9rem;
+}
+
+.hero-title {
+  font-size: clamp(2.1rem, 4.2vw, 3.1rem);
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  margin-bottom: 0.8rem;
+}
+
+.hero-title em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--parchment-deep);
+}
+
+.hero-sub {
+  font-size: 1rem;
+  color: var(--ink-wash);
+  max-width: 34rem;
+  margin-bottom: 1.6rem;
+}
+
+.hero-globe {
+  height: 480px;
+  position: relative;
+}
+
+@media (max-width: 900px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    padding-bottom: 1.5rem;
+  }
+  .hero-globe { height: 380px; }
+}
+
+/* ---------- content surface ---------- */
+.content {
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.2rem 1.5rem 4rem;
+  flex: 1;
+  scroll-margin-top: 4.5rem;
+}
+
+.content-page { padding-top: 2.6rem; }
+
+.briefing-masthead {
+  border-bottom: 3px double var(--line-strong);
+  padding-bottom: 1rem;
+}
+
+.briefing-focus {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  text-transform: capitalize;
+}
+
+.briefing-issued {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  margin-top: 0.3rem;
+}
+
+/* ---------- notices ---------- */
+.notice-card {
+  padding: 2.2rem 2rem;
+  text-align: center;
+}
+
+.notice-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.45rem;
+}
+
+.notice-card p {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.notice-error {
+  border-left: 4px solid var(--alert-critical);
+  text-align: left;
+}
+
+.suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.1rem;
+}
+
+.suggestion-chip {
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: var(--teal);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  transition: all var(--dur-quick) var(--ease-out);
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  background: var(--teal);
+  color: var(--parchment);
+  transform: translateY(-1px);
+}
+
+/* ---------- footer ---------- */
+.footer {
+  background: var(--parchment-deep);
+  border-top: 1px solid var(--line-strong);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  text-align: center;
+  padding: 1.1rem 1.5rem;
+}
+
+.footer .mono {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+}
+
+/* ---------- print: briefing only, ink on paper ---------- */
+@media print {
+  .navbar, .hero, .footer, .toast-host, .notice-card { display: none !important; }
+  .content { padding: 0; max-width: none; }
+  body { background: #fff; }
+  .card, .alert-card { box-shadow: none; break-inside: avoid; }
+  .source-chip { border: none; padding: 0; background: none; }
+}
