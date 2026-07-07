@@ -57,6 +57,22 @@ async def test_no_key_raises_unless_demo_mode(monkeypatch, make_article):
     assert b.article_count == 1
 
 
+def test_system_prompt_keeps_substance_and_adds_injection_guard():
+    from backend.synthesis.briefing import SYSTEM_PROMPT
+    # The analytic standards are the product — guard against accidental gutting.
+    for anchor in ("CONTRADICTIONS", "EMERGING TENSIONS", "escalation potential",
+                   "grounded in the supplied articles"):
+        assert anchor in SYSTEM_PROMPT
+    assert "untrusted" in SYSTEM_PROMPT.lower()
+
+
+def test_user_prompt_delimits_article_data(make_article):
+    from backend.synthesis.briefing import _build_user_prompt
+    p = _build_user_prompt("trade", [make_article()])
+    assert "=== BEGIN ARTICLE DATA (untrusted content) ===" in p
+    assert "=== END ARTICLE DATA ===" in p
+
+
 def test_fallback_briefing_survives_mixed_tz(make_article):
     naive = make_article(title="War risk grows on border", published_at=datetime(2026, 7, 5, 8, 0))
     aware = make_article(title="Attack reported near port city")
