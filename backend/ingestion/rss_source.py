@@ -6,7 +6,7 @@ from time import mktime
 import feedparser
 
 from backend.config import settings
-from backend.focus_terms import extract_focus_terms
+from backend.focus_terms import extract_focus_terms, keyword_hit
 from backend.models import Article
 
 logger = logging.getLogger("briefing.rss")
@@ -57,10 +57,8 @@ def _parse_feed(outlet: str, url: str, keywords: list[str]) -> list[Article]:
         article = _entry_to_article(outlet, entry)
         if article is None:
             continue
-        if keywords:
-            haystack = f"{article.title} {article.snippet}".lower()
-            if not any(kw in haystack for kw in keywords):
-                continue
+        if keywords and not keyword_hit(f"{article.title} {article.snippet}", keywords):
+            continue
         filtered.append(article)
         if len(filtered) >= settings.max_articles_per_source:
             break

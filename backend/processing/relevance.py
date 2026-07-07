@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 from backend.config import settings
-from backend.focus_terms import extract_focus_terms
+from backend.focus_terms import extract_focus_terms, keyword_hit
 from backend.models import Article
 
 from .embeddings import cosine_similarity, embed_texts
@@ -11,10 +11,7 @@ from .embeddings import cosine_similarity, embed_texts
 logger = logging.getLogger("briefing.relevance")
 
 def _keyword_hit(article: Article, keywords: list[str]) -> bool:
-    if not keywords:
-        return False
-    haystack = f"{article.title} {article.snippet}".lower()
-    return any(kw in haystack for kw in keywords)
+    return keyword_hit(f"{article.title} {article.snippet}", keywords)
 
 
 async def filter_by_relevance(

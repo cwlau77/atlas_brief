@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 _STOPWORDS = {
     "the", "a", "an", "and", "or", "of", "in", "on", "for", "to", "by", "with",
     "from", "at", "as", "is", "are", "was", "were", "be", "been", "news", "world",
@@ -85,6 +87,23 @@ def extract_focus_terms(focus: str, *, include_phrase: bool = True) -> list[str]
 
     # Prefer longer/more specific phrases first so substring matching is less noisy.
     return sorted(terms, key=lambda term: (-len(term), term))
+
+
+def keyword_hit(text: str, keywords: list[str]) -> bool:
+    """True if any keyword appears in text as a whole word or phrase.
+
+    Word-boundary matching, not substring: the alias "cop" must not match
+    "Copenhagen", "south" must not match "Southampton". Alias lists carry
+    plural forms explicitly (tariff/tariffs, migrant/migrants), so no
+    stemming is attempted here.
+    """
+    if not keywords:
+        return False
+    haystack = text.lower()
+    return any(
+        re.search(rf"\b{re.escape(kw.lower())}\b", haystack) is not None
+        for kw in keywords
+    )
 
 
 def build_boolean_query(focus: str, *, max_terms: int = 6) -> str:
