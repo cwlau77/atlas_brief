@@ -31,11 +31,13 @@ async def fetch_newsapi(focus: str, client: Optional[httpx.AsyncClient] = None) 
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": settings.max_articles_per_source,
-        "apiKey": settings.newsapi_key,
     }
+    # Key goes in a header, not the query string, so it can't leak into
+    # access logs or error messages that echo the request URL.
+    headers = {"X-Api-Key": settings.newsapi_key}
 
     try:
-        resp = await client.get(NEWSAPI_EVERYTHING, params=params)
+        resp = await client.get(NEWSAPI_EVERYTHING, params=params, headers=headers)
         resp.raise_for_status()
         payload = resp.json()
     except httpx.HTTPStatusError as exc:
