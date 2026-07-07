@@ -2,7 +2,7 @@ services:
   - type: web
     name: guaihack-global-brief-gen
     env: python
-    plan: free
+    plan: free # spins down after ~15 min idle; first request then takes up to a minute — the frontend communicates this honestly
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
@@ -13,13 +13,25 @@ services:
         sync: false
       - key: NEWSAPI_KEY
         sync: false
-      # HUGGINGFACE_API_KEY is no longer required — embeddings are computed
-      # locally via a numpy TF-IDF hashing vectorizer. Safe to leave any existing
-      # value set, it will be ignored.
+      # Comma-separated browser origins allowed by CORS. The Vercel rewrite
+      # proxy makes production traffic same-origin, so this is a backup layer.
+      # Set to the real Vercel URL after the first deploy.
+      - key: ALLOWED_ORIGINS
+        value: "https://atlas-brief.vercel.app,http://localhost:5173"
+      # Without an Anthropic key the API returns 503 instead of fabricated
+      # keyword-matched "analysis". Set true only for keyless demos.
+      - key: DEMO_MODE
+        value: "false"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "6"
+      - key: GDELT_MIN_INTERVAL_SECONDS
+        value: "5.5"
       - key: MAX_ARTICLES_PER_SOURCE
         value: "15"
       - key: DEDUP_SIMILARITY_THRESHOLD
         value: "0.85"
+      # Validated against the labeled fixture in backend/tests (recall 0.92 /
+      # precision 0.92) — no longer a hackathon guess.
       - key: RELEVANCE_SIMILARITY_THRESHOLD
         value: "0.30"
       - key: HOURS_LOOKBACK
