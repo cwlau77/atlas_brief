@@ -88,8 +88,15 @@ def extract_focus_terms(focus: str, *, include_phrase: bool = True) -> list[str]
 
 
 def build_boolean_query(focus: str, *, max_terms: int = 6) -> str:
-    """Build a compact OR query string for upstream search APIs."""
-    terms = extract_focus_terms(focus)[:max_terms]
+    """Build a compact OR query string for upstream search APIs.
+
+    The normalized focus phrase always occupies the first slot: alias expansion
+    is sorted longest-first, so without this pinning the focus term itself gets
+    crowded out of the max_terms window for aliased topics like "trade".
+    """
+    phrase = " ".join(_normalize_focus_tokens(focus))
+    expanded = [t for t in extract_focus_terms(focus) if t != phrase]
+    terms = (([phrase] if phrase else []) + expanded)[:max_terms]
     if not terms:
         return focus.strip()
     if len(terms) == 1:
