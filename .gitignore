@@ -10,3 +10,7 @@ backend/__pycache__/
 backend/**/__pycache__/
 guaihack.global_brief_gen/
 .claude/
+build_data_dictionary.py
+node_modules/
+frontend/dist/
+.pytest_cache/
