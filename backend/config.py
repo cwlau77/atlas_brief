@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # flag explicitly opts into the keyword-matched fallback "demo" briefing.
     demo_mode: bool = False
 
+    # Comma-separated list of allowed CORS origins. The Vercel rewrite proxy makes
+    # browser traffic same-origin, so this is a backup layer, not load-bearing.
+    allowed_origins: str = "*"
+    # Per-client-IP request budget for POST /briefing. 0 disables limiting.
+    rate_limit_per_minute: int = 6
+
     # Cache a generated briefing for this many minutes (per focus). 0 disables caching.
     cache_ttl_minutes: int = 15
     # How many key developments to enrich with historical context (cap for speed).

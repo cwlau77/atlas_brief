@@ -1,33 +1,39 @@
 import asyncio
 import logging
 import time
-from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 
 from backend.config import settings
 from backend.ingestion import fetch_gdelt, fetch_newsapi, fetch_rss
 from backend.models import Article, Briefing, BriefingRequest
 from backend.processing import deduplicate, embed_texts, filter_by_relevance
-from backend.synthesis import enrich_with_historical_context, synthesize_briefing
+from backend.rate_limit import SlidingWindowLimiter
+from backend.synthesis import (
+    SynthesisFailedError,
+    SynthesisUnavailableError,
+    enforce_url_allowlist,
+    enrich_with_historical_context,
+    synthesize_briefing,
+)
 
 logger = logging.getLogger("briefing")
 logging.basicConfig(level=logging.INFO)
-FRONTEND_INDEX = Path(__file__).resolve().parent.parent / "index.html"
 
-app = FastAPI(title="Global Briefing Generator", version="0.1.0")
+app = FastAPI(title="Atlas Brief API", version="0.2.0")
 
 # Simple in-memory briefing cache: {normalized_focus: (briefing, unix_expiry)}.
-# Keeps costs low and responses fast for repeated same-focus requests within the
-# configured TTL. Not shared across worker processes — fine for a hackathon demo.
+# Valid because the backend runs as a single long-running process (Render);
+# a serverless deployment would silently lose this and the rate limiter.
 _briefing_cache: dict[str, tuple[Briefing, float]] = {}
+
+_limiter = SlidingWindowLimiter(settings.rate_limit_per_minute, 60.0)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in settings.allowed_origins.split(",") if o.strip()],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,8 +46,8 @@ async def health() -> dict[str, str]:
 
 
 @app.get("/", include_in_schema=False)
-async def index() -> FileResponse:
-    return FileResponse(FRONTEND_INDEX)
+async def root() -> dict[str, str]:
+    return {"service": "atlas-brief-api", "docs": "/docs", "health": "/health"}
 
 
 async def _ingest_all(focus: str) -> list[Article]:
@@ -67,8 +73,22 @@ async def _ingest_all(focus: str) -> list[Article]:
     return articles
 
 
+def _client_ip(request: Request) -> str:
+    # Render/Vercel sit behind proxies; the first X-Forwarded-For hop is the client.
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 @app.post("/briefing", response_model=Briefing)
-async def briefing_endpoint(req: BriefingRequest) -> Briefing:
+async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
+    if settings.rate_limit_per_minute > 0 and not _limiter.allow(_client_ip(request)):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many briefing requests from this address. Please wait a minute and try again.",
+        )
+
     focus = req.focus.strip()
     cache_key = focus.lower()
 
@@ -90,7 +110,7 @@ async def briefing_endpoint(req: BriefingRequest) -> Briefing:
         hint = (
             f" (missing env vars: {', '.join(missing_keys)})"
             if missing_keys
-            else " (all three upstream sources returned zero; check Render logs for HTTP errors from NewsAPI/GDELT, and try a broader focus)"
+            else " All upstream sources returned zero articles — try a broader focus, or retry in a minute in case an upstream rate limit is in effect."
         )
         raise HTTPException(
             status_code=502,
@@ -120,7 +140,22 @@ async def briefing_endpoint(req: BriefingRequest) -> Briefing:
         )
 
     # Layer 4: synthesize structured briefing (Haiku by default, per settings.synthesis_model)
-    briefing = await synthesize_briefing(focus, articles)
+    try:
+        briefing = await synthesize_briefing(focus, articles)
+    except SynthesisUnavailableError:
+        raise HTTPException(
+            status_code=503,
+            detail="Briefing synthesis is not configured on this server (missing ANTHROPIC_API_KEY).",
+        )
+    except SynthesisFailedError:
+        logger.exception("synthesis failed twice for focus=%r", focus)
+        raise HTTPException(
+            status_code=502,
+            detail="The synthesis model returned an unreadable response twice. Please retry in a moment.",
+        )
+
+    # Server-side guarantee that every cited URL came from the ingested articles.
+    briefing = enforce_url_allowlist(briefing, {a.url for a in articles})
 
     # Layer 4b: enrich key developments with historical context (parallel Haiku calls,
     # capped by context_enrichment_limit for speed).
