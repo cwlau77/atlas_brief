@@ -4,12 +4,20 @@ from datetime import datetime, timezone
 from time import mktime
 
 import feedparser
+import httpx
 
 from backend.config import settings
 from backend.focus_terms import extract_focus_terms, keyword_hit
 from backend.models import Article
 
 logger = logging.getLogger("briefing.rss")
+
+# Fetch feeds with httpx rather than letting feedparser fetch internally:
+# feedparser's urllib fetch has no timeout (a hung feed blocks its worker
+# thread indefinitely) and swallows network/SSL errors as a silent bozo
+# result with zero entries, which is undebuggable in production logs.
+_FEED_TIMEOUT_SECONDS = 10.0
+_FEED_USER_AGENT = "AtlasBrief/1.0 (+https://github.com/cwlau77/guaihack.global_brief_gen)"
 
 # Deliberately spans regions: a "global briefing" product fed only by Western
 # outlets can't surface cross-region framing differences. All feeds verified
@@ -53,11 +61,16 @@ def _entry_to_article(outlet: str, entry) -> Article | None:
     )
 
 
-def _parse_feed(outlet: str, url: str, keywords: list[str]) -> list[Article]:
+def _parse_feed(outlet: str, content: str, keywords: list[str]) -> list[Article]:
+    """Parse already-fetched feed XML and keyword-filter its entries."""
     try:
-        parsed = feedparser.parse(url)
+        parsed = feedparser.parse(content)
     except Exception as exc:
-        logger.warning("feed %s (%s) failed to parse: %s", outlet, url, exc)
+        logger.warning("feed %s failed to parse: %s", outlet, exc)
+        return []
+
+    if not parsed.entries and getattr(parsed, "bozo", False):
+        logger.warning("feed %s returned no entries (bozo: %s)", outlet, getattr(parsed, "bozo_exception", "?"))
         return []
 
     entries = list(parsed.entries[: settings.max_articles_per_source * 3])
@@ -80,20 +93,48 @@ def _parse_feed(outlet: str, url: str, keywords: list[str]) -> list[Article]:
     return filtered
 
 
+async def _fetch_feed_text(client: httpx.AsyncClient, outlet: str, url: str) -> str:
+    try:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        return resp.text
+    except Exception as exc:
+        logger.warning("feed %s (%s) fetch failed: %s", outlet, url, exc or type(exc).__name__)
+        return ""
+
+
 async def fetch_rss(focus: str) -> list[Article]:
     """Pull articles from curated RSS feeds, pre-filtered by focus keywords.
 
-    Feedparser is blocking, so each feed is run in its own thread.
+    Feeds are fetched concurrently with httpx (real timeouts, logged failures),
+    then parsed in threads since feedparser is blocking CPU work.
     """
     keywords = extract_focus_terms(focus)
-    tasks = [asyncio.to_thread(_parse_feed, outlet, url, keywords) for outlet, url in RSS_FEEDS]
+
+    async with httpx.AsyncClient(
+        timeout=_FEED_TIMEOUT_SECONDS,
+        follow_redirects=True,
+        headers={"User-Agent": _FEED_USER_AGENT},
+    ) as client:
+        contents = await asyncio.gather(
+            *(_fetch_feed_text(client, outlet, url) for outlet, url in RSS_FEEDS),
+        )
+
+    tasks = [
+        asyncio.to_thread(_parse_feed, outlet, content, keywords)
+        for (outlet, _), content in zip(RSS_FEEDS, contents)
+        if content
+    ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     articles: list[Article] = []
-    for (outlet, _), result in zip(RSS_FEEDS, results):
+    for result in results:
         if isinstance(result, Exception):
-            logger.warning("feed %s raised: %s", outlet, result)
+            logger.warning("feed parse raised: %s", result)
             continue
-        logger.info("feed %s -> %d articles", outlet, len(result))
         articles.extend(result)
+    logger.info(
+        "rss summary for focus=%r: %d feeds fetched, %d articles kept",
+        focus, sum(1 for c in contents if c), len(articles),
+    )
     return articles

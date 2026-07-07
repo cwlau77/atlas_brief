@@ -2,7 +2,7 @@
 // briefing UI is interactive before any of this arrives over the wire.
 import { useEffect, useMemo, useRef } from 'react'
 import Globe, { type GlobeMethods } from 'react-globe.gl'
-import { MeshPhongMaterial, Color } from 'three'
+import { AmbientLight, Color, MeshPhongMaterial } from 'three'
 import { feature } from 'topojson-client'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 import countriesTopo from 'world-atlas/countries-110m.json'
@@ -16,7 +16,7 @@ export interface GlobePoint {
 }
 
 // Parchment landmasses on a midnight sea — inverted-atlas look.
-const LAND_COLOR = 'rgba(233, 223, 200, 0.78)'
+const LAND_COLOR = 'rgba(240, 232, 212, 0.95)'
 const SEA_COLOR = '#1b2b47'
 const POINT_COLOR = '#c65b39'
 
@@ -63,6 +63,9 @@ export default function GlobeCanvas({ width, height, regionCounts }: {
     controls.autoRotate = true
     controls.autoRotateSpeed = 0.55
     controls.enableZoom = false // never fight the page scroll
+    // Uniform ambient light instead of the default sun: an atlas has no night
+    // side — landmasses stay parchment all the way around.
+    globe.lights([new AmbientLight(0xffffff, 3.4)])
     globe.pointOfView({ lat: 18, lng: 12, altitude: 2.1 }, 0)
   }
 
@@ -78,7 +81,7 @@ export default function GlobeCanvas({ width, height, regionCounts }: {
       atmosphereAltitude={0.18}
       hexPolygonsData={countries.features}
       hexPolygonResolution={3}
-      hexPolygonMargin={0.62}
+      hexPolygonMargin={0.55}
       hexPolygonUseDots
       hexPolygonColor={() => LAND_COLOR}
       pointsData={points}
