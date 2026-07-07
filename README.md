@@ -71,8 +71,12 @@ Change the threshold and the suite will tell you what it costs.
 after the first frontend deploy. Free tier sleeps when idle — the frontend
 warns users about the up-to-a-minute wake-up honestly.
 
-**Frontend (Vercel):** import the repo; `vercel.json` supplies the build
-command, output directory, and the `/api/*` rewrite. **Verify the rewrite
+**Frontend (Vercel):** import the repo and set the project's **Root Directory
+to `frontend`** (Settings → Build & Deployment). This is required — the repo
+root has a `requirements.txt` for Render, which otherwise makes Vercel
+misdetect the whole project as a Python function and fail the build. With the
+root set to `frontend/`, Vercel sees a plain Vite app and reads
+`frontend/vercel.json` for the `/api/*` rewrite. **Verify the rewrite
 destination matches your actual Render URL** (currently assumed to be
 `https://guaihack-global-brief-gen.onrender.com`).
 
