@@ -17,6 +17,14 @@ from backend.models import (
     Tension,
 )
 
+class SynthesisUnavailableError(RuntimeError):
+    """Synthesis cannot run at all (no API key and demo mode disabled)."""
+
+
+class SynthesisFailedError(RuntimeError):
+    """The model responded, but not with usable JSON, twice in a row."""
+
+
 SYSTEM_PROMPT = """You are a senior international-affairs analyst producing a daily intelligence briefing.
 You read raw news wire items from multiple countries and synthesize them into a structured JSON briefing.
 
@@ -153,12 +161,15 @@ def _infer_regions(article: Article, focus: str) -> list[str]:
     return regions[:4] or [focus]
 
 
+def _sort_ts(article: Article) -> datetime:
+    # Defense in depth: upstream sources should all emit tz-aware datetimes now,
+    # but a single naive value would make the aware/naive comparison raise.
+    ts = article.published_at or datetime.min
+    return ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
+
+
 def _fallback_briefing(focus: str, articles: list[Article]) -> Briefing:
-    sorted_articles = sorted(
-        articles,
-        key=lambda article: article.published_at or datetime.min.replace(tzinfo=timezone.utc),
-        reverse=True,
-    )
+    sorted_articles = sorted(articles, key=_sort_ts, reverse=True)
     article_count = len(sorted_articles)
     top_articles = sorted_articles[: min(4, article_count)]
 
@@ -244,37 +255,56 @@ def _fallback_briefing(focus: str, articles: list[Article]) -> Briefing:
     )
 
 
-async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
-    """Run the main Claude Sonnet synthesis pass and return a Briefing."""
-    if not settings.anthropic_api_key:
-        return _fallback_briefing(focus, articles)
+def extract_json(raw_text: str) -> dict:
+    """Pull a JSON object out of a model reply, tolerating ``` fences and stray prose.
 
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    Raises ValueError when no parseable JSON object is present.
+    """
+    text = raw_text.strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        if text.lower().startswith("json"):
+            text = text[4:]
+        text = text.strip()
 
-    response = await client.messages.create(
-        model=settings.synthesis_model,
-        max_tokens=4000,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": _build_user_prompt(focus, articles)}],
-    )
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError("no JSON object found in model reply")
+    try:
+        data = json.loads(text[start : end + 1])
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"model reply is not valid JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError("model reply JSON is not an object")
+    return data
 
-    text_parts = [block.text for block in response.content if getattr(block, "type", "") == "text"]
-    raw_text = "".join(text_parts).strip()
 
-    # Tolerate the model wrapping JSON in ```json fences or stray prose.
-    if raw_text.startswith("```"):
-        raw_text = raw_text.strip("`")
-        if raw_text.lower().startswith("json"):
-            raw_text = raw_text[4:]
-        raw_text = raw_text.strip()
+def enforce_url_allowlist(briefing: Briefing, allowed: set[str]) -> Briefing:
+    """Server-side enforcement of the prompt's 'every URL must come from the
+    provided articles' rule, so hallucinated or injected URLs never reach clients.
 
-    start = raw_text.find("{")
-    end = raw_text.rfind("}")
-    if start != -1 and end != -1:
-        raw_text = raw_text[start : end + 1]
+    Citations with unknown URLs are dropped; recommended readings with unknown
+    URLs are removed entirely (a reading is nothing but its link).
+    """
+    def _keep(citations: list[SourceCitation]) -> list[SourceCitation]:
+        return [c for c in citations if c.url in allowed]
 
-    data = json.loads(raw_text)
+    for dev in briefing.key_developments:
+        dev.sources = _keep(dev.sources)
+    for tension in briefing.emerging_tensions:
+        tension.sources = _keep(tension.sources)
+    for contradiction in briefing.contradictions:
+        contradiction.sources_a = _keep(contradiction.sources_a)
+        contradiction.sources_b = _keep(contradiction.sources_b)
+    for alert in briefing.priority_alerts:
+        alert.sources = _keep(alert.sources)
+    briefing.recommended_readings = [r for r in briefing.recommended_readings if r.url in allowed]
+    return briefing
 
+
+def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Briefing:
+    """Construct a validated Briefing from the model's parsed JSON."""
     key_developments = [
         KeyDevelopment(
             headline=kd["headline"],
@@ -327,3 +357,41 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
         article_count=len(articles),
         source_breakdown=_source_breakdown(articles),
     )
+
+
+async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
+    """Run the Claude synthesis pass and return a Briefing.
+
+    Raises SynthesisUnavailableError when no key is configured (unless
+    DEMO_MODE opts into the keyword fallback) and SynthesisFailedError when
+    the model fails to produce usable JSON even after one corrective retry.
+    """
+    if not settings.anthropic_api_key:
+        if settings.demo_mode:
+            return _fallback_briefing(focus, articles)
+        raise SynthesisUnavailableError("ANTHROPIC_API_KEY is not configured")
+
+    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    messages: list[dict] = [{"role": "user", "content": _build_user_prompt(focus, articles)}]
+
+    last_error: Exception | None = None
+    for _attempt in (1, 2):
+        response = await client.messages.create(
+            model=settings.synthesis_model,
+            max_tokens=4000,
+            system=SYSTEM_PROMPT,
+            messages=messages,
+        )
+        text_parts = [block.text for block in response.content if getattr(block, "type", "") == "text"]
+        raw_text = "".join(text_parts).strip()
+        try:
+            data = extract_json(raw_text)
+            return briefing_from_data(data, focus, articles)
+        except (ValueError, KeyError, TypeError) as exc:  # ValidationError is a ValueError
+            last_error = exc
+            # One corrective retry: show the model its bad reply and demand bare JSON.
+            messages = messages + [
+                {"role": "assistant", "content": raw_text[:2000] or "(empty reply)"},
+                {"role": "user", "content": "Your previous reply was not valid JSON matching the schema. Return ONLY the JSON object, nothing else."},
+            ]
+    raise SynthesisFailedError(str(last_error))

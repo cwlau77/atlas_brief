@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     context_model: str = "claude-haiku-4-5"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
+    # Without an Anthropic key the server refuses to synthesize (503) unless this
+    # flag explicitly opts into the keyword-matched fallback "demo" briefing.
+    demo_mode: bool = False
+
     # Cache a generated briefing for this many minutes (per focus). 0 disables caching.
     cache_ttl_minutes: int = 15
     # How many key developments to enrich with historical context (cap for speed).
