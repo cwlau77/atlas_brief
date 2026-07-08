@@ -1,6 +1,6 @@
 // Heavy chunk: three.js + globe geometry. Loaded lazily via GlobeHero so the
 // briefing UI is interactive before any of this arrives over the wire.
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import Globe, { type GlobeMethods } from 'react-globe.gl'
 import { AmbientLight, Color, MeshPhongMaterial } from 'three'
 import { feature } from 'topojson-client'
@@ -15,10 +15,17 @@ export interface GlobePoint {
   lng: number
 }
 
-// Parchment landmasses on a midnight sea — inverted-atlas look.
-const LAND_COLOR = 'rgba(240, 232, 212, 0.95)'
-const SEA_COLOR = '#1b2b47'
-const POINT_COLOR = '#c65b39'
+export interface DevelopmentAnchor {
+  headline: string
+  regions: string[]
+  anchorId: string
+}
+
+// Midnight Signal duotone: dim white landmass dots on near-black, chartreuse
+// hotspots. The globe holds exactly two colors.
+const LAND_COLOR = 'rgba(255, 255, 255, 0.35)'
+const SEA_COLOR = '#0a0c10'
+const ATMOSPHERE = '#c6f135'
 
 type CountriesTopology = Topology<{ countries: GeometryCollection<{ name: string }> }>
 const topo = countriesTopo as unknown as CountriesTopology
@@ -33,10 +40,20 @@ export function buildPoints(regionCounts: Record<string, number>): GlobePoint[] 
     .filter((p): p is GlobePoint => p !== null)
 }
 
-export default function GlobeCanvas({ width, height, regionCounts }: {
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+export default function GlobeCanvas({ width, height, regionCounts, developments }: {
   width: number
   height: number
   regionCounts: Record<string, number> | null
+  developments: DevelopmentAnchor[] | null
 }) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined)
 
@@ -56,16 +73,57 @@ export default function GlobeCanvas({ width, height, regionCounts }: {
     globe.pointOfView({ lat: top.lat, lng: top.lng, altitude: 1.9 }, 1200)
   }, [points])
 
+  const setAutoRotate = useCallback((on: boolean) => {
+    const controls = globeRef.current?.controls()
+    if (controls) controls.autoRotate = on
+  }, [])
+
+  // Imperative DOM markers: globe.gl positions raw elements on the sphere, so
+  // the hover dropdown is plain HTML/CSS rather than a React portal chase.
+  const makeHotspot = useCallback((d: object) => {
+    const p = d as GlobePoint
+    const scale = p.count / maxCount
+    const dot = Math.round(10 + 9 * scale)
+
+    const stories = (developments ?? []).filter((dev) => dev.regions.includes(p.name))
+    const rows = stories
+      .map(
+        (s) => `<button class="hotspot-row" data-anchor="${escapeHtml(s.anchorId)}">${escapeHtml(s.headline)}</button>`,
+      )
+      .join('')
+
+    const el = document.createElement('div')
+    el.className = 'hotspot'
+    el.style.pointerEvents = 'auto'
+    el.innerHTML = `
+      <span class="hotspot-ring" style="width:${dot + 14}px;height:${dot + 14}px"></span>
+      <span class="hotspot-dot" style="width:${dot}px;height:${dot}px"></span>
+      <div class="hotspot-panel" role="menu" aria-label="Developing stories in ${escapeHtml(p.name)}">
+        <div class="hotspot-head mono">${escapeHtml(p.name.toUpperCase())} · ${p.count} MENTION${p.count === 1 ? '' : 'S'}</div>
+        ${rows || '<div class="hotspot-none">Plotted from region tags in this briefing.</div>'}
+      </div>`
+
+    // Hovering a hotspot freezes the rotation so the dropdown is readable.
+    el.addEventListener('mouseenter', () => setAutoRotate(false))
+    el.addEventListener('mouseleave', () => setAutoRotate(true))
+    el.querySelectorAll<HTMLButtonElement>('.hotspot-row').forEach((btn) =>
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        document.getElementById(btn.dataset.anchor ?? '')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }),
+    )
+    return el
+  }, [developments, maxCount, setAutoRotate])
+
   const handleReady = () => {
     const globe = globeRef.current
     if (!globe) return
     const controls = globe.controls()
     controls.autoRotate = true
-    controls.autoRotateSpeed = 0.55
+    controls.autoRotateSpeed = 0.4
     controls.enableZoom = false // never fight the page scroll
-    // Uniform ambient light instead of the default sun: an atlas has no night
-    // side — landmasses stay parchment all the way around.
-    globe.lights([new AmbientLight(0xffffff, 3.4)])
+    // Uniform ambient light: the signal globe has no day/night terminator.
+    globe.lights([new AmbientLight(0xffffff, 3.2)])
     globe.pointOfView({ lat: 18, lng: 12, altitude: 2.1 }, 0)
   }
 
@@ -77,22 +135,21 @@ export default function GlobeCanvas({ width, height, regionCounts }: {
       backgroundColor="rgba(0,0,0,0)"
       globeMaterial={globeMaterial}
       showAtmosphere
-      atmosphereColor="#5b6b83"
-      atmosphereAltitude={0.18}
+      atmosphereColor={ATMOSPHERE}
+      atmosphereAltitude={0.13}
       hexPolygonsData={countries.features}
       hexPolygonResolution={3}
-      hexPolygonMargin={0.55}
+      hexPolygonMargin={0.62}
       hexPolygonUseDots
       hexPolygonColor={() => LAND_COLOR}
-      pointsData={points}
-      pointLat={(d) => (d as GlobePoint).lat}
-      pointLng={(d) => (d as GlobePoint).lng}
-      pointColor={() => POINT_COLOR}
-      pointAltitude={(d) => 0.04 + 0.16 * ((d as GlobePoint).count / maxCount)}
-      pointRadius={(d) => 0.5 + 0.9 * ((d as GlobePoint).count / maxCount)}
-      pointLabel={(d) => {
-        const p = d as GlobePoint
-        return `<div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:#16233a;color:#f4eee1;padding:4px 8px;border-radius:4px;border:1px solid rgba(244,238,225,.25)">${p.name} — ${p.count} mention${p.count === 1 ? '' : 's'}</div>`
+      htmlElementsData={points}
+      htmlLat={(d) => (d as GlobePoint).lat}
+      htmlLng={(d) => (d as GlobePoint).lng}
+      htmlAltitude={0.02}
+      htmlElement={makeHotspot}
+      htmlElementVisibilityModifier={(el, isVisible) => {
+        el.style.opacity = isVisible ? '1' : '0'
+        el.style.pointerEvents = isVisible ? 'auto' : 'none'
       }}
       onGlobeReady={handleReady}
     />

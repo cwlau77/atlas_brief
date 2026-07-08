@@ -1,27 +1,27 @@
 .stat-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.7rem;
+  gap: 0.75rem;
   margin-bottom: 0.9rem;
 }
 
 .stat-tile {
-  padding: 0.8rem 1rem;
+  padding: 0.9rem 1.05rem;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
 
 .stat-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--ink);
+  font-size: 1.7rem;
+  font-weight: 500;
+  color: var(--text-hi);
 }
 
 .stat-label {
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  color: var(--ink-faint);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: var(--text-low);
 }
 
 .chart-row {
@@ -31,12 +31,12 @@
 }
 
 .chart-box {
-  padding: 1rem 1.15rem 1.15rem;
+  padding: 1.05rem 1.2rem 1.2rem;
 }
 
 .chart-title {
-  font-size: 0.95rem;
-  margin-bottom: 0.6rem;
+  font-size: 1.15rem;
+  margin-bottom: 0.7rem;
 }
 
 .chart-canvas {
@@ -46,7 +46,7 @@
 
 .chart-empty {
   font-size: 0.85rem;
-  color: var(--ink-faint);
+  color: var(--text-low);
   padding: 2rem 0;
   text-align: center;
 }

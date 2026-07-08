@@ -4,69 +4,145 @@
   flex-direction: column;
 }
 
-/* ---------- hero: the chart band ---------- */
+/* ---------- hero ---------- */
 .hero {
-  background: var(--ink);
-  color: var(--parchment);
   position: relative;
-  overflow: hidden;
-  /* graticule: faint lat/long grid over the midnight sea */
-  background-image:
-    linear-gradient(var(--chart-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--chart-line) 1px, transparent 1px),
-    radial-gradient(ellipse at 75% 40%, rgba(47, 135, 122, 0.14), transparent 55%),
-    radial-gradient(ellipse at 15% 85%, rgba(176, 74, 46, 0.12), transparent 50%);
-  background-size: 72px 72px, 72px 72px, auto, auto;
+  color: var(--text-hi);
 }
 
 .hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- StandBy mode: the globe is the interface --- */
+.hero-inner-standby {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem 3.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.standby-stage {
+  position: relative;
+  width: 100%;
+  height: clamp(400px, 58vh, 580px);
+}
+
+.standby-stage .globe-stage {
+  min-height: 0;
+}
+
+.standby-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 2.2rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.standby-kicker {
+  margin-top: 0.9rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.32em;
+  color: var(--text-low);
+}
+
+.standby-console {
+  position: relative;
+  z-index: 3;
+  width: min(740px, 100%);
+  margin-top: -2.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.standby-console .brief-form {
+  width: 100%;
+}
+
+/* --- Docked mode: briefing leads, globe stands aside --- */
+.hero-inner-docked {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3.2rem 1.5rem 3.4rem;
+  padding: 2.6rem 1.5rem 2.2rem;
   display: grid;
   grid-template-columns: minmax(340px, 1.05fr) 1fr;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: center;
 }
 
 .hero-kicker {
-  font-size: 0.68rem;
-  letter-spacing: 0.24em;
-  color: var(--terracotta);
-  margin-bottom: 0.9rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.28em;
+  color: var(--signal);
+  margin-bottom: 1rem;
 }
 
 .hero-title {
-  font-size: clamp(2.1rem, 4.2vw, 3.1rem);
-  font-weight: 700;
-  letter-spacing: 0.005em;
-  margin-bottom: 0.8rem;
+  font-size: clamp(2.6rem, 5vw, 3.9rem);
+  margin-bottom: 1.4rem;
 }
 
 .hero-title em {
   font-style: italic;
-  font-weight: 400;
-  color: var(--parchment-deep);
+  color: var(--signal);
 }
 
-.hero-sub {
-  font-size: 1rem;
-  color: var(--ink-wash);
-  max-width: 34rem;
-  margin-bottom: 1.6rem;
+.docked-hint {
+  margin-top: 0.9rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  color: var(--text-low);
 }
 
-.hero-globe {
-  height: 480px;
+.docked-globe {
+  height: 470px;
   position: relative;
 }
 
 @media (max-width: 900px) {
-  .hero-inner {
+  .hero-inner-docked {
     grid-template-columns: 1fr;
-    padding-bottom: 1.5rem;
+    gap: 1rem;
+    padding-top: 1.8rem;
   }
-  .hero-globe { height: 380px; }
+  .docked-globe { height: 380px; }
+  .standby-stage { height: clamp(340px, 46vh, 460px); }
+  .standby-overlay { padding-top: 1.2rem; }
+}
+
+/* ---------- suggestion chips ---------- */
+.suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.suggestion-chip {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--text-mid);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.36rem 0.95rem;
+  transition: all var(--dur-quick) var(--ease-expo);
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  border-color: var(--signal);
+  color: var(--signal);
+  box-shadow: 0 0 16px var(--signal-glow);
+  transform: translateY(-1px);
 }
 
 /* ---------- content surface ---------- */
@@ -74,97 +150,80 @@
   max-width: 1080px;
   width: 100%;
   margin: 0 auto;
-  padding: 2.2rem 1.5rem 4rem;
+  padding: 1.6rem 1.5rem 4.5rem;
   flex: 1;
   scroll-margin-top: 4.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .content-page { padding-top: 2.6rem; }
 
 .briefing-masthead {
-  border-bottom: 3px double var(--line-strong);
-  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.2rem;
 }
 
 .briefing-focus {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-size: clamp(2rem, 4vw, 2.9rem);
   text-transform: capitalize;
 }
 
 .briefing-issued {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--ink-faint);
-  margin-top: 0.3rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  color: var(--text-low);
+  margin-top: 0.4rem;
 }
 
 /* ---------- notices ---------- */
 .notice-card {
-  padding: 2.2rem 2rem;
-  text-align: center;
+  padding: 2rem;
+  text-align: left;
+  margin-bottom: 1.5rem;
 }
 
 .notice-card h3 {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   margin-bottom: 0.45rem;
 }
 
 .notice-card p {
-  color: var(--ink-soft);
+  color: var(--text-mid);
   font-size: 0.95rem;
 }
 
 .notice-error {
-  border-left: 4px solid var(--alert-critical);
-  text-align: left;
-}
-
-.suggestion-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-top: 1.1rem;
-}
-
-.suggestion-chip {
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-  color: var(--teal);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
-  border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-  transition: all var(--dur-quick) var(--ease-out);
-}
-
-.suggestion-chip:hover:not(:disabled) {
-  background: var(--teal);
-  color: var(--parchment);
-  transform: translateY(-1px);
+  border-left: 3px solid var(--alert-critical);
 }
 
 /* ---------- footer ---------- */
 .footer {
-  background: var(--parchment-deep);
-  border-top: 1px solid var(--line-strong);
-  font-size: 0.78rem;
-  color: var(--ink-faint);
+  border-top: 1px solid var(--border);
+  font-size: 0.76rem;
+  color: var(--text-low);
   text-align: center;
-  padding: 1.1rem 1.5rem;
+  padding: 1.3rem 1.5rem;
 }
 
 .footer .mono {
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  color: var(--ink-soft);
+  font-size: 0.64rem;
+  letter-spacing: 0.22em;
+  color: var(--text-mid);
 }
 
 /* ---------- print: briefing only, ink on paper ---------- */
 @media print {
-  .navbar, .hero, .footer, .toast-host, .notice-card { display: none !important; }
+  .navbar, .hero, .footer, .toast-host, .notice-card, .ambient, body::after { display: none !important; }
   .content { padding: 0; max-width: none; }
-  body { background: #fff; }
-  .card, .alert-card { box-shadow: none; break-inside: avoid; }
-  .source-chip { border: none; padding: 0; background: none; }
+  body { background: #fff; color: #111; }
+  h1, h2, h3, h4, p, span, a, li { color: #111 !important; }
+  .panel, .alert-card {
+    background: #fff !important;
+    border-color: #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  .signal-label, .stat-label, .briefing-issued { color: #555 !important; }
+  .source-chip { border: none; padding: 0; background: none !important; }
 }

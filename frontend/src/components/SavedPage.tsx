@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { SavedBriefing } from '../lib/normalize'
 import { formatDate, relativeTime } from '../lib/relativeTime'
+import { useSpotlight } from '../lib/useSpotlight'
 import { PrintIcon, StarIcon, TrashIcon } from './icons'
 import './saved.css'
 
@@ -10,19 +11,19 @@ function CompareColumn({ briefing }: { briefing: SavedBriefing }) {
       <h3 className="compare-title">{briefing.area}</h3>
       <p className="compare-issued mono">{formatDate(briefing.generatedAt)}</p>
       <div className="compare-block">
-        <span className="plate-label">Developments</span>
+        <span className="signal-label">Developments</span>
         <ul>
           {briefing.keyDevelopments.slice(0, 4).map((d, i) => <li key={i}>{d.title}</li>)}
         </ul>
       </div>
       <div className="compare-block">
-        <span className="plate-label">Alerts</span>
+        <span className="signal-label">Alerts</span>
         {briefing.alerts.length
           ? <ul>{briefing.alerts.map((a, i) => <li key={i}><strong>{a.label}</strong> — {a.title}</li>)}</ul>
           : <p className="compare-none">None issued.</p>}
       </div>
       <div className="compare-block">
-        <span className="plate-label">Tensions</span>
+        <span className="signal-label">Tensions</span>
         {briefing.emergingTensions.length
           ? <ul>{briefing.emergingTensions.map((t, i) => <li key={i}>{t.actors}</li>)}</ul>
           : <p className="compare-none">None surfaced.</p>}
@@ -58,9 +59,11 @@ export function SavedPage({ saved, starredIds, onView, onToggleStar, onDelete, o
     )
   }
 
+  const spot = useSpotlight()
+
   if (!saved.length) {
     return (
-      <div className="saved-empty card">
+      <div className="saved-empty panel">
         <h3>The archive is empty</h3>
         <p>Generate a briefing and it will be filed here automatically — the newest twelve are kept.</p>
       </div>
@@ -70,7 +73,7 @@ export function SavedPage({ saved, starredIds, onView, onToggleStar, onDelete, o
   return (
     <div className="saved-page">
       <div className="saved-toolbar">
-        <div className="plate-label">Filed briefings · {visible.length}</div>
+        <div className="signal-label">Filed briefings · {visible.length}</div>
         <div className="saved-filters">
           <button
             className={`btn btn-quiet saved-filter ${filter === 'all' ? 'on' : ''}`}
@@ -88,7 +91,7 @@ export function SavedPage({ saved, starredIds, onView, onToggleStar, onDelete, o
           const starred = starredIds.includes(b.id)
           const checked = selected.includes(b.id)
           return (
-            <article key={b.id} className={`card saved-card ${checked ? 'selected' : ''}`}>
+            <article key={b.id} className={`panel spot saved-card ${checked ? 'selected' : ''}`} onMouseMove={spot}>
               <header className="saved-card-head">
                 <div>
                   <h3 className="saved-card-title">{b.area}</h3>
@@ -133,8 +136,8 @@ export function SavedPage({ saved, starredIds, onView, onToggleStar, onDelete, o
       </div>
 
       {pair.length === 2 && (
-        <section className="compare-panel card" aria-label="Briefing comparison">
-          <div className="plate-label">Side by side</div>
+        <section className="compare-panel panel" aria-label="Briefing comparison">
+          <div className="signal-label">Side by side</div>
           <div className="compare-split">
             <CompareColumn briefing={pair[0]} />
             <CompareColumn briefing={pair[1]} />

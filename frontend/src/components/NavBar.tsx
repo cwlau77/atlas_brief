@@ -19,10 +19,22 @@ function useUtcClock(): string {
   return `${now.toISOString().slice(11, 16)} UTC`
 }
 
+function useScrolled(threshold = 8): boolean {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [threshold])
+  return scrolled
+}
+
 export function NavBar({ page, onNavigate }: { page: Page; onNavigate: (p: Page) => void }) {
   const clock = useUtcClock()
+  const scrolled = useScrolled()
   return (
-    <header className="navbar">
+    <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="navbar-inner">
         <button className="wordmark" onClick={() => onNavigate('briefing')} aria-label="Atlas Brief home">
           <CompassIcon size={22} className="wordmark-icon" />

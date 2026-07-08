@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import { AmbientBackdrop } from './components/AmbientBackdrop'
 import { BriefingForm } from './components/BriefingForm'
 import { BriefingView } from './components/BriefingView'
 import { GlobeHero } from './components/GlobeHero'
 import { NavBar, type Page } from './components/NavBar'
 import { ProfilePage, loadSettings } from './components/ProfilePage'
 import { SavedPage } from './components/SavedPage'
+import { StandByClock } from './components/StandByClock'
 import { ToastHost, type ToastItem } from './components/Toast'
 import { requestBriefing, warmBackend } from './lib/api'
 import { normalizeBriefing, type SavedBriefing } from './lib/normalize'
@@ -12,6 +15,8 @@ import { KEYS, loadJSON, saveJSON } from './lib/storage'
 import './app.css'
 
 const SUGGESTIONS = ['South Asian security', 'climate policy', 'global trade', 'migration', 'energy markets']
+
+const heroTransition = { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }
 
 let toastSeq = 0
 
@@ -107,49 +112,79 @@ export default function App() {
     window.setTimeout(() => window.print(), 400)
   }
 
+  // Docked once a briefing exists: the globe moves aside and content leads.
+  const docked = current !== null
+
+  // Globe hotspot dropdowns scroll to these anchors inside KeyDevelopments.
+  const anchors = current
+    ? current.keyDevelopments.map((d, i) => ({ headline: d.title, regions: d.regions, anchorId: `dev-${i}` }))
+    : null
+
   return (
     <div className="app">
       <NavBar page={page} onNavigate={setPage} />
 
       {page === 'briefing' && (
         <>
-          <section className="hero">
-            <div className="hero-inner">
-              <div className="hero-copy">
-                <p className="hero-kicker mono">DAILY INTELLIGENCE · ATLAS EDITION</p>
-                <h1 className="hero-title">
-                  Signal from noise, <em>mapped.</em>
-                </h1>
-                <p className="hero-sub">
-                  One focus phrase. Multiple wire sources, deduplicated, cross-examined for
-                  contradictions and tensions, and plotted on the globe.
-                </p>
-                <BriefingForm loading={loading} onGenerate={generate} />
-              </div>
-              <div className="hero-globe">
-                <GlobeHero regionCounts={current?.regionCounts ?? null} />
-              </div>
-            </div>
+          <section className={`hero ${docked ? 'hero-docked' : 'hero-standby'}`}>
+            <AmbientBackdrop ring={!docked} />
+            {/* No AnimatePresence here: exit-waiting deadlocks when the leaving
+                subtree contains the lazy/Suspense globe. Keyed remounts give a
+                clean animated entrance instead. */}
+            {!docked ? (
+                <motion.div
+                  key="standby"
+                  className="hero-inner hero-inner-standby"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={heroTransition}
+                >
+                  <div className="standby-stage">
+                    <GlobeHero regionCounts={null} />
+                    <div className="standby-overlay">
+                      <StandByClock />
+                      <p className="standby-kicker mono">GLOBAL INTELLIGENCE · ONE FOCUS PHRASE</p>
+                    </div>
+                  </div>
+                  <div className="standby-console">
+                    <BriefingForm loading={loading} onGenerate={generate} />
+                    <div className="suggestion-row">
+                      {SUGGESTIONS.map((s) => (
+                        <button key={s} className="suggestion-chip mono" onClick={() => generate(s, 'daily')} disabled={loading}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="docked"
+                  className="hero-inner hero-inner-docked"
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={heroTransition}
+                >
+                  <div className="docked-copy">
+                    <p className="hero-kicker mono">ATLAS BRIEF · LIVE SIGNAL</p>
+                    <h1 className="hero-title">
+                      Signal from noise, <em>mapped.</em>
+                    </h1>
+                    <BriefingForm loading={loading} onGenerate={generate} />
+                    <p className="docked-hint mono">HOVER A SIGNAL POINT ON THE GLOBE FOR ITS STORIES</p>
+                  </div>
+                  <div className="docked-globe">
+                    <GlobeHero regionCounts={current.regionCounts} developments={anchors} />
+                  </div>
+                </motion.div>
+              )}
           </section>
 
           <main className="content" ref={resultsRef}>
             {error && (
-              <div className="card notice-card notice-error" role="alert">
+              <div className="panel notice-card notice-error" role="alert">
                 <h3>Unable to generate briefing</h3>
                 <p>{error}</p>
-              </div>
-            )}
-            {!error && !current && (
-              <div className="card notice-card">
-                <h3>Welcome to the atlas</h3>
-                <p>Enter a region, issue, or policy track above — or start from a common heading:</p>
-                <div className="suggestion-row">
-                  {SUGGESTIONS.map((s) => (
-                    <button key={s} className="suggestion-chip mono" onClick={() => generate(s, 'daily')} disabled={loading}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
             {current && <BriefingView briefing={current} />}
@@ -177,8 +212,8 @@ export default function App() {
       )}
 
       <footer className="footer">
-        <span className="mono">ATLAS BRIEF</span> — synthesized from NewsAPI, GDELT, and nine
-        regional wires. Analysis is model-generated; verify against the cited sources.
+        <span className="mono">ATLAS BRIEF</span> — synthesized from NewsAPI, GDELT, and a
+        fifteen-wire source pool. Analysis is model-generated; verify against the cited sources.
       </footer>
 
       <ToastHost toasts={toasts} onDismiss={dismissToast} />

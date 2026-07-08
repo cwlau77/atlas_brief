@@ -6,16 +6,16 @@
   gap: 1.5rem;
 }
 
-.saved-toolbar .plate-label { flex: 1; }
+.saved-toolbar .signal-label { flex: 1; }
 
 .saved-filters { display: flex; gap: 0.4rem; }
 
-.saved-filter { font-size: 0.78rem; padding: 0.35rem 0.8rem; }
+.saved-filter { font-size: 0.78rem; padding: 0.35rem 0.85rem; }
 
 .saved-filter.on {
-  border-color: var(--terracotta);
-  color: var(--terracotta);
-  background: color-mix(in srgb, var(--terracotta) 8%, transparent);
+  border-color: rgba(198, 241, 53, 0.5);
+  color: var(--signal);
+  background: rgba(198, 241, 53, 0.07);
 }
 
 .saved-grid {
@@ -25,16 +25,16 @@
 }
 
 .saved-card {
-  padding: 1.05rem 1.15rem;
+  padding: 1.1rem 1.2rem;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  transition: border-color var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
 }
 
-.saved-card:hover { transform: translateY(-2px); }
-
-.saved-card.selected { border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal), var(--shadow-card); }
+.saved-card.selected {
+  border-color: rgba(198, 241, 53, 0.55);
+  box-shadow: 0 0 0 1px rgba(198, 241, 53, 0.35), 0 0 20px var(--signal-glow), var(--shadow-card);
+}
 
 .saved-card-head {
   display: flex;
@@ -43,28 +43,28 @@
   gap: 0.6rem;
 }
 
-.saved-card-title { font-size: 1.08rem; text-transform: capitalize; }
+.saved-card-title { font-size: 1.3rem; text-transform: capitalize; }
 
-.saved-card-date { font-size: 0.68rem; color: var(--ink-faint); }
+.saved-card-date { font-size: 0.66rem; color: var(--text-low); }
 
 .star-btn {
   background: none;
   border: none;
-  color: var(--ink-wash);
+  color: var(--text-low);
   padding: 0.2rem;
-  transition: color var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
+  transition: color var(--dur-quick) var(--ease-expo), transform var(--dur-quick) var(--ease-expo);
 }
 
-.star-btn:hover { color: var(--gold); transform: scale(1.15) rotate(-8deg); }
-.star-btn.on { color: var(--gold); }
+.star-btn:hover { color: var(--signal); transform: scale(1.15) rotate(-8deg); }
+.star-btn.on { color: var(--signal); filter: drop-shadow(0 0 6px var(--signal-glow)); }
 
 .saved-card-lede {
   font-size: 0.88rem;
-  color: var(--ink-soft);
+  color: var(--text-mid);
   flex: 1;
 }
 
-.saved-card-stats { font-size: 0.68rem; color: var(--ink-faint); }
+.saved-card-stats { font-size: 0.66rem; color: var(--text-low); }
 
 .saved-card-actions {
   display: flex;
@@ -73,7 +73,7 @@
   flex-wrap: wrap;
 }
 
-.saved-card-actions .btn { font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+.saved-card-actions .btn { font-size: 0.78rem; padding: 0.35rem 0.75rem; }
 
 .compare-check {
   margin-left: auto;
@@ -81,24 +81,24 @@
   align-items: center;
   gap: 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   letter-spacing: 0.08em;
-  color: var(--ink-faint);
+  color: var(--text-low);
   cursor: pointer;
 }
 
-.compare-check input { accent-color: var(--teal); }
+.compare-check input { accent-color: var(--signal); }
 
 .saved-empty {
   padding: 3rem 2rem;
   text-align: center;
 }
 
-.saved-empty h3 { margin-bottom: 0.4rem; }
-.saved-empty p { color: var(--ink-faint); font-size: 0.92rem; }
+.saved-empty h3 { margin-bottom: 0.4rem; font-size: 1.5rem; }
+.saved-empty p { color: var(--text-low); font-size: 0.92rem; }
 
 /* comparison */
-.compare-panel { padding: 1.2rem 1.35rem; }
+.compare-panel { padding: 1.25rem 1.4rem; }
 
 .compare-split {
   display: grid;
@@ -114,25 +114,25 @@
   top: 0;
   bottom: 0;
   left: 50%;
-  border-left: 1px dashed var(--line-strong);
+  border-left: 1px dashed var(--border-hi);
 }
 
-.compare-title { font-size: 1.15rem; text-transform: capitalize; }
+.compare-title { font-size: 1.35rem; text-transform: capitalize; }
 
-.compare-issued { font-size: 0.68rem; color: var(--ink-faint); margin-bottom: 0.8rem; }
+.compare-issued { font-size: 0.66rem; color: var(--text-low); margin-bottom: 0.8rem; }
 
 .compare-block { margin-top: 0.9rem; }
 
 .compare-block ul {
   margin: 0.45rem 0 0 1.1rem;
   font-size: 0.86rem;
-  color: var(--ink-soft);
+  color: var(--text-mid);
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
 
-.compare-none { font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.4rem; }
+.compare-none { font-size: 0.82rem; color: var(--text-low); margin-top: 0.4rem; }
 
 @media (max-width: 700px) {
   .compare-split { grid-template-columns: 1fr; }

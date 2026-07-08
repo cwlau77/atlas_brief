@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import type { DevelopmentAnchor } from './GlobeCanvas'
 import { CompassIcon } from './icons'
 import './globehero.css'
 
@@ -23,22 +24,25 @@ function useContainerSize() {
 function GlobeFallback() {
   return (
     <div className="globe-fallback" aria-hidden>
-      <CompassIcon size={72} className="globe-fallback-compass" />
-      <span className="mono globe-fallback-label">LOADING CHART…</span>
+      <CompassIcon size={64} className="globe-fallback-compass" />
+      <span className="mono globe-fallback-label">ACQUIRING SIGNAL…</span>
     </div>
   )
 }
 
-export function GlobeHero({ regionCounts }: { regionCounts: Record<string, number> | null }) {
+export function GlobeHero({ regionCounts, developments = null }: {
+  regionCounts: Record<string, number> | null
+  developments?: DevelopmentAnchor[] | null
+}) {
   const { ref, size } = useContainerSize()
   return (
-    <div className="globe-stage" ref={ref} role="img"
+    <div className="globe-stage" ref={ref} data-w={size.width} data-h={size.height} role="img"
       aria-label={regionCounts && Object.keys(regionCounts).length > 0
-        ? `Interactive globe showing news activity across ${Object.keys(regionCounts).length} regions`
+        ? `Interactive globe showing news activity across ${Object.keys(regionCounts).length} regions — hover a signal point for its stories`
         : 'Interactive globe awaiting a briefing'}>
       {size.width > 0 && (
         <Suspense fallback={<GlobeFallback />}>
-          <GlobeCanvas width={size.width} height={size.height} regionCounts={regionCounts} />
+          <GlobeCanvas width={size.width} height={size.height} regionCounts={regionCounts} developments={developments} />
         </Suspense>
       )}
     </div>

@@ -5,7 +5,7 @@
   align-items: start;
 }
 
-.profile-card { padding: 1.3rem 1.4rem; }
+.profile-card { padding: 1.35rem 1.45rem; }
 
 .profile-row {
   display: flex;
@@ -18,14 +18,15 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--parchment);
+  background: var(--bg-2);
+  color: var(--signal);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.05rem;
-  font-weight: 600;
-  border: 2px solid var(--terracotta);
+  font-size: 1rem;
+  font-weight: 500;
+  border: 1px solid rgba(198, 241, 53, 0.4);
+  box-shadow: 0 0 16px var(--signal-glow);
   flex-shrink: 0;
 }
 
@@ -33,49 +34,49 @@
 
 .profile-display-name {
   font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-size: 1.35rem;
 }
 
-.profile-display-email { font-size: 0.72rem; color: var(--ink-faint); }
+.profile-display-email { font-size: 0.7rem; color: var(--text-low); }
 
 .profile-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.8rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1.15rem;
 }
 
 .profile-fields label {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--ink-soft);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-mid);
 }
 
 .profile-fields input {
   font-family: var(--font-body);
   font-size: 0.9rem;
-  padding: 0.5rem 0.65rem;
-  border: 1px solid var(--line-strong);
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--parchment);
-  color: var(--ink);
+  background: var(--bg-2);
+  color: var(--text-hi);
+  transition: border-color var(--dur-quick) var(--ease-expo), box-shadow var(--dur-quick) var(--ease-expo);
 }
 
 .profile-fields input:focus {
   outline: none;
-  border-color: var(--terracotta);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--terracotta) 15%, transparent);
+  border-color: rgba(198, 241, 53, 0.5);
+  box-shadow: 0 0 0 3px var(--signal-glow);
 }
 
 .profile-note {
-  margin-top: 0.8rem;
-  font-size: 0.66rem;
-  color: var(--ink-faint);
-  letter-spacing: 0.05em;
+  margin-top: 0.85rem;
+  font-size: 0.64rem;
+  color: var(--text-low);
+  letter-spacing: 0.06em;
 }
 
 .settings-list {
@@ -90,22 +91,22 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 0;
+  padding: 0.8rem 0;
 }
 
-.settings-item + .settings-item { border-top: 1px solid var(--line); }
+.settings-item + .settings-item { border-top: 1px solid var(--border); }
 
-.settings-label { display: block; font-weight: 600; font-size: 0.9rem; }
-.settings-hint { display: block; font-size: 0.76rem; color: var(--ink-faint); }
+.settings-label { display: block; font-weight: 500; font-size: 0.9rem; color: var(--text-hi); }
+.settings-hint { display: block; font-size: 0.76rem; color: var(--text-low); }
 
 .switch {
   width: 42px;
   height: 24px;
   border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  background: var(--parchment-deep);
+  border: 1px solid var(--border-hi);
+  background: var(--bg-2);
   position: relative;
-  transition: background var(--dur-quick) var(--ease-out);
+  transition: background var(--dur-quick) var(--ease-expo), border-color var(--dur-quick) var(--ease-expo), box-shadow var(--dur-quick) var(--ease-expo);
   flex-shrink: 0;
 }
 
@@ -116,13 +117,20 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--card);
-  border: 1px solid var(--line-strong);
-  transition: transform var(--dur-quick) var(--ease-out);
+  background: var(--text-mid);
+  transition: transform var(--dur-quick) var(--ease-expo), background var(--dur-quick) var(--ease-expo);
 }
 
-.switch.on { background: var(--teal); border-color: var(--teal); }
-.switch.on .switch-knob { transform: translateX(18px); border-color: var(--teal); }
+.switch.on {
+  background: rgba(198, 241, 53, 0.18);
+  border-color: rgba(198, 241, 53, 0.55);
+  box-shadow: 0 0 12px var(--signal-glow);
+}
+
+.switch.on .switch-knob {
+  transform: translateX(18px);
+  background: var(--signal);
+}
 
 @media (max-width: 760px) {
   .profile-page { grid-template-columns: 1fr; }

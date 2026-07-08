@@ -1,0 +1,97 @@
+.ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- flowing graph grid ----------
+   The grid layer is oversized and translated by exactly one tile, looping —
+   transform-only, so it composites on the GPU. A radial mask sinks it into
+   the dark toward the edges so it reads as depth, not wallpaper. */
+.ambient-grid-viewport {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 42%, black 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 42%, black 30%, transparent 78%);
+}
+
+.ambient-grid {
+  position: absolute;
+  inset: -56px 0 0 -56px;
+  width: calc(100% + 112px);
+  height: calc(100% + 112px);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(var(--grid-line-hi) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-hi) 1px, transparent 1px);
+  background-size: 56px 56px, 56px 56px, 280px 280px, 280px 280px;
+  animation: grid-flow 14s linear infinite;
+  will-change: transform;
+}
+
+@keyframes grid-flow {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(56px, 56px, 0); }
+}
+
+/* ---------- drifting glow blobs ---------- */
+.ambient-blob {
+  position: absolute;
+  width: 44vw;
+  height: 44vw;
+  min-width: 380px;
+  min-height: 380px;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.1;
+  will-change: transform;
+}
+
+.ambient-blob-signal {
+  background: radial-gradient(circle, var(--signal) 0%, transparent 65%);
+  top: -12%;
+  left: -8%;
+  animation: blob-drift-a 26s ease-in-out infinite alternate;
+}
+
+.ambient-blob-haze {
+  background: radial-gradient(circle, var(--haze) 0%, transparent 65%);
+  bottom: -18%;
+  right: -10%;
+  opacity: 0.09;
+  animation: blob-drift-b 32s ease-in-out infinite alternate;
+}
+
+@keyframes blob-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(9vw, 6vh, 0) scale(1.15); }
+}
+
+@keyframes blob-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.1); }
+  to { transform: translate3d(-8vw, -7vh, 0) scale(0.95); }
+}
+
+/* ---------- conic ring behind the globe ---------- */
+.ambient-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(58vw, 640px);
+  height: min(58vw, 640px);
+  margin: calc(min(58vw, 640px) / -2) 0 0 calc(min(58vw, 640px) / -2);
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0%, var(--signal-glow) 12%, transparent 26%, transparent 58%, var(--haze-glow) 72%, transparent 88%);
+  -webkit-mask-image: radial-gradient(circle, transparent 62%, black 63%, black 66%, transparent 67%);
+  mask-image: radial-gradient(circle, transparent 62%, black 63%, black 66%, transparent 67%);
+  animation: ring-spin 40s linear infinite;
+  will-change: transform;
+}
+
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

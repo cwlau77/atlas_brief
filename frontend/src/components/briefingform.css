@@ -1,28 +1,27 @@
 .brief-form {
-  padding: 1.25rem 1.4rem 1.35rem;
+  width: 100%;
 }
 
-.brief-form-label {
-  margin-bottom: 0.75rem;
-}
-
-.brief-form-row {
+/* Floating glass pill: input · cadence · CTA in one capsule */
+.brief-form-shell {
   display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.45rem 0.45rem 0.6rem;
+  border-radius: 999px;
 }
 
 .brief-form-field {
   position: relative;
-  flex: 1 1 16rem;
+  flex: 1 1 14rem;
+  display: flex;
+  align-items: center;
 }
 
 .brief-form-pin {
   position: absolute;
-  left: 0.7rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--terracotta);
+  left: 0.75rem;
+  color: var(--signal);
   pointer-events: none;
 }
 
@@ -30,50 +29,69 @@
   width: 100%;
   font-family: var(--font-body);
   font-size: 0.95rem;
-  color: var(--ink);
-  background: var(--card);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.8rem 0.6rem 2.2rem;
-  transition: border-color var(--dur-quick) var(--ease-out), box-shadow var(--dur-quick) var(--ease-out);
+  color: var(--text-hi);
+  background: transparent;
+  border: none;
+  padding: 0.6rem 0.6rem 0.6rem 2.3rem;
+}
+
+.brief-form input[type='text']::placeholder {
+  color: var(--text-low);
 }
 
 .brief-form input[type='text']:focus {
   outline: none;
-  border-color: var(--terracotta);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--terracotta) 18%, transparent);
+}
+
+.brief-form-shell:focus-within {
+  border-color: rgba(198, 241, 53, 0.45);
+  box-shadow: 0 0 0 3px var(--signal-glow), var(--shadow-float);
 }
 
 .brief-form select {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--ink-soft);
-  background: var(--card);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--text-mid);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.5rem 0.7rem;
 }
+
+.brief-form select:hover { border-color: var(--border-hi); }
 
 .brief-form-stage {
   margin-top: 0.85rem;
-  font-size: 0.76rem;
-  color: var(--ink-soft);
+  font-size: 0.74rem;
+  color: var(--text-mid);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.55rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 
 .stage-beacon {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--terracotta);
+  background: var(--signal);
   flex-shrink: 0;
   animation: beacon-pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes beacon-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--terracotta) 45%, transparent); }
-  55% { box-shadow: 0 0 0 7px transparent; }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(198, 241, 53, 0.45); }
+  55% { box-shadow: 0 0 0 8px transparent; }
+}
+
+@media (max-width: 640px) {
+  .brief-form-shell {
+    flex-wrap: wrap;
+    border-radius: 24px;
+    padding: 0.6rem;
+  }
+  .brief-form-field { flex-basis: 100%; }
+  .brief-form select { flex: 1; }
 }

@@ -17,5 +17,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // The project lives at a path with a space ("Atlas Brief"); the default
+    // forks pool fails to spawn workers on such paths, threads is fine.
+    pool: 'threads',
   },
 })

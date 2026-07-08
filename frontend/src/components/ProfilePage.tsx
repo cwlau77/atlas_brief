@@ -63,8 +63,8 @@ export function ProfilePage({ onStorageFailure }: { onStorageFailure: () => void
 
   return (
     <div className="profile-page">
-      <section className="card profile-card">
-        <div className="plate-label">Analyst profile</div>
+      <section className="panel profile-card">
+        <div className="signal-label">Analyst profile</div>
         <div className="profile-row">
           <div className="profile-avatar mono" aria-hidden>{initialsFor(profile)}</div>
           <div className="profile-name-block">
@@ -94,8 +94,8 @@ export function ProfilePage({ onStorageFailure }: { onStorageFailure: () => void
         <p className="profile-note mono">Stored only in this browser — nothing leaves your device.</p>
       </section>
 
-      <section className="card profile-card">
-        <div className="plate-label">Preferences</div>
+      <section className="panel profile-card">
+        <div className="signal-label">Preferences</div>
         <ul className="settings-list">
           {SETTING_LABELS.map(({ key, label, hint }) => (
             <li key={key} className="settings-item">

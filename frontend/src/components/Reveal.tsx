@@ -2,8 +2,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import type { ReactNode } from 'react'
 
 /**
- * Scroll-triggered reveal with a lateral "panning across a map" feel —
- * content slides in from the west as it enters the viewport, once.
+ * Scroll-triggered reveal: content rises from below as it enters the
+ * viewport, once. Stagger by passing incremental `delay`s from the caller.
  * Respects prefers-reduced-motion by rendering statically.
  */
 export function Reveal({ children, delay = 0, className }: {
@@ -16,10 +16,10 @@ export function Reveal({ children, delay = 0, className }: {
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, x: -24 }}
-      whileInView={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.52, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>

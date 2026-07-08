@@ -1,16 +1,25 @@
 .navbar {
-  background: var(--ink);
-  color: var(--parchment);
-  border-bottom: 1px solid rgba(244, 238, 225, 0.12);
   position: sticky;
   top: 0;
   z-index: 50;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background-color var(--dur-mid) var(--ease-expo),
+              border-color var(--dur-mid) var(--ease-expo),
+              backdrop-filter var(--dur-mid) var(--ease-expo);
+}
+
+.navbar.scrolled {
+  background: rgba(6, 7, 9, 0.72);
+  border-bottom-color: var(--border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .navbar-inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0.7rem 1.5rem;
+  padding: 0.8rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 2rem;
@@ -22,13 +31,13 @@
   gap: 0.55rem;
   background: none;
   border: none;
-  color: var(--parchment);
+  color: var(--text-hi);
   padding: 0.2rem 0;
 }
 
 .wordmark-icon {
-  color: var(--terracotta);
-  transition: transform 0.5s var(--ease-out);
+  color: var(--signal);
+  transition: transform 0.5s var(--ease-expo);
 }
 
 .wordmark:hover .wordmark-icon {
@@ -37,16 +46,15 @@
 
 .wordmark-text {
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 400;
   letter-spacing: 0.02em;
 }
 
 .wordmark-text em {
   font-style: italic;
-  font-weight: 400;
-  color: var(--ink-wash);
-  margin-left: 0.15rem;
+  color: var(--signal);
+  margin-left: 0.18rem;
 }
 
 .nav-tabs {
@@ -58,36 +66,40 @@
 .nav-tab {
   background: none;
   border: none;
-  color: var(--ink-wash);
-  font-size: 0.92rem;
+  color: var(--text-mid);
+  font-size: 0.9rem;
   font-weight: 500;
   padding: 0.45rem 0.9rem;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   position: relative;
-  transition: color var(--dur-quick) var(--ease-out);
+  transition: color var(--dur-quick) var(--ease-expo), background-color var(--dur-quick) var(--ease-expo);
 }
 
-.nav-tab:hover { color: var(--parchment); }
+.nav-tab:hover {
+  color: var(--text-hi);
+  background: var(--surface);
+}
 
 .nav-tab.active {
-  color: var(--parchment);
+  color: var(--text-hi);
 }
 
 .nav-tab.active::after {
   content: '';
   position: absolute;
-  left: 0.9rem;
-  right: 0.9rem;
-  bottom: 0.15rem;
+  left: 0.95rem;
+  right: 0.95rem;
+  bottom: 0.1rem;
   height: 2px;
-  background: var(--terracotta);
+  background: var(--signal);
   border-radius: 1px;
+  box-shadow: 0 0 8px var(--signal-glow);
 }
 
 .nav-clock {
-  font-size: 0.78rem;
-  color: var(--ink-wash);
-  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  color: var(--text-low);
+  letter-spacing: 0.1em;
 }
 
 @media (max-width: 640px) {

@@ -1,20 +1,22 @@
 import type { ViewDevelopment } from '../../lib/normalize'
 import { relativeTime } from '../../lib/relativeTime'
-import { PinIcon } from '../icons'
+import { useSpotlight } from '../../lib/useSpotlight'
 import { Reveal } from '../Reveal'
 import { SourceChips } from './SourceChips'
 
 export function KeyDevelopments({ developments }: { developments: ViewDevelopment[] }) {
+  const spot = useSpotlight()
   if (!developments.length) return null
   return (
     <section className="brief-section" aria-labelledby="dev-heading">
-      <div className="plate-label" id="dev-heading">
-        <PinIcon size={13} /> Key developments
+      <div className="signal-label" id="dev-heading">
+        <span className="label-index" aria-hidden>02</span> Key developments
       </div>
       <div className="dev-stack">
         {developments.map((dev, i) => (
           <Reveal key={`${dev.title}-${i}`} delay={i * 0.05}>
-            <article className={`card dev-card dev-${dev.priority}`}>
+            {/* dev-N anchors are the globe hotspot dropdowns' scroll targets */}
+            <article className={`panel spot dev-card dev-${dev.priority}`} id={`dev-${i}`} onMouseMove={spot}>
               <header className="dev-head">
                 <h3 className="dev-title">{dev.title}</h3>
                 <span className="dev-time mono">{relativeTime(dev.timestamp)}</span>

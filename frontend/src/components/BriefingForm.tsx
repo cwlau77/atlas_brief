@@ -45,19 +45,19 @@ export function BriefingForm({ loading, onGenerate }: {
   const valid = focus.trim().length >= 2 && focus.trim().length <= 200
 
   return (
-    <form className="brief-form glass" onSubmit={submit}>
-      <label className="brief-form-label plate-label" htmlFor="focus-input">
+    <form className="brief-form" onSubmit={submit}>
+      <label className="visually-hidden" htmlFor="focus-input">
         Area of focus
       </label>
-      <div className="brief-form-row">
+      <div className="brief-form-shell glass">
         <div className="brief-form-field">
-          <PinIcon size={16} className="brief-form-pin" />
+          <PinIcon size={15} className="brief-form-pin" />
           <input
             id="focus-input"
             type="text"
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
-            placeholder="e.g. South Asian security, climate policy, trade…"
+            placeholder="Chart a focus — South Asian security, climate policy, trade…"
             minLength={2}
             maxLength={200}
             disabled={loading}

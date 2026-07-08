@@ -12,27 +12,31 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: var(--ink);
-  color: var(--parchment);
+  background: var(--glass-bg);
+  color: var(--text-hi);
+  border: 1px solid var(--glass-border);
+  border-left-width: 3px;
   border-radius: var(--radius-sm);
-  padding: 0.6rem 0.85rem;
-  font-size: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.88rem;
   box-shadow: var(--shadow-float);
-  border-left: 3px solid var(--teal-bright);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
   max-width: 22rem;
 }
 
 .toast-error { border-left-color: var(--alert-critical); }
-.toast-success { border-left-color: var(--teal-bright); }
-.toast-info { border-left-color: var(--gold); }
+.toast-success { border-left-color: var(--signal); }
+.toast-info { border-left-color: var(--alert-elevated); }
 
 .toast-close {
   background: none;
   border: none;
-  color: var(--ink-wash);
+  color: var(--text-low);
   font-size: 1.1rem;
   line-height: 1;
   padding: 0 0.1rem;
+  transition: color var(--dur-quick) var(--ease-expo);
 }
 
-.toast-close:hover { color: var(--parchment); }
+.toast-close:hover { color: var(--text-hi); }

@@ -1,19 +1,20 @@
 import type { ViewTension } from '../../lib/normalize'
-import { CompassIcon } from '../icons'
+import { useSpotlight } from '../../lib/useSpotlight'
 import { Reveal } from '../Reveal'
 import { SourceChips } from './SourceChips'
 
 export function Tensions({ tensions }: { tensions: ViewTension[] }) {
+  const spot = useSpotlight()
   if (!tensions.length) return null
   return (
     <section className="brief-section" aria-labelledby="tension-heading">
-      <div className="plate-label" id="tension-heading">
-        <CompassIcon size={13} /> Emerging tensions
+      <div className="signal-label" id="tension-heading">
+        <span className="label-index" aria-hidden>03</span> Emerging tensions
       </div>
       <div className="tension-stack">
         {tensions.map((t, i) => (
           <Reveal key={`${t.actors}-${i}`} delay={i * 0.05}>
-            <article className={`card tension-card tension-${t.level}`}>
+            <article className={`panel spot tension-card tension-${t.level}`} onMouseMove={spot}>
               <div className="tension-head">
                 <span className={`tension-dot dot-${t.level}`} aria-hidden />
                 <span className="tension-actors mono">{t.actors}</span>

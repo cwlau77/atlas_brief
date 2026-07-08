@@ -1,0 +1,32 @@
+.standby-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  user-select: none;
+}
+
+.standby-time {
+  font-size: clamp(3.4rem, 8vw, 6rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--text-hi);
+  text-shadow: 0 0 42px rgba(198, 241, 53, 0.14);
+}
+
+.standby-colon {
+  color: var(--signal);
+  animation: colon-breathe 2s ease-in-out infinite;
+}
+
+@keyframes colon-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.standby-date {
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  color: var(--text-low);
+}
