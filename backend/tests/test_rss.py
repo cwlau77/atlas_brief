@@ -20,3 +20,9 @@ def test_feed_list_covers_non_western_outlets():
     outlets = {name for name, _ in RSS_FEEDS}
     assert len(outlets) >= 8
     assert {"The Hindu", "Deutsche Welle", "France 24", "AllAfrica", "Straits Times"} <= outlets
+
+
+def test_feed_list_covers_major_us_outlets():
+    outlets = {name for name, _ in RSS_FEEDS}
+    assert {"CNN World", "Fox News World", "New York Times World",
+            "Washington Post World", "ABC News International", "CBS News World"} <= outlets

@@ -18,6 +18,42 @@ def test_keyword_hit_respects_word_boundaries():
 
 
 @pytest.mark.asyncio
+async def test_entity_focus_rejects_generic_category_noise(make_article):
+    """User-reported: 'Regeneron Pharmaceuticals' returned mostly articles that
+    merely contained the word 'pharmaceuticals'. A generic-token-only hit must
+    not pass when the focus has a distinctive anchor token."""
+    focus = "Regeneron Pharmaceuticals"
+    relevant = [
+        make_article(title="Regeneron Pharmaceuticals beats quarterly earnings expectations",
+                     snippet="The biotech raised full-year guidance.", url="https://x.com/r/1"),
+        make_article(title="Regeneron wins FDA approval for new eye therapy",
+                     snippet="Approval covers a common retinal condition.", url="https://x.com/r/2"),
+    ]
+    noise = [
+        make_article(title="Sanofi expands pharmaceuticals plant in northern France",
+                     snippet="The site will produce vaccines for European markets.", url="https://x.com/n/1"),
+        make_article(title="Pharmaceuticals sector faces pricing pressure in Congress",
+                     snippet="Lawmakers debate negotiation powers over drug costs.", url="https://x.com/n/2"),
+        make_article(title="Generic pharmaceuticals imports rise across Latin America",
+                     snippet="Distributors cite currency swings and demand growth.", url="https://x.com/n/3"),
+        make_article(title="Indian pharmaceuticals exporters court African buyers",
+                     snippet="Trade delegations tour manufacturing hubs this week.", url="https://x.com/n/4"),
+        make_article(title="Counterfeit pharmaceuticals seized at Rotterdam port",
+                     snippet="Customs officials describe a record haul of fake pills.", url="https://x.com/n/5"),
+        make_article(title="Pharmaceuticals lobby spends record sums on advertising",
+                     snippet="Watchdog groups tally television and digital campaigns.", url="https://x.com/n/6"),
+    ]
+    arts = relevant + noise
+    emb = await embed_texts([f"{a.title}. {a.snippet}" for a in arts])
+    kept, _ = await filter_by_relevance(focus, arts, emb)
+    kept_titles = {a.title for a in kept}
+    for a in relevant:
+        assert a.title in kept_titles, f"relevant article dropped: {a.title}"
+    leaked = [a.title for a in noise if a.title in kept_titles]
+    assert not leaked, f"generic pharma noise leaked through: {leaked}"
+
+
+@pytest.mark.asyncio
 async def test_labeled_pairs_precision_recall(make_article):
     by_focus: dict[str, list[tuple]] = {}
     for focus, title, snippet, label in LABELED:

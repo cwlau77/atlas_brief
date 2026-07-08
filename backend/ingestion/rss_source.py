@@ -33,6 +33,14 @@ RSS_FEEDS: list[tuple[str, str]] = [
     ("France 24", "https://www.france24.com/en/rss"),
     ("AllAfrica", "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf"),
     ("Straits Times", "https://www.straitstimes.com/news/world/rss.xml"),
+    # Major US outlets (all verified live 2026-07-07). NewsAPI's free tier
+    # under-covers these, so their official feeds are the reliable path in.
+    ("CNN World", "http://rss.cnn.com/rss/edition_world.rss"),
+    ("Fox News World", "https://moxie.foxnews.com/google-publisher/world.xml"),
+    ("New York Times World", "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
+    ("Washington Post World", "https://feeds.washingtonpost.com/rss/world"),
+    ("ABC News International", "https://abcnews.go.com/abcnews/internationalheadlines"),
+    ("CBS News World", "https://www.cbsnews.com/latest/rss/world"),
 ]
 
 def _entry_to_article(outlet: str, entry) -> Article | None:

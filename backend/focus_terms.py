@@ -4,6 +4,17 @@ from __future__ import annotations
 
 import re
 
+try:
+    from wordfreq import zipf_frequency
+except ImportError:  # pragma: no cover — dependency is pinned, but degrade gracefully
+    zipf_frequency = None
+
+# Zipf frequency at/above which a token counts as ordinary English rather than
+# a distinctive entity name. Calibrated against real focuses: "regeneron" 1.7
+# and "streamer" 3.0 must fall below it; "pharmaceuticals" 3.5 and
+# "university" 5.4 must not.
+_GENERIC_ZIPF = 3.4
+
 _STOPWORDS = {
     "the", "a", "an", "and", "or", "of", "in", "on", "for", "to", "by", "with",
     "from", "at", "as", "is", "are", "was", "were", "be", "been", "news", "world",
@@ -89,6 +100,28 @@ def extract_focus_terms(focus: str, *, include_phrase: bool = True) -> list[str]
     return sorted(terms, key=lambda term: (-len(term), term))
 
 
+def normalize_focus_phrase(focus: str) -> str:
+    """The full focus phrase, normalized the same way tokens are."""
+    return " ".join(_normalize_focus_tokens(focus))
+
+
+def distinctive_tokens(focus: str) -> set[str]:
+    """Focus tokens that are rare enough in English to act as entity anchors.
+
+    "Regeneron Pharmaceuticals" → {"regeneron"}: an article mentioning
+    "regeneron" is almost certainly on-topic, while one mentioning only
+    "pharmaceuticals" is almost certainly category noise. Topic focuses made of
+    common words ("south asian security") return an empty set, signalling that
+    every token carries equal topical weight.
+    """
+    if zipf_frequency is None:
+        return set()
+    return {
+        tok for tok in _normalize_focus_tokens(focus)
+        if zipf_frequency(tok, "en") < _GENERIC_ZIPF
+    }
+
+
 def keyword_hit(text: str, keywords: list[str]) -> bool:
     """True if any keyword appears in text as a whole word or phrase.
 
@@ -112,9 +145,26 @@ def build_boolean_query(focus: str, *, max_terms: int = 6) -> str:
     The normalized focus phrase always occupies the first slot: alias expansion
     is sorted longest-first, so without this pinning the focus term itself gets
     crowded out of the max_terms window for aliased topics like "trade".
+
+    Multi-word focuses do NOT get their generic tokens OR'd individually:
+    querying ("regeneron pharmaceuticals" OR "pharmaceuticals") fills the
+    per-source article cap with category noise that crowds out the entity
+    itself. Only the phrase, distinctive entity tokens, and known topic
+    aliases go upstream.
     """
-    phrase = " ".join(_normalize_focus_tokens(focus))
-    expanded = [t for t in extract_focus_terms(focus) if t != phrase]
+    tokens = _normalize_focus_tokens(focus)
+    phrase = " ".join(tokens)
+
+    if len(tokens) <= 1:
+        expanded = [t for t in extract_focus_terms(focus) if t != phrase]
+    else:
+        anchors = distinctive_tokens(focus)
+        expanded = [t for t in tokens if t in anchors]
+        for token in tokens:
+            for alias in _TERM_ALIASES.get(token, []):
+                if alias != phrase and alias not in expanded:
+                    expanded.append(alias)
+
     terms = (([phrase] if phrase else []) + expanded)[:max_terms]
     if not terms:
         return focus.strip()

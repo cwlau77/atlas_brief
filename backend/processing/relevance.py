@@ -3,7 +3,12 @@ import logging
 import numpy as np
 
 from backend.config import settings
-from backend.focus_terms import extract_focus_terms, keyword_hit
+from backend.focus_terms import (
+    distinctive_tokens,
+    extract_focus_terms,
+    keyword_hit,
+    normalize_focus_phrase,
+)
 from backend.models import Article
 
 from .embeddings import cosine_similarity, embed_texts
@@ -12,6 +17,35 @@ logger = logging.getLogger("briefing.relevance")
 
 def _keyword_hit(article: Article, keywords: list[str]) -> bool:
     return keyword_hit(f"{article.title} {article.snippet}", keywords)
+
+
+def _make_keyword_pass(focus: str, keywords: list[str]):
+    """Build the keyword-acceptance predicate for this focus.
+
+    Topic focuses ("climate", "south asian security") accept any keyword hit —
+    every token carries topical weight. Entity focuses (those with a
+    distinctive anchor token, e.g. "Regeneron Pharmaceuticals") are stricter:
+    an article matching ONLY generic tokens like "pharmaceuticals" is category
+    noise and must not pass on keywords alone (it can still pass semantically).
+    """
+    anchors = distinctive_tokens(focus)
+    if not anchors:
+        return lambda article: _keyword_hit(article, keywords)
+
+    phrase = normalize_focus_phrase(focus)
+
+    def _pass(article: Article) -> bool:
+        text = f"{article.title} {article.snippet}"
+        hits = [kw for kw in keywords if keyword_hit(text, [kw])]
+        if not hits:
+            return False
+        if phrase in hits:
+            return True
+        if any(anchor in hits for anchor in anchors):
+            return True
+        return len(hits) >= 2
+
+    return _pass
 
 
 async def filter_by_relevance(
@@ -50,9 +84,11 @@ async def filter_by_relevance(
     # makes bare tokens like "climate" match articles about "carbon" or "net zero".
     focus_text = " ".join(keywords) if keywords else focus
     focus_emb = await embed_texts([focus_text])
+    keyword_pass = _make_keyword_pass(focus, keywords)
+
     if focus_emb.size == 0 or embeddings.size == 0:
         # Embedding unavailable — keyword-only filter, strict (no fallback).
-        kept = [(i, a) for i, a in enumerate(articles) if _keyword_hit(a, keywords)]
+        kept = [(i, a) for i, a in enumerate(articles) if keyword_pass(a)]
         logger.warning(
             "relevance fallback for focus=%r: keyword-only mode kept %d/%d articles",
             focus,
@@ -70,7 +106,7 @@ async def filter_by_relevance(
 
     kept_indices: list[int] = []
     for i, article in enumerate(articles):
-        if _keyword_hit(article, keywords) or float(sims[i]) >= threshold:
+        if keyword_pass(article) or float(sims[i]) >= threshold:
             kept_indices.append(i)
 
     if not kept_indices:

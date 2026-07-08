@@ -1,4 +1,4 @@
-from backend.focus_terms import build_boolean_query, extract_focus_terms
+from backend.focus_terms import build_boolean_query, distinctive_tokens, extract_focus_terms
 
 
 def test_extract_expands_known_aliases():
@@ -27,3 +27,30 @@ def test_boolean_query_always_includes_the_focus_phrase_itself():
     assert '"trade"' in build_boolean_query("trade")
     assert '"climate"' in build_boolean_query("climate")
     assert '"south asian security"' in build_boolean_query("South Asian security")
+
+
+def test_distinctive_tokens_split_entities_from_generic_words():
+    # "regeneron" is a proper noun absent from everyday English;
+    # "pharmaceuticals" is an ordinary dictionary word that matches thousands
+    # of unrelated articles.
+    assert distinctive_tokens("Regeneron Pharmaceuticals") == {"regeneron"}
+    assert distinctive_tokens("Streamer University") == {"streamer"}
+    # Topic focuses made entirely of common words have no distinctive anchor.
+    assert distinctive_tokens("south asian security") == set()
+    assert distinctive_tokens("climate") == set()
+
+
+def test_entity_query_drops_generic_bare_tokens_upstream():
+    q = build_boolean_query("Regeneron Pharmaceuticals")
+    assert '"regeneron pharmaceuticals"' in q
+    assert '"regeneron"' in q
+    # The generic token must not be OR'd on its own — it floods the per-source
+    # article cap with category noise before relevance filtering can run.
+    assert q.replace('"regeneron pharmaceuticals"', '').count("pharmaceuticals") == 0
+
+
+def test_multiword_topic_query_keeps_phrase_and_aliases_not_bare_tokens():
+    q = build_boolean_query("south asian security")
+    assert '"south asian security"' in q
+    assert '"military"' in q  # alias expansion of the known topic token
+    assert '"asian"' not in q  # bare generic tokens dropped upstream
