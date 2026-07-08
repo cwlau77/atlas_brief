@@ -9,11 +9,16 @@ try:
 except ImportError:  # pragma: no cover — dependency is pinned, but degrade gracefully
     zipf_frequency = None
 
-# Zipf frequency at/above which a token counts as ordinary English rather than
-# a distinctive entity name. Calibrated against real focuses: "regeneron" 1.7
-# and "streamer" 3.0 must fall below it; "pharmaceuticals" 3.5 and
-# "university" 5.4 must not.
-_GENERIC_ZIPF = 3.4
+# Zipf frequency BELOW which a token is rare enough to trust as a standalone
+# entity anchor (safe to match on its own, without the rest of the phrase).
+# Deliberately conservative: general-English rarity is not the same as
+# domain-specific ambiguity. "streamer" (zipf 3.0) is uncommon in everyday
+# English but ubiquitous *within* entertainment journalism — matching on it
+# alone let in every article about any streamer, not the specific focus. Only
+# near-unique proper nouns like "regeneron" (1.7) or "openai" (1.6) clear this
+# bar; jargon words like "streamer", "tesla", "nvidia" correctly do not, and
+# fall back to requiring the full phrase (see build_boolean_query, relevance.py).
+_GENERIC_ZIPF = 2.3
 
 _STOPWORDS = {
     "the", "a", "an", "and", "or", "of", "in", "on", "for", "to", "by", "with",
@@ -106,13 +111,13 @@ def normalize_focus_phrase(focus: str) -> str:
 
 
 def distinctive_tokens(focus: str) -> set[str]:
-    """Focus tokens that are rare enough in English to act as entity anchors.
+    """Focus tokens rare enough to trust as standalone entity anchors.
 
     "Regeneron Pharmaceuticals" → {"regeneron"}: an article mentioning
-    "regeneron" is almost certainly on-topic, while one mentioning only
-    "pharmaceuticals" is almost certainly category noise. Topic focuses made of
-    common words ("south asian security") return an empty set, signalling that
-    every token carries equal topical weight.
+    "regeneron" alone is almost certainly on-topic. "Streamer University" →
+    set(): "streamer" is common jargon within entertainment coverage, so an
+    article mentioning it alone is NOT reliably about this specific focus —
+    callers must fall back to requiring the full phrase or semantic similarity.
     """
     if zipf_frequency is None:
         return set()
@@ -120,6 +125,17 @@ def distinctive_tokens(focus: str) -> set[str]:
         tok for tok in _normalize_focus_tokens(focus)
         if zipf_frequency(tok, "en") < _GENERIC_ZIPF
     }
+
+
+def topic_heads(focus: str) -> set[str]:
+    """Focus tokens that are curated broad-topic anchors (see _TERM_ALIASES).
+
+    Unlike distinctive_tokens, this is a manually vetted allowlist: for these
+    specific words, matching on the bare token alone (or any of its aliases)
+    is intentional and desired — "security" should match "military",
+    "ceasefire", "sanctions", etc. independently, not just the literal phrase.
+    """
+    return {tok for tok in _normalize_focus_tokens(focus) if tok in _TERM_ALIASES}
 
 
 def keyword_hit(text: str, keywords: list[str]) -> bool:

@@ -1,4 +1,4 @@
-from backend.focus_terms import build_boolean_query, distinctive_tokens, extract_focus_terms
+from backend.focus_terms import build_boolean_query, distinctive_tokens, extract_focus_terms, topic_heads
 
 
 def test_extract_expands_known_aliases():
@@ -30,14 +30,24 @@ def test_boolean_query_always_includes_the_focus_phrase_itself():
 
 
 def test_distinctive_tokens_split_entities_from_generic_words():
-    # "regeneron" is a proper noun absent from everyday English;
-    # "pharmaceuticals" is an ordinary dictionary word that matches thousands
-    # of unrelated articles.
+    # "regeneron" is a near-unique proper noun; matching on it alone is safe.
     assert distinctive_tokens("Regeneron Pharmaceuticals") == {"regeneron"}
-    assert distinctive_tokens("Streamer University") == {"streamer"}
+    # "streamer" is uncommon in general English but ubiquitous *within*
+    # entertainment journalism — NOT safe to trust alone (this was the
+    # Kai Cenat "Streamer University" bug: it let in any article mentioning
+    # any streamer). Neither token here clears the conservative bar.
+    assert distinctive_tokens("Streamer University") == set()
     # Topic focuses made entirely of common words have no distinctive anchor.
     assert distinctive_tokens("south asian security") == set()
     assert distinctive_tokens("climate") == set()
+
+
+def test_topic_heads_identifies_curated_broad_topics():
+    assert topic_heads("south asian security") == {"security"}
+    assert topic_heads("climate") == {"climate"}
+    # Entity/event names are not curated topics, regardless of word rarity.
+    assert topic_heads("Regeneron Pharmaceuticals") == set()
+    assert topic_heads("Streamer University") == set()
 
 
 def test_entity_query_drops_generic_bare_tokens_upstream():

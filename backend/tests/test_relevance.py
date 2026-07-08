@@ -54,6 +54,42 @@ async def test_entity_focus_rejects_generic_category_noise(make_article):
 
 
 @pytest.mark.asyncio
+async def test_jargon_anchor_does_not_leak_unrelated_category_articles(make_article):
+    """User-reported: 'Streamer University' (Kai Cenat's event) returned
+    articles about unrelated streamers (Hasan Piker, Sneako, Prime Video
+    shows) because 'streamer' alone was treated as a safe distinctive anchor.
+    'streamer' is common jargon within entertainment coverage — not a
+    near-unique proper noun like 'regeneron' — so it must NOT pass alone."""
+    focus = "Streamer University"
+    relevant = [
+        make_article(title="Kai Cenat's Streamer University event draws record viewership",
+                     snippet="The marathon livestream event set new platform records.",
+                     url="https://x.com/su/1"),
+    ]
+    noise = [
+        make_article(title="Left-wing streamer Hasan Piker condemns sexual assault allegations",
+                     snippet="The Twitch streamer weighed in during a livestream Monday.",
+                     url="https://x.com/su/n1"),
+        make_article(title="Apple TV commissions Julia Garner thriller series",
+                     snippet="Major streamers keep investing in prestige drama content.",
+                     url="https://x.com/su/n2"),
+        make_article(title="Streamer Sneako sparks backlash over World Cup remarks",
+                     snippet="Conservative outlets framed the comments as extremist.",
+                     url="https://x.com/su/n3"),
+        make_article(title="Prime Video announces Muhammad Ali series release date",
+                     snippet="The streamer revealed a first-look trailer at a festival.",
+                     url="https://x.com/su/n4"),
+    ]
+    arts = relevant + noise
+    emb = await embed_texts([f"{a.title}. {a.snippet}" for a in arts])
+    kept, _ = await filter_by_relevance(focus, arts, emb)
+    kept_titles = {a.title for a in kept}
+    assert relevant[0].title in kept_titles
+    leaked = [a.title for a in noise if a.title in kept_titles]
+    assert not leaked, f"unrelated 'streamer'-only noise leaked through: {leaked}"
+
+
+@pytest.mark.asyncio
 async def test_labeled_pairs_precision_recall(make_article):
     by_focus: dict[str, list[tuple]] = {}
     for focus, title, snippet, label in LABELED:

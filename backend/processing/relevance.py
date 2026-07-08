@@ -8,6 +8,7 @@ from backend.focus_terms import (
     extract_focus_terms,
     keyword_hit,
     normalize_focus_phrase,
+    topic_heads,
 )
 from backend.models import Article
 
@@ -22,16 +23,23 @@ def _keyword_hit(article: Article, keywords: list[str]) -> bool:
 def _make_keyword_pass(focus: str, keywords: list[str]):
     """Build the keyword-acceptance predicate for this focus.
 
-    Topic focuses ("climate", "south asian security") accept any keyword hit —
-    every token carries topical weight. Entity focuses (those with a
-    distinctive anchor token, e.g. "Regeneron Pharmaceuticals") are stricter:
-    an article matching ONLY generic tokens like "pharmaceuticals" is category
-    noise and must not pass on keywords alone (it can still pass semantically).
+    Single-word focuses ("climate") and multi-word focuses built around a
+    curated topic head ("south asian security" → "security") accept any
+    keyword hit — every token/alias carries equal topical weight there by
+    design.
+
+    All other multi-word focuses are entity/event names ("Regeneron
+    Pharmaceuticals", "Streamer University") where individual generic tokens
+    ("pharmaceuticals", "university", even jargon like "streamer") are NOT
+    reliable on their own — an article matching only those is category noise.
+    These require the full phrase, a near-unique distinctive anchor token
+    (e.g. "regeneron"), or 2+ independent keyword hits together.
     """
-    anchors = distinctive_tokens(focus)
-    if not anchors:
+    phrase_tokens = normalize_focus_phrase(focus).split()
+    if len(phrase_tokens) <= 1 or topic_heads(focus):
         return lambda article: _keyword_hit(article, keywords)
 
+    anchors = distinctive_tokens(focus)
     phrase = normalize_focus_phrase(focus)
 
     def _pass(article: Article) -> bool:
