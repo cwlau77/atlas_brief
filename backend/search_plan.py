@@ -53,12 +53,26 @@ class SearchPlan(BaseModel):
 # Place qualifiers that mean "domestic coverage of this country". Only US and
 # UK are extracted by rules (see plan Global Constraints ruling); "US" and
 # "UK" count only in capitals so the pronoun "us" never matches.
+#
+# The bare capital forms ("US", "UK", with no periods) are ambiguous with
+# compounds ("US-China", "US Steel", "US Open"): a trailing "-" or letter
+# means it's part of a larger token, not a standalone qualifier, and even
+# with nothing trailing it's only a coverage qualifier in qualifier position
+# (after in/across/within/throughout/for, optionally "the", or at the very
+# end of the focus) -- never as a free-floating word next to another word
+# ("US Steel"). The dotted/expanded forms (U.S., USA, United States) are
+# unambiguous and stay unrestricted.
 _PLACE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"\b(?:in|across|within|throughout)\s+the\s+(?:us|u\.s\.a?\.?|usa)(?![a-z])", re.I), "US"),
-    (re.compile(r"(?<![A-Za-z])(?:U\.S\.A?\.?|USA|US)(?![A-Za-z])"), "US"),
+    (re.compile(r"\b(?:in|across|within|throughout)\s+the\s+(?:us|u\.s\.a?\.?|usa)(?![a-z-])", re.I), "US"),
+    (re.compile(r"(?<![A-Za-z])(?:U\.S\.A?\.?|USA)(?![A-Za-z-])"), "US"),
+    (re.compile(r"\b(?:in|across|within|throughout|for)\s+(?:the\s+)?US(?![A-Za-z-])"), "US"),
+    (re.compile(r"(?<![A-Za-z])US(?![A-Za-z-])\s*$"), "US"),
     (re.compile(r"\b(?:(?:in|across|within|throughout)\s+)?(?:the\s+)?united\s+states\b", re.I), "US"),
-    (re.compile(r"\b(?:in|across|within|throughout)\s+the\s+(?:uk|u\.k\.)(?![a-z])", re.I), "GB"),
-    (re.compile(r"(?<![A-Za-z])(?:U\.K\.|UK)(?![A-Za-z])"), "GB"),
+    (re.compile(r"\b(?:in|across|throughout)\s+America\b", re.I), "US"),
+    (re.compile(r"\b(?:in|across|within|throughout)\s+the\s+(?:uk|u\.k\.)(?![a-z-])", re.I), "GB"),
+    (re.compile(r"(?<![A-Za-z])U\.K\.(?![A-Za-z-])"), "GB"),
+    (re.compile(r"\b(?:in|across|within|throughout|for)\s+(?:the\s+)?UK(?![A-Za-z-])"), "GB"),
+    (re.compile(r"(?<![A-Za-z])UK(?![A-Za-z-])\s*$"), "GB"),
     (re.compile(r"\b(?:(?:in|across|within|throughout)\s+)?(?:the\s+)?(?:united\s+kingdom|britain)\b", re.I), "GB"),
 ]
 
@@ -98,7 +112,11 @@ def rule_plan(focus: str) -> SearchPlan:
     tickers = list(dict.fromkeys(_TICKER.findall(focus)))[:5]
     text = _TICKER.sub(" ", focus)
     text, country = _strip_places(text)
-    tokens = _normalize_focus_tokens(text)
+    # Strip stray leading/trailing hyphens left over from place-stripping
+    # (e.g. "US-China" -> " -China" once "US" is removed): a query term
+    # starting with "-" is an EXCLUDE operator upstream, so it must never
+    # survive into queries/must_terms.
+    tokens = [t for t in (tok.strip("-") for tok in _normalize_focus_tokens(text)) if t]
     if not tokens and tickers:
         tokens = [t.lower() for t in tickers]
     if not tokens:

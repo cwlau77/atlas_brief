@@ -95,6 +95,33 @@ def test_place_only_focus_still_produces_a_plan():
     assert plan.country == "US"
 
 
+def test_us_china_compound_does_not_become_an_exclude_operator():
+    plan = rule_plan("US-China trade")
+    every_term = [*plan.queries, *plan.must_terms, *plan.synonyms]
+    assert not any(term.lstrip('"').startswith("-") for term in every_term)
+    assert "china" in plan.phrase
+    assert "trade" in plan.phrase
+
+
+def test_us_steel_and_us_open_do_not_set_country():
+    assert rule_plan("US Steel").country is None
+    assert rule_plan("US Open").country is None
+
+
+def test_data_centers_in_the_us_example_unaffected():
+    plan = rule_plan("Data centers and privacy in the US")
+    assert plan.country == "US"
+    assert "us" not in plan.phrase.split()
+
+
+def test_labor_market_in_america_is_a_us_qualifier():
+    plan = rule_plan("labor market in America")
+    assert plan.country == "US"
+    assert "america" not in plan.must_terms
+    every_term = " ".join(plan.queries + plan.must_terms + plan.synonyms)
+    assert "america" not in every_term.split()
+
+
 def test_match_terms_dedupes_and_orders_longest_first():
     plan = SearchPlan(phrase="x", queries=["x"], must_terms=["privacy", "Data Centers"],
                       synonyms=["privacy", "data broker"])
