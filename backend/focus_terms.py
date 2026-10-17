@@ -23,7 +23,7 @@ _GENERIC_ZIPF = 2.3
 _STOPWORDS = {
     "the", "a", "an", "and", "or", "of", "in", "on", "for", "to", "by", "with",
     "from", "at", "as", "is", "are", "was", "were", "be", "been", "news", "world",
-    "update", "daily", "briefing", "focus", "about", "over", "into", "amid",
+    "update", "daily", "briefing", "focus", "about", "over", "into", "amid", "us",
 }
 
 _TERM_ALIASES: dict[str, list[str]] = {

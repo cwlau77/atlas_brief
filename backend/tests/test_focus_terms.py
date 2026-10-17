@@ -64,3 +64,7 @@ def test_multiword_topic_query_keeps_phrase_and_aliases_not_bare_tokens():
     assert '"south asian security"' in q
     assert '"military"' in q  # alias expansion of the known topic token
     assert '"asian"' not in q  # bare generic tokens dropped upstream
+
+
+def test_pronoun_us_is_a_stopword():
+    assert "us" not in extract_focus_terms("Data centers and privacy in the US")
