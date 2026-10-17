@@ -1,85 +1,53 @@
 import logging
-from datetime import datetime, timezone
-from typing import Optional
 
 import httpx
 
 from backend.config import settings
-from backend.focus_terms import build_boolean_query
+from backend.ingestion.common import clean_text, get_json, parse_datetime
+from backend.ingestion.query_format import or_of_ands
+from backend.ingestion.quota import quota
 from backend.models import Article
+from backend.search_plan import SearchPlan
 
 logger = logging.getLogger("briefing.newsapi")
 
+SOURCE_NAME = "newsapi"
+FINANCE_ONLY = False
 NEWSAPI_EVERYTHING = "https://newsapi.org/v2/everything"
 
 
-async def fetch_newsapi(focus: str, client: Optional[httpx.AsyncClient] = None) -> list[Article]:
-    """Query NewsAPI /everything for the focus phrase across the lookback window."""
-    if not settings.newsapi_key:
-        logger.warning("NEWSAPI_KEY not set; skipping NewsAPI ingestion")
+def enabled() -> bool:
+    return bool(settings.newsapi_key)
+
+
+async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
+    """NewsAPI /everything with the plan's queries OR'd together (free tier delays 24 h)."""
+    if not enabled() or not quota.take(SOURCE_NAME):
         return []
-
-    owns_client = client is None
-    if owns_client:
-        client = httpx.AsyncClient(timeout=20.0)
-
-    # NOTE: free-tier NewsAPI delays articles by 24h, so we do not apply a `from` filter here;
-    # we rely on sortBy=publishedAt to get the newest articles available to our plan.
-    query = build_boolean_query(focus)
     params = {
-        "q": query,
+        "q": or_of_ands(plan.queries or [plan.phrase]),
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": settings.max_articles_per_source,
     }
-    # Key goes in a header, not the query string, so it can't leak into
-    # access logs or error messages that echo the request URL.
-    headers = {"X-Api-Key": settings.newsapi_key}
-
-    try:
-        resp = await client.get(NEWSAPI_EVERYTHING, params=params, headers=headers)
-        resp.raise_for_status()
-        payload = resp.json()
-    except httpx.HTTPStatusError as exc:
-        logger.warning("NewsAPI HTTP %s for focus=%r: %s", exc.response.status_code, focus, exc.response.text[:200])
+    # Key in a header so it never appears in logged URLs.
+    payload = await get_json(client, NEWSAPI_EVERYTHING, source=SOURCE_NAME, params=params,
+                             headers={"X-Api-Key": settings.newsapi_key})
+    if not isinstance(payload, dict):
         return []
-    except Exception as exc:
-        logger.warning("NewsAPI request failed for focus=%r: %s", focus, exc)
-        return []
-    finally:
-        if owns_client:
-            await client.aclose()
-
-    total_results = payload.get("totalResults", 0)
-    logger.info("NewsAPI totalResults=%d for focus=%r query=%r", total_results, focus, query)
-
     articles: list[Article] = []
-    for item in payload.get("articles", []):
-        title = item.get("title") or ""
-        snippet = item.get("description") or item.get("content") or ""
-        url = item.get("url") or ""
-        outlet = (item.get("source") or {}).get("name") or "NewsAPI"
+    for item in payload.get("articles") or []:
+        title, url = item.get("title") or "", item.get("url") or ""
         if not title or not url:
             continue
-
-        published_at = None
-        raw_ts = item.get("publishedAt")
-        if raw_ts:
-            try:
-                published_at = datetime.fromisoformat(raw_ts.replace("Z", "+00:00"))
-            except ValueError:
-                published_at = None
-
-        articles.append(
-            Article(
-                title=title,
-                snippet=snippet,
-                url=url,
-                source=outlet,
-                published_at=published_at,
-                country=None,
-                raw_source_type="newsapi",
-            )
-        )
-
+        articles.append(Article(
+            title=title,
+            snippet=clean_text(item.get("description") or item.get("content")) or title,
+            url=url,
+            source=(item.get("source") or {}).get("name") or "NewsAPI",
+            published_at=parse_datetime(item.get("publishedAt")),
+            country=None,
+            raw_source_type="newsapi",
+        ))
+    logger.info("source=%s count=%d totalResults=%s", SOURCE_NAME, len(articles), payload.get("totalResults"))
     return articles

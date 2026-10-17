@@ -26,3 +26,12 @@ def test_feed_list_covers_major_us_outlets():
     outlets = {name for name, _ in RSS_FEEDS}
     assert {"CNN World", "Fox News World", "New York Times World",
             "Washington Post World", "ABC News International", "CBS News World"} <= outlets
+
+
+def test_feed_list_covers_us_tech_and_finance_desks():
+    outlets = {name for name, _ in RSS_FEEDS}
+    assert len(outlets & {"NPR News", "New York Times U.S.", "New York Times Technology",
+                          "Washington Post Technology", "Axios", "Politico", "The Verge",
+                          "Ars Technica", "Wired"}) >= 6
+    assert len(outlets & {"MarketWatch", "CNBC Top News", "Yahoo Finance",
+                          "Investing.com", "Financial Times"}) >= 3

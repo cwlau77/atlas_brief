@@ -3,14 +3,19 @@ from fastapi.testclient import TestClient
 
 import backend.main as main
 from backend.config import settings
+from backend.ingestion.registry import IngestResult
 from backend.rate_limit import SlidingWindowLimiter
 
 
 @pytest.fixture
 def client(monkeypatch, make_article):
-    async def fake_ingest(focus):
-        return [make_article(title=f"{focus} development one", snippet=f"Latest on {focus}.",
-                             url="https://ex.com/dev1")]
+    async def fake_ingest(plan):
+        return IngestResult(
+            articles=[make_article(title=f"{plan.phrase} development one",
+                                   snippet=f"Latest on {plan.phrase}.", url="https://ex.com/dev1")],
+            stats={},
+            skipped_missing_key=[],
+        )
 
     monkeypatch.setattr(main, "_ingest_all", fake_ingest)
     # Demo mode exercises the full pipeline without the Anthropic SDK.
@@ -72,3 +77,12 @@ def test_root_is_api_info_not_html(client):
     r = client.get("/")
     assert r.status_code == 200
     assert r.json()["service"] == "atlas-brief-api"
+
+
+def test_502_names_sources_skipped_for_missing_keys(client, monkeypatch):
+    async def empty_ingest(plan):
+        return IngestResult(articles=[], stats={}, skipped_missing_key=["guardian", "tavily"])
+    monkeypatch.setattr(main, "_ingest_all", empty_ingest)
+    r = client.post("/briefing", json={"focus": "trade policy"})
+    assert r.status_code == 502
+    assert "guardian" in r.json()["detail"] and "tavily" in r.json()["detail"]

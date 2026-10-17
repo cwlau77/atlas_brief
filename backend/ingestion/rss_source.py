@@ -7,17 +7,11 @@ import feedparser
 import httpx
 
 from backend.config import settings
-from backend.focus_terms import extract_focus_terms, keyword_hit
+from backend.focus_terms import keyword_hit
 from backend.models import Article
+from backend.search_plan import SearchPlan
 
 logger = logging.getLogger("briefing.rss")
-
-# Fetch feeds with httpx rather than letting feedparser fetch internally:
-# feedparser's urllib fetch has no timeout (a hung feed blocks its worker
-# thread indefinitely) and swallows network/SSL errors as a silent bozo
-# result with zero entries, which is undebuggable in production logs.
-_FEED_TIMEOUT_SECONDS = 10.0
-_FEED_USER_AGENT = "AtlasBrief/1.0 (+https://github.com/cwlau77/guaihack.global_brief_gen)"
 
 # Deliberately spans regions: a "global briefing" product fed only by Western
 # outlets can't surface cross-region framing differences. All feeds verified
@@ -41,6 +35,23 @@ RSS_FEEDS: list[tuple[str, str]] = [
     ("Washington Post World", "https://feeds.washingtonpost.com/rss/world"),
     ("ABC News International", "https://abcnews.go.com/abcnews/internationalheadlines"),
     ("CBS News World", "https://www.cbsnews.com/latest/rss/world"),
+    # US national, tech and policy desks (domestic coverage the world desks miss).
+    # Verified live 2026-10-17; two candidates were dropped after failing curl
+    # verification: Washington Post Technology (502 from feeds.washingtonpost.com)
+    # and Yahoo Finance (404 on every known RSS path) — see task-4-report.md.
+    ("NPR News", "https://feeds.npr.org/1001/rss.xml"),
+    ("New York Times U.S.", "https://rss.nytimes.com/services/xml/rss/nyt/US.xml"),
+    ("New York Times Technology", "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"),
+    ("Axios", "https://api.axios.com/feed/"),
+    ("Politico", "https://rss.politico.com/politics-news.xml"),
+    ("The Verge", "https://www.theverge.com/rss/index.xml"),
+    ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index"),
+    ("Wired", "https://www.wired.com/feed/rss"),
+    # Finance desks.
+    ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories"),
+    ("CNBC Top News", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"),
+    ("Investing.com", "https://www.investing.com/rss/news.rss"),
+    ("Financial Times", "https://www.ft.com/rss/home"),
 ]
 
 def _entry_to_article(outlet: str, entry) -> Article | None:
@@ -111,38 +122,29 @@ async def _fetch_feed_text(client: httpx.AsyncClient, outlet: str, url: str) -> 
         return ""
 
 
-async def fetch_rss(focus: str) -> list[Article]:
-    """Pull articles from curated RSS feeds, pre-filtered by focus keywords.
+SOURCE_NAME = "rss"
+FINANCE_ONLY = False
 
-    Feeds are fetched concurrently with httpx (real timeouts, logged failures),
-    then parsed in threads since feedparser is blocking CPU work.
-    """
-    keywords = extract_focus_terms(focus)
 
-    async with httpx.AsyncClient(
-        timeout=_FEED_TIMEOUT_SECONDS,
-        follow_redirects=True,
-        headers={"User-Agent": _FEED_USER_AGENT},
-    ) as client:
-        contents = await asyncio.gather(
-            *(_fetch_feed_text(client, outlet, url) for outlet, url in RSS_FEEDS),
-        )
+def enabled() -> bool:
+    return True
 
+
+async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
+    """Curated feeds fetched concurrently on the shared client, keyword-filtered by the plan."""
+    keywords = plan.match_terms
+    contents = await asyncio.gather(*(_fetch_feed_text(client, outlet, url) for outlet, url in RSS_FEEDS))
     tasks = [
         asyncio.to_thread(_parse_feed, outlet, content, keywords)
         for (outlet, _), content in zip(RSS_FEEDS, contents)
         if content
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
-
     articles: list[Article] = []
     for result in results:
         if isinstance(result, Exception):
-            logger.warning("feed parse raised: %s", result)
+            logger.warning("source=rss status=malformed detail=%s", type(result).__name__)
             continue
         articles.extend(result)
-    logger.info(
-        "rss summary for focus=%r: %d feeds fetched, %d articles kept",
-        focus, sum(1 for c in contents if c), len(articles),
-    )
+    logger.info("source=rss feeds=%d count=%d", sum(1 for c in contents if c), len(articles))
     return articles

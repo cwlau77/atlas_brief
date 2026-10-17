@@ -2,14 +2,14 @@ import asyncio
 import logging
 import random
 import time
-from datetime import datetime, timezone
-from typing import Optional
 
 import httpx
 
 from backend.config import settings
-from backend.focus_terms import build_boolean_query
+from backend.ingestion.common import parse_datetime
+from backend.ingestion.query_format import best_query, query_terms
 from backend.models import Article
+from backend.search_plan import SearchPlan
 
 logger = logging.getLogger("briefing.gdelt")
 
@@ -35,23 +35,37 @@ async def _pace() -> None:
         _last_request_at = time.monotonic()
 
 
-async def fetch_gdelt(focus: str, client: Optional[httpx.AsyncClient] = None) -> list[Article]:
-    """Query GDELT DOC 2.0 ArtList for articles matching the focus phrase."""
-    owns_client = client is None
-    if owns_client:
-        client = httpx.AsyncClient(timeout=20.0)
+SOURCE_NAME = "gdelt"
+FINANCE_ONLY = False
 
-    timespan = f"{max(settings.hours_lookback, 1)}h"
-    query = build_boolean_query(focus)
+# GDELT sourcecountry takes FIPS codes; only the ones the planner commonly emits are mapped.
+_FIPS = {"US": "US", "GB": "UK"}
+
+
+def enabled() -> bool:
+    return True
+
+
+def _gdelt_query(plan: SearchPlan) -> str:
+    # GDELT rejects bare terms shorter than 3 characters ("ai"); quoted phrases are fine.
+    terms = [t for t in query_terms(best_query(plan)) if t.startswith('"') or len(t) >= 3]
+    query = " ".join(terms) or plan.phrase
+    fips = _FIPS.get(plan.country or "")
+    if fips:
+        query = f"{query} sourcecountry:{fips}"
+    return f"{query} sourcelang:english"
+
+
+async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
+    """GDELT DOC 2.0 ArtList for the plan's best query (paced, one retry on 429)."""
     params = {
-        "query": f"{query} sourcelang:english",
+        "query": _gdelt_query(plan),
         "mode": "ArtList",
         "maxrecords": settings.max_articles_per_source,
         "format": "json",
-        "timespan": timespan,
+        "timespan": f"{max(settings.hours_lookback, 1)}h",
         "sort": "DateDesc",
     }
-
     payload = None
     try:
         for attempt in (1, 2):
@@ -64,62 +78,26 @@ async def fetch_gdelt(focus: str, client: Optional[httpx.AsyncClient] = None) ->
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code == 429 and attempt == 1:
                     backoff = _GDELT_RETRY_DELAY_SECONDS + random.random()
-                    logger.info(
-                        "GDELT 429 for focus=%r; retrying once after %.1fs backoff",
-                        focus, backoff,
-                    )
+                    logger.info("source=gdelt status=rate_limited retry_in=%.1fs", backoff)
                     await asyncio.sleep(backoff)
                     continue
-                logger.warning(
-                    "GDELT HTTP %s for focus=%r: %s",
-                    exc.response.status_code, focus, exc.response.text[:200],
-                )
+                logger.warning("source=gdelt status=http_%d", exc.response.status_code)
                 return []
     except Exception as exc:
-        logger.warning("GDELT request failed for focus=%r: %s", focus, exc)
+        logger.warning("source=gdelt status=network_error detail=%s", type(exc).__name__)
         return []
-    finally:
-        if owns_client:
-            await client.aclose()
-
-    if payload is None:
+    if not isinstance(payload, dict):
         return []
-
-    logger.info(
-        "GDELT returned %d raw articles for focus=%r query=%r",
-        len(payload.get("articles", [])),
-        focus,
-        query,
-    )
-
     articles: list[Article] = []
-    for item in payload.get("articles", []):
-        title = item.get("title") or ""
-        url = item.get("url") or ""
-        outlet = item.get("domain") or "GDELT"
-        country = item.get("sourcecountry") or None
+    for item in payload.get("articles") or []:
+        title, url = item.get("title") or "", item.get("url") or ""
         if not title or not url:
             continue
-
-        published_at = None
-        raw_ts = item.get("seendate")
-        if raw_ts:
-            try:
-                # GDELT seendate format: YYYYMMDDTHHMMSSZ (the trailing Z is UTC)
-                published_at = datetime.strptime(raw_ts, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-            except ValueError:
-                published_at = None
-
-        articles.append(
-            Article(
-                title=title,
-                snippet=title,
-                url=url,
-                source=outlet,
-                published_at=published_at,
-                country=country,
-                raw_source_type="gdelt",
-            )
-        )
-
+        articles.append(Article(
+            title=title, snippet=title, url=url,
+            source=item.get("domain") or "GDELT",
+            published_at=parse_datetime(item.get("seendate")),
+            country=item.get("sourcecountry") or None,
+            raw_source_type="gdelt",
+        ))
     return articles

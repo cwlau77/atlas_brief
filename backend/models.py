@@ -2,6 +2,11 @@ from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
+SourceType = Literal[
+    "newsapi", "gdelt", "rss", "google_news", "guardian", "gnews", "newsdata",
+    "brave", "tavily", "exa", "finnhub", "marketaux", "alphavantage",
+]
+
 
 class Article(BaseModel):
     title: str
@@ -10,7 +15,7 @@ class Article(BaseModel):
     source: str
     published_at: Optional[datetime] = None
     country: Optional[str] = None
-    raw_source_type: Literal["newsapi", "gdelt", "rss"]
+    raw_source_type: SourceType
 
 
 class BriefingRequest(BaseModel):

@@ -1,16 +1,15 @@
-import asyncio
 import logging
 import time
 
-import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
-from backend.ingestion import fetch_gdelt, fetch_newsapi, fetch_rss
-from backend.models import Article, Briefing, BriefingRequest
+from backend.ingestion import IngestResult, ingest
+from backend.models import Briefing, BriefingRequest
 from backend.processing import deduplicate, embed_texts, filter_by_relevance
 from backend.rate_limit import SlidingWindowLimiter
+from backend.search_plan import SearchPlan, plan_search
 from backend.synthesis import (
     SynthesisFailedError,
     SynthesisUnavailableError,
@@ -50,27 +49,15 @@ async def root() -> dict[str, str]:
     return {"service": "atlas-brief-api", "docs": "/docs", "health": "/health"}
 
 
-async def _ingest_all(focus: str) -> list[Article]:
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        results = await asyncio.gather(
-            fetch_newsapi(focus, client=client),
-            fetch_gdelt(focus, client=client),
-            fetch_rss(focus),
-            return_exceptions=True,
-        )
-
-    labels = ("newsapi", "gdelt", "rss")
-    articles: list[Article] = []
-    per_source_counts: dict[str, int] = {}
-    for label, r in zip(labels, results):
-        if isinstance(r, Exception):
-            logger.warning("ingestion source %s failed: %s", label, r)
-            per_source_counts[label] = 0
-            continue
-        per_source_counts[label] = len(r)
-        articles.extend(r)
-    logger.info("ingestion summary for focus=%r: %s", focus, per_source_counts)
-    return articles
+async def _ingest_all(plan: SearchPlan) -> IngestResult:
+    result = await ingest(plan)
+    logger.info(
+        "ingestion summary phrase=%r plan=%s: %s skipped=%s",
+        plan.phrase, plan.source,
+        {name: (s.count, s.status, s.ms) for name, s in result.stats.items()},
+        result.skipped_missing_key,
+    )
+    return result
 
 
 def _client_ip(request: Request) -> str:
@@ -100,22 +87,19 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
             logger.info("cache hit for focus=%r", focus)
             return cached[0]
 
-    # Layer 2: ingest (parallel fan-out)
-    articles = await _ingest_all(focus)
+    # Layer 2: plan + ingest (parallel fan-out across all enabled sources)
+    plan = await plan_search(focus)
+    ingest_result = await _ingest_all(plan)
+    articles = ingest_result.articles
     logger.info("ingested %d raw articles for focus=%r", len(articles), focus)
     if not articles:
-        missing_keys = []
-        if not settings.newsapi_key:
-            missing_keys.append("NEWSAPI_KEY")
+        skipped = ingest_result.skipped_missing_key
         hint = (
-            f" (missing env vars: {', '.join(missing_keys)})"
-            if missing_keys
+            f" Sources skipped for missing API keys: {', '.join(skipped)}."
+            if skipped
             else " All upstream sources returned zero articles — try a broader focus, or retry in a minute in case an upstream rate limit is in effect."
         )
-        raise HTTPException(
-            status_code=502,
-            detail=f"No articles could be fetched from any source.{hint}",
-        )
+        raise HTTPException(status_code=502, detail=f"No articles could be fetched from any source.{hint}")
 
     # Layer 3: process (embed -> dedupe -> relevance filter)
     # Embedding is now a local TF-IDF hashing vectorizer — no external calls,

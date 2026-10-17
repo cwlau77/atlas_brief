@@ -17,7 +17,7 @@ except ImportError:  # pragma: no cover — dependency is pinned, but degrade gr
 # alone let in every article about any streamer, not the specific focus. Only
 # near-unique proper nouns like "regeneron" (1.7) or "openai" (1.6) clear this
 # bar; jargon words like "streamer", "tesla", "nvidia" correctly do not, and
-# fall back to requiring the full phrase (see build_boolean_query, relevance.py).
+# fall back to requiring the full phrase (see search_plan.py, relevance.py).
 _GENERIC_ZIPF = 2.3
 
 _STOPWORDS = {
@@ -153,37 +153,3 @@ def keyword_hit(text: str, keywords: list[str]) -> bool:
         re.search(rf"\b{re.escape(kw.lower())}\b", haystack) is not None
         for kw in keywords
     )
-
-
-def build_boolean_query(focus: str, *, max_terms: int = 6) -> str:
-    """Build a compact OR query string for upstream search APIs.
-
-    The normalized focus phrase always occupies the first slot: alias expansion
-    is sorted longest-first, so without this pinning the focus term itself gets
-    crowded out of the max_terms window for aliased topics like "trade".
-
-    Multi-word focuses do NOT get their generic tokens OR'd individually:
-    querying ("regeneron pharmaceuticals" OR "pharmaceuticals") fills the
-    per-source article cap with category noise that crowds out the entity
-    itself. Only the phrase, distinctive entity tokens, and known topic
-    aliases go upstream.
-    """
-    tokens = _normalize_focus_tokens(focus)
-    phrase = " ".join(tokens)
-
-    if len(tokens) <= 1:
-        expanded = [t for t in extract_focus_terms(focus) if t != phrase]
-    else:
-        anchors = distinctive_tokens(focus)
-        expanded = [t for t in tokens if t in anchors]
-        for token in tokens:
-            for alias in _TERM_ALIASES.get(token, []):
-                if alias != phrase and alias not in expanded:
-                    expanded.append(alias)
-
-    terms = (([phrase] if phrase else []) + expanded)[:max_terms]
-    if not terms:
-        return focus.strip()
-    if len(terms) == 1:
-        return f'"{terms[0]}"'
-    return "(" + " OR ".join(f'"{term}"' for term in terms) + ")"
