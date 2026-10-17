@@ -1,5 +1,5 @@
 import { AskForm } from '../components/AskForm'
-import { GlobeHero } from '../components/GlobeHero'
+import { Globe } from '../globe/Globe'
 import { useGenerateBriefing } from '../state/useGenerateBriefing'
 import './home.css'
 
@@ -35,7 +35,11 @@ export function HomePage() {
           </p>
         </div>
         <div className="home-globe">
-          <GlobeHero regionCounts={null} />
+          <Globe
+            mode="hero"
+            scanning={loading}
+            label="A globe of the world drawn in fine grain, slowly turning."
+          />
         </div>
       </div>
     </section>
