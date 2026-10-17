@@ -1,5 +1,8 @@
 import asyncio
+import os
 import time
+from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -7,7 +10,7 @@ import respx
 
 from backend.config import settings
 from backend.ingestion import rss_source
-from backend.ingestion.rss_source import RSS_FEEDS, _parse_feed
+from backend.ingestion.rss_source import RSS_FEEDS, _entry_to_article, _parse_feed
 from backend.search_plan import SearchPlan
 
 FIXTURE = """<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
@@ -80,3 +83,26 @@ async def test_one_slow_feed_does_not_starve_the_whole_source_budget(monkeypatch
 
     assert [a.url for a in articles] == ["https://f.com/1"]
     assert elapsed < settings.source_timeout_seconds - 0.5
+
+
+def test_entry_to_article_treats_published_parsed_as_utc():
+    # published_parsed is already UTC (feedparser's contract); interpreting it
+    # as local time (time.mktime) instead of UTC (calendar.timegm) shifts the
+    # result by the local offset. Force a non-UTC local TZ so a regression
+    # back to mktime fails this test regardless of the machine running it.
+    previous_tz = os.environ.get("TZ")
+    os.environ["TZ"] = "America/New_York"
+    time.tzset()
+    try:
+        entry = SimpleNamespace(
+            title="Headline", link="https://f.com/x", summary="Snippet",
+            published_parsed=(2026, 10, 17, 12, 0, 0, 0, 0, 0),
+        )
+        article = _entry_to_article("Outlet", entry)
+    finally:
+        if previous_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = previous_tz
+        time.tzset()
+    assert article.published_at == datetime(2026, 10, 17, 12, 0, tzinfo=timezone.utc)

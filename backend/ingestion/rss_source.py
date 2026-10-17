@@ -1,7 +1,7 @@
 import asyncio
+import calendar
 import logging
 from datetime import datetime, timezone
-from time import mktime
 
 import feedparser
 import httpx
@@ -66,7 +66,10 @@ def _entry_to_article(outlet: str, entry) -> Article | None:
     struct_time = getattr(entry, "published_parsed", None) or getattr(entry, "updated_parsed", None)
     if struct_time:
         try:
-            published_at = datetime.fromtimestamp(mktime(struct_time), tz=timezone.utc)
+            # published_parsed/updated_parsed are already UTC (feedparser's
+            # contract); calendar.timegm treats the struct as UTC, unlike
+            # time.mktime which wrongly treats it as local time.
+            published_at = datetime.fromtimestamp(calendar.timegm(struct_time), tz=timezone.utc)
         except Exception:
             published_at = None
 
