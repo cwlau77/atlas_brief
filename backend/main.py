@@ -8,6 +8,7 @@ from backend.config import settings
 from backend.ingestion import IngestResult, ingest
 from backend.models import Briefing, BriefingRequest
 from backend.processing import deduplicate, embed_texts, filter_by_relevance
+from backend.processing.urls import dedupe_exact
 from backend.rate_limit import SlidingWindowLimiter
 from backend.search_plan import SearchPlan, plan_search
 from backend.synthesis import (
@@ -91,6 +92,9 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     plan = await plan_search(focus)
     ingest_result = await _ingest_all(plan)
     articles = ingest_result.articles
+    merged_count = len(articles)
+    articles = dedupe_exact(articles)
+    logger.info("exact dedupe for focus=%r: %d -> %d articles", focus, merged_count, len(articles))
     logger.info("ingested %d raw articles for focus=%r", len(articles), focus)
     if not articles:
         skipped = ingest_result.skipped_missing_key
