@@ -51,5 +51,22 @@ class Settings(BaseSettings):
     search_plan_model: str = "claude-haiku-4-5"
     search_plan_timeout_seconds: float = 4.0
 
+    # Fan-out timing.
+    source_timeout_seconds: float = 8.0
+    ingest_deadline_seconds: float = 15.0
+
+    # Per-source daily request budgets (UTC day, in-process). Unlisted sources are unlimited.
+    quota_newsapi_per_day: int = 90
+    quota_gnews_per_day: int = 90
+    quota_newsdata_per_day: int = 180
+    quota_guardian_per_day: int = 4500
+    quota_brave_per_day: int = 30
+    quota_tavily_per_day: int = 30
+    quota_exa_per_day: int = 40
+    quota_google_news_per_day: int = 300
+    quota_finnhub_per_day: int = 1000
+    quota_marketaux_per_day: int = 90
+    quota_alphavantage_per_day: int = 20
+
 
 settings = Settings()
