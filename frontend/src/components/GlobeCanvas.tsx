@@ -1,6 +1,6 @@
 // Heavy chunk: three.js + globe geometry. Loaded lazily via GlobeHero so the
 // briefing UI is interactive before any of this arrives over the wire.
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import Globe, { type GlobeMethods } from 'react-globe.gl'
 import { AmbientLight, Color, MeshPhongMaterial } from 'three'
 import { feature } from 'topojson-client'
@@ -31,6 +31,16 @@ type CountriesTopology = Topology<{ countries: GeometryCollection<{ name: string
 const topo = countriesTopo as unknown as CountriesTopology
 const countries = feature(topo, topo.objects.countries)
 
+// Accessors live at module scope so their identity never changes: globe.gl
+// re-digests a layer whenever one of its accessor props changes.
+const hexColor = () => LAND_COLOR
+const pointLat = (d: object) => (d as GlobePoint).lat
+const pointLng = (d: object) => (d as GlobePoint).lng
+const toggleVisibility = (el: HTMLElement, isVisible: boolean) => {
+  el.style.opacity = isVisible ? '1' : '0'
+  el.style.pointerEvents = isVisible ? 'auto' : 'none'
+}
+
 export function buildPoints(regionCounts: Record<string, number>): GlobePoint[] {
   return Object.entries(regionCounts)
     .map(([name, count]) => {
@@ -49,7 +59,7 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
-export default function GlobeCanvas({ width, height, regionCounts, developments }: {
+function GlobeCanvas({ width, height, regionCounts, developments }: {
   width: number
   height: number
   regionCounts: Record<string, number> | null
@@ -115,7 +125,7 @@ export default function GlobeCanvas({ width, height, regionCounts, developments 
     return el
   }, [developments, maxCount, setAutoRotate])
 
-  const handleReady = () => {
+  const handleReady = useCallback(() => {
     const globe = globeRef.current
     if (!globe) return
     const controls = globe.controls()
@@ -125,7 +135,7 @@ export default function GlobeCanvas({ width, height, regionCounts, developments 
     // Uniform ambient light: the signal globe has no day/night terminator.
     globe.lights([new AmbientLight(0xffffff, 3.2)])
     globe.pointOfView({ lat: 18, lng: 12, altitude: 2.1 }, 0)
-  }
+  }, [])
 
   return (
     <Globe
@@ -141,17 +151,17 @@ export default function GlobeCanvas({ width, height, regionCounts, developments 
       hexPolygonResolution={3}
       hexPolygonMargin={0.62}
       hexPolygonUseDots
-      hexPolygonColor={() => LAND_COLOR}
+      hexPolygonColor={hexColor}
       htmlElementsData={points}
-      htmlLat={(d) => (d as GlobePoint).lat}
-      htmlLng={(d) => (d as GlobePoint).lng}
+      htmlLat={pointLat}
+      htmlLng={pointLng}
       htmlAltitude={0.02}
       htmlElement={makeHotspot}
-      htmlElementVisibilityModifier={(el, isVisible) => {
-        el.style.opacity = isVisible ? '1' : '0'
-        el.style.pointerEvents = isVisible ? 'auto' : 'none'
-      }}
+      htmlElementVisibilityModifier={toggleVisibility}
       onGlobeReady={handleReady}
     />
   )
 }
+
+// Memoized so unrelated App renders (toasts, loading) don't reach the globe.
+export default memo(GlobeCanvas)

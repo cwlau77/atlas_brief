@@ -1,6 +1,7 @@
+import { Suspense, lazy, useState } from 'react'
+import { loadAnalytics } from '../lib/analyticsChunk'
 import type { SavedBriefing } from '../lib/normalize'
 import { formatDate } from '../lib/relativeTime'
-import { AnalyticsPanel } from './AnalyticsPanel'
 import { Contradictions } from './briefing/Contradictions'
 import { KeyDevelopments } from './briefing/KeyDevelopments'
 import { PriorityAlerts } from './briefing/PriorityAlerts'
@@ -9,8 +10,11 @@ import { Tensions } from './briefing/Tensions'
 import { loadSettings } from './ProfilePage'
 import './briefing/briefing.css'
 
+const AnalyticsPanel = lazy(() => loadAnalytics().then((m) => ({ default: m.AnalyticsPanel })))
+
 export function BriefingView({ briefing }: { briefing: SavedBriefing }) {
-  const settings = loadSettings()
+  // Read storage once per mount; the view remounts after any Profile change.
+  const [settings] = useState(loadSettings)
   const developments = settings.showHistoricalContext
     ? briefing.keyDevelopments
     : briefing.keyDevelopments.map((d) => ({ ...d, historicalContext: '' }))
@@ -27,7 +31,9 @@ export function BriefingView({ briefing }: { briefing: SavedBriefing }) {
       <Tensions tensions={briefing.emergingTensions} />
       <Contradictions contradictions={briefing.contradictions} />
       <ReadingList readings={briefing.readingList} />
-      <AnalyticsPanel briefing={briefing} />
+      <Suspense fallback={null}>
+        <AnalyticsPanel briefing={briefing} />
+      </Suspense>
     </div>
   )
 }

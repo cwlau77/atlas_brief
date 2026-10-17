@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { AmbientBackdrop } from './components/AmbientBackdrop'
 import { BriefingForm } from './components/BriefingForm'
@@ -9,6 +9,7 @@ import { ProfilePage, loadSettings } from './components/ProfilePage'
 import { SavedPage } from './components/SavedPage'
 import { StandByClock } from './components/StandByClock'
 import { ToastHost, type ToastItem } from './components/Toast'
+import { preloadAnalytics } from './lib/analyticsChunk'
 import { requestBriefing, warmBackend } from './lib/api'
 import { normalizeBriefing, type SavedBriefing } from './lib/normalize'
 import { KEYS, loadJSON, saveJSON } from './lib/storage'
@@ -31,6 +32,17 @@ export default function App() {
   const resultsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => warmBackend(), [])
+
+  // Fetch the chart.js chunk once the page is idle, so it's ready before the
+  // first briefing renders (and before printBriefing's 400ms print delay).
+  useEffect(() => {
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(preloadAnalytics)
+      return () => cancelIdleCallback(id)
+    }
+    const t = window.setTimeout(preloadAnalytics, 2000)
+    return () => window.clearTimeout(t)
+  }, [])
 
   const pushToast = (message: string, tone: ToastItem['tone'] = 'info', ttl = 3000) => {
     const id = ++toastSeq
@@ -116,9 +128,13 @@ export default function App() {
   const docked = current !== null
 
   // Globe hotspot dropdowns scroll to these anchors inside KeyDevelopments.
-  const anchors = current
-    ? current.keyDevelopments.map((d, i) => ({ headline: d.title, regions: d.regions, anchorId: `dev-${i}` }))
-    : null
+  // Memoized: a fresh array each render would rebuild every globe hotspot.
+  const anchors = useMemo(
+    () => current
+      ? current.keyDevelopments.map((d, i) => ({ headline: d.title, regions: d.regions, anchorId: `dev-${i}` }))
+      : null,
+    [current],
+  )
 
   return (
     <div className="app">
