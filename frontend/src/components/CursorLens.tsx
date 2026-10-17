@@ -28,8 +28,8 @@ export function CursorLens() {
     const setMode = (m: string) => {
       if (m === mode) return
       mode = m
-      if (m) root.dataset.cursor = m
-      else delete root.dataset.cursor
+      if (m) root.dataset.cursorMode = m
+      else delete root.dataset.cursorMode
     }
     const pick = (target: EventTarget | null): string => {
       const el = (target as Element | null)?.closest?.(INTERACTIVE) as HTMLElement | null
@@ -79,7 +79,7 @@ export function CursorLens() {
       window.removeEventListener('pointermove', onMove)
       root.removeEventListener('pointerleave', onLeave)
       root.classList.remove('has-cursor')
-      delete root.dataset.cursor
+      delete root.dataset.cursorMode
     }
   }, [enabled])
 
