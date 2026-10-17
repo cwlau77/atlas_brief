@@ -22,7 +22,6 @@ export function useRouteFocus(): void {
     const save = () => positions.current.set(key, window.scrollY)
     window.addEventListener('scroll', save, { passive: true })
     return () => {
-      save()
       window.removeEventListener('scroll', save)
     }
   }, [location.key])
@@ -32,7 +31,8 @@ export function useRouteFocus(): void {
       first.current = false
       return
     }
-    window.scrollTo(0, navType === 'POP' ? positions.current.get(location.key) ?? 0 : 0)
+    const top = navType === 'POP' ? positions.current.get(location.key) ?? 0 : 0
+    window.scrollTo({ top, left: 0, behavior: 'instant' })
     const heading = document.querySelector<HTMLElement>('main h1, main h2')
     if (heading) {
       heading.setAttribute('tabindex', '-1')

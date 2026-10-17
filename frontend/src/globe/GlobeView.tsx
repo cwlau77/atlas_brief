@@ -277,7 +277,7 @@ export default function GlobeView({
                     {r.name}, {r.count} mention{r.count === 1 ? '' : 's'}
                     <ul>
                       {r.stories.map((s) => (
-                        <li key={s.anchorId}><button type="button" onClick={() => select(s.anchorId)}>{s.title}</button></li>
+                        <li key={s.anchorId}><button type="button" tabIndex={-1} onClick={() => select(s.anchorId)}>{s.title}</button></li>
                       ))}
                     </ul>
                   </li>

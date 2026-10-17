@@ -59,24 +59,35 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const fileBriefing = useCallback((briefing: SavedBriefing) => {
     // Replace any same-topic entry, newest first, keep twelve (legacy behavior).
-    const next = [briefing, ...saved.filter((b) => b.area !== briefing.area)].slice(0, ARCHIVE_LIMIT)
-    setSaved(next)
-    if (!saveJSON(KEYS.saved, next)) storageFailed()
-  }, [saved, storageFailed])
+    setSaved((prev) => {
+      const next = [briefing, ...prev.filter((b) => b.area !== briefing.area)].slice(0, ARCHIVE_LIMIT)
+      if (!saveJSON(KEYS.saved, next)) storageFailed()
+      return next
+    })
+  }, [storageFailed])
 
   const removeBriefing = useCallback((id: string) => {
-    const nextSaved = saved.filter((b) => b.id !== id)
-    const nextStarred = starred.filter((s) => s !== id)
-    setSaved(nextSaved)
-    setStarred(nextStarred)
-    if (!saveJSON(KEYS.saved, nextSaved) || !saveJSON(KEYS.starred, nextStarred)) storageFailed()
-  }, [saved, starred, storageFailed])
+    let failed = false
+    setSaved((prev) => {
+      const next = prev.filter((b) => b.id !== id)
+      if (!saveJSON(KEYS.saved, next)) failed = true
+      return next
+    })
+    setStarred((prev) => {
+      const next = prev.filter((s) => s !== id)
+      if (!saveJSON(KEYS.starred, next)) failed = true
+      return next
+    })
+    if (failed) storageFailed()
+  }, [storageFailed])
 
   const toggleStar = useCallback((id: string) => {
-    const next = starred.includes(id) ? starred.filter((s) => s !== id) : [...starred, id]
-    setStarred(next)
-    if (!saveJSON(KEYS.starred, next)) storageFailed()
-  }, [starred, storageFailed])
+    setStarred((prev) => {
+      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+      if (!saveJSON(KEYS.starred, next)) storageFailed()
+      return next
+    })
+  }, [storageFailed])
 
   const setSession = useCallback((briefing: SavedBriefing) => {
     setSessionState(briefing)
@@ -84,10 +95,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateSettings = useCallback((patch: Partial<UserSettings>) => {
-    const next = { ...settings, ...patch }
-    setSettings(next)
-    if (!saveJSON(KEYS.settings, next)) storageFailed()
-  }, [settings, storageFailed])
+    setSettings((prev) => {
+      const next = { ...prev, ...patch }
+      if (!saveJSON(KEYS.settings, next)) storageFailed()
+      return next
+    })
+  }, [storageFailed])
 
   const saveProfile = useCallback((next: UserProfile) => {
     setProfile(next)

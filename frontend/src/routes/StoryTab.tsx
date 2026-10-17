@@ -17,7 +17,12 @@ export function StoryTab() {
   usePrintOnLoad()
   const regions = useMemo(() => buildRegionPoints(briefing), [briefing])
   const scrollToStory = useCallback((anchorId: string) => {
-    document.getElementById(anchorId)?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
+    const el = document.getElementById(anchorId)
+    el?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
+    if (el && !el.hasAttribute('tabindex')) {
+      el.setAttribute('tabindex', '-1')
+    }
+    el?.focus({ preventScroll: true })
   }, [reduced])
   const count = briefing.keyDevelopments.length
 
