@@ -5,20 +5,16 @@ import { ExternalIcon } from '../icons'
 export function SourceChips({ sources }: { sources: SourceCitation[] }) {
   if (!sources.length) return null
   return (
-    <div className="source-chips">
+    <ul className="source-chips" aria-label="Sources">
       {sources.map((s, i) => (
-        <a
-          key={`${s.url}-${i}`}
-          className="source-chip"
-          href={s.url}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span className="source-chip-outlet">{s.outlet}</span>
-          {s.published_at && <span className="source-chip-time mono">{relativeTime(s.published_at)}</span>}
-          <ExternalIcon size={11} className="source-chip-ext" />
-        </a>
+        <li key={`${s.url}-${i}`}>
+          <a className="source-chip" href={s.url} target="_blank" rel="noopener noreferrer" data-cursor="link">
+            <span>{s.outlet}</span>
+            {s.published_at && <span className="source-chip-time mono">{relativeTime(s.published_at)}</span>}
+            <ExternalIcon size={11} className="source-chip-ext" />
+          </a>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }
