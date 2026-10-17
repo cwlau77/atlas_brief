@@ -6,7 +6,7 @@ import pytest
 import backend.processing.rerank as rerank_module
 from backend.config import settings
 from backend.processing.embeddings import embed_texts
-from backend.processing.rerank import prefilter, rank_articles, rerank
+from backend.processing.rerank import _parse_scores, prefilter, rank_articles, rerank
 from backend.search_plan import SearchPlan, rule_plan
 from backend.tests.fixtures.broad_topics import BROAD_TOPICS
 
@@ -79,6 +79,28 @@ async def test_rerank_failures_return_none(fake_llm, make_article, reply):
     fake_llm.reply = reply
     plan = SearchPlan(phrase="privacy", queries=["privacy"], must_terms=["privacy"])
     assert await rerank(plan, [make_article()]) is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", [
+    json.dumps({"scores": []}),
+    json.dumps({"scores": [{"index": 0, "score": 3}]}),  # wrong keys: "i"/"s" expected
+])
+async def test_rerank_empty_or_malformed_scores_falls_back_to_none(fake_llm, make_article, reply):
+    fake_llm.reply = reply
+    plan = SearchPlan(phrase="privacy", queries=["privacy"], must_terms=["privacy"])
+    assert await rerank(plan, [make_article()]) is None
+
+
+@pytest.mark.asyncio
+async def test_rerank_valid_entries_all_below_threshold_is_empty_not_none(fake_llm, make_article):
+    plan = SearchPlan(phrase="privacy", queries=["privacy"], must_terms=["privacy"])
+    fake_llm.reply = json.dumps({"scores": [{"i": 0, "s": 1}, {"i": 1, "s": 0}]})
+    assert await rerank(plan, [make_article(), make_article()]) == []
+
+
+def test_parse_scores_rejects_bool_scores():
+    assert _parse_scores({"scores": [{"i": 0, "s": True}]}, 2) == {}
 
 
 @pytest.mark.asyncio

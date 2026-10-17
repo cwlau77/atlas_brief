@@ -76,7 +76,10 @@ def _parse_scores(data: dict, count: int) -> dict[int, int]:
         if not isinstance(item, dict):
             continue
         index, score = item.get("i"), item.get("s")
-        if isinstance(index, int) and not isinstance(index, bool) and 0 <= index < count and isinstance(score, (int, float)):
+        if (
+            isinstance(index, int) and not isinstance(index, bool) and 0 <= index < count
+            and isinstance(score, (int, float)) and not isinstance(score, bool)
+        ):
             scores[index] = max(0, min(3, int(score)))
     return scores
 
@@ -95,6 +98,13 @@ async def rerank(plan: SearchPlan, candidates: list[Article]) -> list[Article] |
         )
         raw = "".join(block.text for block in response.content if getattr(block, "type", "") == "text")
         scores = _parse_scores(extract_json(raw), len(candidates))
+        if not scores:
+            # No usable entries at all (empty "scores" list, or every entry
+            # had the wrong keys/types) -- treat as a malformed reply and
+            # fall back, same as invalid JSON. A reply with valid entries
+            # that all score below the keep threshold is NOT this case: it
+            # produces a non-empty scores dict and correctly returns [].
+            raise ValueError("rerank reply had no usable score entries")
     except Exception as exc:  # timeout, API error, invalid JSON: fall back to the deterministic filter
         logger.warning("rerank failed (%s); using keyword + TF-IDF fallback", type(exc).__name__)
         return None
