@@ -12,7 +12,6 @@
     "dev:live": "VITE_API_TARGET=https://guaihack-global-brief-gen-1-491x.onrender.com vite"
   },
   "dependencies": {
-    "chart.js": "^4.5.1",
     "framer-motion": "^12.42.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
