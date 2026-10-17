@@ -45,6 +45,7 @@ export default function GlobeView({
   const [failed, setFailed] = useState(false)
   const [active, setActive] = useState<number | null>(null)
   const [pinned, setPinned] = useState(false)
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
 
   const spots: GlobeHotspot[] = mode === 'hero' ? HERO_HOTSPOTS : regions.map((r) => ({ lat: r.lat, lng: r.lng, count: r.count }))
   const spotsKey = spots.map((s) => `${s.lat},${s.lng},${s.count}`).join('|')
@@ -133,10 +134,14 @@ export default function GlobeView({
     if (top) engine.focusOn(top.lat, top.lng)
     setActive(null)
     setPinned(false)
+    setFocusedIndex(null)
   }, [spotsKey, engineVersion, mode])
 
   useEffect(() => { engineRef.current?.setScanning(scanning) }, [scanning, engineVersion])
-  useEffect(() => { engineRef.current?.setHold(pinned) }, [pinned, engineVersion])
+  // Hold auto-spin while a hotspot is pinned open or a hotspot/the panel has keyboard focus.
+  useEffect(() => {
+    engineRef.current?.setHold(pinned || focusedIndex !== null)
+  }, [pinned, focusedIndex, engineVersion])
 
   const open = useCallback((i: number) => {
     window.clearTimeout(closeTimer.current)
@@ -201,8 +206,16 @@ export default function GlobeView({
                 aria-controls="globe-panel"
                 onPointerEnter={() => { if (!pinned) open(i) }}
                 onPointerLeave={() => { if (!pinned) scheduleClose() }}
-                onFocus={() => { if (!pinned) open(i) }}
-                onBlur={(e) => { if (!pinned && !wrapRef.current?.contains(e.relatedTarget as Node)) scheduleClose() }}
+                onFocus={() => {
+                  setFocusedIndex(i)
+                  engineRef.current?.focusOn(r.lat, r.lng)
+                  if (!pinned) open(i)
+                }}
+                onBlur={(e) => {
+                  if (wrapRef.current?.contains(e.relatedTarget as Node)) return
+                  setFocusedIndex(null)
+                  if (!pinned) scheduleClose()
+                }}
                 onClick={() => togglePin(i)}
               >
                 <span className="globe-hotspot-label label">{r.name}<b>{r.count}</b></span>
@@ -219,6 +232,11 @@ export default function GlobeView({
               aria-label={`Stories in ${current.name}`}
               onPointerEnter={() => window.clearTimeout(closeTimer.current)}
               onPointerLeave={() => { if (!pinned) scheduleClose() }}
+              onBlur={(e) => {
+                if (wrapRef.current?.contains(e.relatedTarget as Node)) return
+                setFocusedIndex(null)
+                if (!pinned) scheduleClose()
+              }}
             >
               <div className="globe-panel-head label">
                 <span>{current.name}</span>
