@@ -46,5 +46,10 @@ class Settings(BaseSettings):
     # How many key developments to enrich with historical context (cap for speed).
     context_enrichment_limit: int = 4
 
+    # Search planning (LLM turns the focus into queries; rules are the fallback).
+    search_plan_enabled: bool = True
+    search_plan_model: str = "claude-haiku-4-5"
+    search_plan_timeout_seconds: float = 4.0
+
 
 settings = Settings()

@@ -7,12 +7,18 @@ layers an LLM planner on top and falls back to rule_plan on any failure.
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Literal
 
+from anthropic import AsyncAnthropic
 from pydantic import BaseModel, Field
 
+from backend.config import settings
 from backend.focus_terms import _TERM_ALIASES, _normalize_focus_tokens, distinctive_tokens, topic_heads
+from backend.synthesis.briefing import extract_json
+
+logger = logging.getLogger("briefing.search_plan")
 
 Domain = Literal["finance", "tech", "politics", "general"]
 
@@ -138,3 +144,82 @@ def rule_plan(focus: str) -> SearchPlan:
         tickers=tickers,
         source="rules",
     )
+
+
+PLAN_SYSTEM_PROMPT = """You turn a news-briefing focus into a search plan for news search APIs.
+Return ONLY a JSON object with exactly these keys:
+- "queries": 1-3 short keyword search strings, most specific first. Put double quotes only around multi-word names that must stay together. No boolean operators.
+- "must_terms": 1-4 lowercase concepts that a relevant article must mention, in the words journalists use.
+- "synonyms": up to 8 lowercase alternative terms journalists use for the same concepts.
+- "country": an ISO 3166-1 alpha-2 code only if the focus limits coverage to one country's domestic news (for example "in the US" -> "US"); otherwise null. A country that is the subject of the story (for example "elections in Iran") is not a filter, so use null.
+- "domains": one or more of "finance", "tech", "politics", "general".
+- "tickers": uppercase stock ticker symbols only for publicly listed companies named in the focus; otherwise []."""
+
+_DOMAINS = {"finance", "tech", "politics", "general"}
+_TICKER_OK = re.compile(r"^[A-Z]{1,5}(?:\.[A-Z]{1,2})?$")
+_COUNTRY_OK = re.compile(r"^[A-Za-z]{2}$")
+
+
+def _str_list(value: object, limit: int, *, lower: bool = False) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    out: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        text = " ".join(item.split())[:80]
+        if lower:
+            text = text.lower()
+        if text and text not in out:
+            out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _clamp(data: dict, fallback: SearchPlan) -> SearchPlan:
+    queries = _str_list(data.get("queries"), 3)
+    if not queries:
+        raise ValueError("search plan has no queries")
+    raw_country = data.get("country")
+    country = raw_country.strip().upper() if isinstance(raw_country, str) and _COUNTRY_OK.match(raw_country.strip()) else None
+    domains = [d for d in _str_list(data.get("domains"), 4, lower=True) if d in _DOMAINS] or ["general"]
+    llm_tickers = [t.upper() for t in _str_list(data.get("tickers"), 5) if _TICKER_OK.match(t.upper())]
+    return SearchPlan(
+        phrase=fallback.phrase,
+        queries=queries,
+        must_terms=_str_list(data.get("must_terms"), 4, lower=True) or fallback.must_terms,
+        synonyms=_str_list(data.get("synonyms"), 8, lower=True),
+        country=country or fallback.country,
+        domains=domains,
+        tickers=list(dict.fromkeys([*fallback.tickers, *llm_tickers]))[:5],
+        source="llm",
+    )
+
+
+async def _llm_plan(focus: str, fallback: SearchPlan) -> SearchPlan:
+    client = AsyncAnthropic(
+        api_key=settings.anthropic_api_key,
+        timeout=settings.search_plan_timeout_seconds,
+        max_retries=0,
+    )
+    response = await client.messages.create(
+        model=settings.search_plan_model,
+        max_tokens=512,
+        system=PLAN_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": f"Focus: {focus}"}],
+    )
+    raw = "".join(block.text for block in response.content if getattr(block, "type", "") == "text")
+    return _clamp(extract_json(raw), fallback)
+
+
+async def plan_search(focus: str) -> SearchPlan:
+    """LLM search plan when available, otherwise (or on any failure) the rule plan."""
+    fallback = rule_plan(focus)
+    if not (settings.search_plan_enabled and settings.anthropic_api_key):
+        return fallback
+    try:
+        return await _llm_plan(focus, fallback)
+    except Exception as exc:  # timeout, API error, invalid JSON, validation: all degrade to rules
+        logger.warning("search plan LLM failed for focus=%r (%s); using rule plan", focus, type(exc).__name__)
+        return fallback

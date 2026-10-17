@@ -1,4 +1,11 @@
-from backend.search_plan import SearchPlan, rule_plan
+import json
+from types import SimpleNamespace
+
+import pytest
+
+import backend.search_plan as search_plan
+from backend.config import settings
+from backend.search_plan import SearchPlan, plan_search, rule_plan
 
 
 def test_data_centers_example_splits_place_pair_and_drops_pronoun():
@@ -92,3 +99,76 @@ def test_match_terms_dedupes_and_orders_longest_first():
     plan = SearchPlan(phrase="x", queries=["x"], must_terms=["privacy", "Data Centers"],
                       synonyms=["privacy", "data broker"])
     assert plan.match_terms == ["data centers", "data broker", "privacy"]
+
+
+class _FakeAnthropic:
+    """Stands in for AsyncAnthropic; records calls and returns a canned reply or raises."""
+    reply: str | Exception = ""
+    calls: list[dict] = []
+
+    def __init__(self, **kwargs):
+        self.init_kwargs = kwargs
+        self.messages = self
+
+    async def create(self, **kwargs):
+        _FakeAnthropic.calls.append(kwargs)
+        if isinstance(_FakeAnthropic.reply, Exception):
+            raise _FakeAnthropic.reply
+        return SimpleNamespace(content=[SimpleNamespace(type="text", text=_FakeAnthropic.reply)])
+
+
+@pytest.fixture
+def fake_llm(monkeypatch):
+    _FakeAnthropic.calls = []
+    monkeypatch.setattr(search_plan, "AsyncAnthropic", _FakeAnthropic)
+    monkeypatch.setattr(settings, "anthropic_api_key", "test-key")
+    monkeypatch.setattr(settings, "search_plan_enabled", True)
+    return _FakeAnthropic
+
+
+@pytest.mark.asyncio
+async def test_llm_plan_is_parsed_and_clamped(fake_llm):
+    fake_llm.reply = json.dumps({
+        "queries": ["q1", "q2", "q3", "q4", "q5"],
+        "must_terms": ["Data Center", "privacy"],
+        "synonyms": ["hyperscale", "data broker"],
+        "country": "us",
+        "domains": ["tech", "sports"],
+        "tickers": ["msft", "TOOLONGX"],
+    })
+    plan = await plan_search("Data centers and privacy in the US")
+    assert plan.source == "llm"
+    assert plan.queries == ["q1", "q2", "q3"]
+    assert plan.must_terms == ["data center", "privacy"]
+    assert plan.country == "US"
+    assert plan.domains == ["tech"]
+    assert plan.tickers == ["MSFT"]
+    assert plan.phrase == "data centers privacy"  # phrase always comes from the rule plan
+    assert fake_llm.calls[0]["model"] == settings.search_plan_model
+
+
+@pytest.mark.asyncio
+async def test_llm_null_country_keeps_rule_country(fake_llm):
+    fake_llm.reply = json.dumps({"queries": ["data center privacy"], "must_terms": ["privacy"],
+                                 "synonyms": [], "country": None, "domains": ["general"], "tickers": []})
+    plan = await plan_search("Data centers and privacy in the US")
+    assert plan.country == "US"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", ["not json at all", json.dumps({"queries": []}), TimeoutError("slow")])
+async def test_llm_failures_fall_back_to_rules(fake_llm, reply):
+    fake_llm.reply = reply
+    plan = await plan_search("Data centers and privacy in the US")
+    assert plan.source == "rules"
+    assert plan.queries[0] == '"data centers" privacy'
+
+
+@pytest.mark.asyncio
+async def test_no_key_or_disabled_uses_rules_without_calling_llm(fake_llm, monkeypatch):
+    monkeypatch.setattr(settings, "anthropic_api_key", None)
+    assert (await plan_search("climate")).source == "rules"
+    monkeypatch.setattr(settings, "anthropic_api_key", "test-key")
+    monkeypatch.setattr(settings, "search_plan_enabled", False)
+    assert (await plan_search("climate")).source == "rules"
+    assert fake_llm.calls == []
