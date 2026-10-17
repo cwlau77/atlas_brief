@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AmbientBackdrop } from './components/AmbientBackdrop'
 import { BriefingForm } from './components/BriefingForm'
 import { BriefingView } from './components/BriefingView'
 import { GlobeHero } from './components/GlobeHero'
@@ -143,7 +142,6 @@ export default function App() {
       {page === 'briefing' && (
         <>
           <section className={`hero ${docked ? 'hero-docked' : 'hero-standby'}`}>
-            <AmbientBackdrop ring={!docked} />
             {/* No AnimatePresence here: exit-waiting deadlocks when the leaving
                 subtree contains the lazy/Suspense globe. Keyed remounts give a
                 clean animated entrance instead. */}

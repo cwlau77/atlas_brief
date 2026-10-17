@@ -1,61 +1,68 @@
-/* ============================================================
-   Atlas Brief — design tokens
-   "Midnight Signal": near-black layered surfaces, one chartreuse
-   voice, serif display moments. Dark-only (print stays light).
-   ============================================================ */
+/* Atlas Brief design tokens: "Oat". Light only. */
 :root {
-  /* Surfaces — never pure #000 */
-  --bg-0: #060709;   /* page */
-  --bg-1: #0b0d10;   /* elevated panels */
-  --bg-2: #14171c;   /* hover / inset */
-  --surface: rgba(255, 255, 255, 0.04);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hi: rgba(255, 255, 255, 0.16);
+  color-scheme: light;
 
-  /* Text */
-  --text-hi: #f2f4f6;
-  --text-mid: #9ba3ad;
-  /* ~5:1 on --bg-0 — micro-labels are small text and must clear WCAG AA */
-  --text-low: #77828e;
+  --oat: #EEE8DC;
+  --oat-deep: #E4DCCB;
+  --paper: #F8F4EB;
+  --ink: #1C231F;
+  --ink-2: #48524B;
+  --ink-3: #646A60;
+  --rule: #D6CDBA;
+  --rule-soft: #E2DACA;
+  --moss: #3D5A45;
+  --sage: #9AAA92;
+  --sand: #C7B89C;
+  --terra: #B5532E;
+  --terra-ink: #93421F;
+  --terra-wash: rgba(181, 83, 46, 0.10);
+  --ochre: #9C7026;
 
-  /* The signal — one vibrant voice in the room */
-  --signal: #c6f135;
-  --signal-dim: #a8cf2b;
-  --signal-glow: rgba(198, 241, 53, 0.16);
-  --signal-ink: #101403; /* text on signal fills */
+  --font-sans: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --serif-vars: 'SOFT' 100, 'opsz' 120;
 
-  /* Ambient haze — blobs and gradients only, never UI text */
-  --haze: #8b7cf6;
-  --haze-glow: rgba(139, 124, 246, 0.12);
-
-  /* Severity — priority alerts (backend: critical | high | elevated) */
-  --alert-critical: #ff6b57;
-  --alert-high: #ffb454;
-  --alert-elevated: #5cc8ff;
-
-  /* Grid & pattern lines */
-  --grid-line: rgba(255, 255, 255, 0.05);
-  --grid-line-hi: rgba(198, 241, 53, 0.07);
-
-  /* Glass — floating over the globe field */
-  --glass-bg: rgba(11, 13, 16, 0.66);
-  --glass-border: rgba(255, 255, 255, 0.10);
-
-  /* Type */
-  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
-  --font-body: 'Geist', -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
-
-  /* Shape & depth */
-  --radius: 16px;
+  --radius: 14px;
   --radius-sm: 10px;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.5), 0 32px 64px rgba(0, 0, 0, 0.35);
-  --glow-signal: 0 0 24px var(--signal-glow);
+  --shadow-lift: 0 20px 40px -30px rgba(60, 50, 30, 0.45);
 
-  /* Motion */
-  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-quick: 150ms;
   --dur-mid: 300ms;
+  --dur-enter: 900ms;
+
+  --gutter: clamp(16px, 4vw, 56px);
+  --maxw: 1240px;
+
+  /* Legacy aliases so not-yet-migrated components stay readable. Task 14 deletes this block. */
+  --bg-0: var(--oat);
+  --bg-1: var(--paper);
+  --bg-2: var(--oat-deep);
+  --surface: rgba(28, 35, 31, 0.03);
+  --border: var(--rule-soft);
+  --border-hi: var(--rule);
+  --text-hi: var(--ink);
+  --text-mid: var(--ink-2);
+  --text-low: var(--ink-3);
+  --signal: var(--terra);
+  --signal-dim: var(--terra-ink);
+  --signal-glow: var(--terra-wash);
+  --signal-ink: #FBF6EE;
+  --haze: var(--sage);
+  --haze-glow: rgba(154, 170, 146, 0.15);
+  --alert-critical: var(--terra);
+  --alert-high: var(--ochre);
+  --alert-elevated: var(--moss);
+  --grid-line: transparent;
+  --grid-line-hi: transparent;
+  --glass-bg: var(--paper);
+  --glass-border: var(--rule);
+  --font-display: var(--font-sans);
+  --font-body: var(--font-sans);
+  --shadow-card: none;
+  --shadow-float: var(--shadow-lift);
+  --glow-signal: none;
+  --ease-expo: var(--ease-out);
   --dur-reveal: 500ms;
 }

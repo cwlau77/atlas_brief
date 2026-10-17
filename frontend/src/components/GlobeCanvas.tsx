@@ -21,11 +21,9 @@ export interface DevelopmentAnchor {
   anchorId: string
 }
 
-// Midnight Signal duotone: dim white landmass dots on near-black, chartreuse
-// hotspots. The globe holds exactly two colors.
-const LAND_COLOR = 'rgba(255, 255, 255, 0.35)'
-const SEA_COLOR = '#0a0c10'
-const ATMOSPHERE = '#c6f135'
+const LAND_COLOR = 'rgba(61, 90, 69, 0.6)'
+const SEA_COLOR = '#E4DCCB'
+const ATMOSPHERE = '#B5532E'
 
 type CountriesTopology = Topology<{ countries: GeometryCollection<{ name: string }> }>
 const topo = countriesTopo as unknown as CountriesTopology
