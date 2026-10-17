@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     anthropic_api_key: Optional[str] = None
     newsapi_key: Optional[str] = None
     huggingface_api_key: Optional[str] = None
+    guardian_api_key: Optional[str] = None
+    gnews_api_key: Optional[str] = None
+    newsdata_api_key: Optional[str] = None
 
     max_articles_per_source: int = 15
     # GDELT allows ~1 request per 5s per IP; all outbound GDELT calls from this
