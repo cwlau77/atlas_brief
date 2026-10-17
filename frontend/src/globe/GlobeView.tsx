@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { setGlobeReadout } from '../components/cursorBus'
 import { formatTime } from '../lib/time'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { attachDrag } from './controls'
@@ -90,7 +91,8 @@ export default function GlobeView({
     wrap.addEventListener('pointermove', onMove, { passive: true })
     wrap.addEventListener('pointerleave', onLeave)
 
-    engine.onFrame = ({ hotspots }) => {
+    engine.onFrame = ({ hotspots, readout }) => {
+      setGlobeReadout(readout)
       hotspots.forEach((h, i) => {
         const el = hotRefs.current[i]
         if (!el) return
@@ -112,6 +114,7 @@ export default function GlobeView({
     setEngineVersion((v) => v + 1)
 
     return () => {
+      setGlobeReadout(null)
       ro.disconnect()
       io.disconnect()
       detach()

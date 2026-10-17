@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Route, Routes } from 'react-router'
+import { CursorLens } from './components/CursorLens'
 import { NavBar } from './components/NavBar'
 import { ToastHost } from './components/Toast'
 import { warmBackend } from './lib/api'
@@ -42,6 +43,7 @@ function Shell() {
         </div>
       </footer>
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
+      <CursorLens />
     </div>
   )
 }
