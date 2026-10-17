@@ -22,11 +22,14 @@ def normalize_url(url: str) -> str:
         return raw
     if not parts.scheme or not parts.netloc:
         return raw
-    host = (parts.hostname or "").lower()
-    if host.startswith("www."):
-        host = host[4:]
-    if parts.port:
-        host = f"{host}:{parts.port}"
+    try:
+        host = (parts.hostname or "").lower()
+        if host.startswith("www."):
+            host = host[4:]
+        if parts.port:
+            host = f"{host}:{parts.port}"
+    except ValueError:
+        return raw
     query = [
         (k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
         if not (k.lower().startswith("utm_") or k.lower() in _TRACKING_KEYS)

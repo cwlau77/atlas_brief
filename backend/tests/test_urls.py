@@ -9,6 +9,10 @@ def test_normalize_url_strips_tracking_and_www():
     assert normalize_url("not a url") == "not a url"
 
 
+def test_normalize_url_tolerates_malformed_port():
+    assert normalize_url("http://example.com:abc/x") == "http://example.com:abc/x"
+
+
 def test_normalize_title():
     assert normalize_title("Data Centers: Privacy fight!") == "data centers privacy fight"
 
