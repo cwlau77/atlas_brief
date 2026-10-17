@@ -3,7 +3,7 @@ import asyncio
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, lookback_start, parse_datetime
+from backend.ingestion.common import clean_text, get_json, lookback_start, parse_datetime, sub_request_timeout
 from backend.ingestion.query_format import and_query
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -29,7 +29,10 @@ async def _search(client: httpx.AsyncClient, query: str) -> list[Article]:
         "show-fields": "trailText",
         "from-date": lookback_start().date().isoformat(),
     }
-    payload = await get_json(client, GUARDIAN_SEARCH, source=SOURCE_NAME, params=params)
+    # Per-request timeout, not the client default: 2 queries share one
+    # per-source budget (asyncio.wait_for in the registry), so one slow
+    # query must fail on its own with margin to spare.
+    payload = await get_json(client, GUARDIAN_SEARCH, source=SOURCE_NAME, params=params, timeout=sub_request_timeout())
     response = payload.get("response") if isinstance(payload, dict) else None
     results = response.get("results") if isinstance(response, dict) else None
     articles: list[Article] = []

@@ -80,6 +80,15 @@ def matches_plan(text: str, plan: SearchPlan) -> bool:
     return keyword_hit(text, plan.match_terms)
 
 
+def sub_request_timeout() -> httpx.Timeout:
+    """Per-request timeout for sources that issue several requests inside one
+    source budget (asyncio.wait_for(source_timeout_seconds) in the registry).
+    Leaves 2s of margin so one slow/hung request fails on its own, caught and
+    skipped, instead of consuming the whole budget and wiping every request's
+    results, including ones that already came back."""
+    return httpx.Timeout(max(1.0, settings.source_timeout_seconds - 2))
+
+
 def _decode(resp: httpx.Response, source: str) -> Any | None:
     if resp.status_code == 429:
         logger.warning("source=%s status=rate_limited", source)
@@ -95,9 +104,13 @@ def _decode(resp: httpx.Response, source: str) -> Any | None:
 
 
 async def get_json(client: httpx.AsyncClient, url: str, *, source: str,
-                   params: dict | None = None, headers: dict | None = None) -> Any | None:
+                   params: dict | None = None, headers: dict | None = None,
+                   timeout: httpx.Timeout | float | None = None) -> Any | None:
+    kwargs: dict[str, Any] = {"params": params, "headers": headers}
+    if timeout is not None:
+        kwargs["timeout"] = timeout
     try:
-        resp = await client.get(url, params=params, headers=headers)
+        resp = await client.get(url, **kwargs)
     except httpx.HTTPError as exc:
         logger.warning("source=%s status=network_error detail=%s", source, type(exc).__name__)
         return None
@@ -105,9 +118,13 @@ async def get_json(client: httpx.AsyncClient, url: str, *, source: str,
 
 
 async def post_json(client: httpx.AsyncClient, url: str, *, source: str,
-                    json_body: dict, headers: dict | None = None) -> Any | None:
+                    json_body: dict, headers: dict | None = None,
+                    timeout: httpx.Timeout | float | None = None) -> Any | None:
+    kwargs: dict[str, Any] = {"json": json_body, "headers": headers}
+    if timeout is not None:
+        kwargs["timeout"] = timeout
     try:
-        resp = await client.post(url, json=json_body, headers=headers)
+        resp = await client.post(url, **kwargs)
     except httpx.HTTPError as exc:
         logger.warning("source=%s status=network_error detail=%s", source, type(exc).__name__)
         return None

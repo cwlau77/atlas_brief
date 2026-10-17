@@ -10,7 +10,7 @@ import feedparser
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text
+from backend.ingestion.common import clean_text, sub_request_timeout
 from backend.ingestion.quota import quota
 from backend.models import Article
 from backend.search_plan import SearchPlan
@@ -60,7 +60,10 @@ def _parse(text: str) -> list[Article]:
 async def _search(client: httpx.AsyncClient, query: str, cc: str) -> str:
     params = {"q": f"{query} when:7d", "hl": f"en-{cc}", "gl": cc, "ceid": f"{cc}:en"}
     try:
-        resp = await client.get(GOOGLE_NEWS_SEARCH, params=params)
+        # Per-request timeout, not the client default: several queries share
+        # one per-source budget (asyncio.wait_for in the registry), so one
+        # slow query must fail on its own with margin to spare.
+        resp = await client.get(GOOGLE_NEWS_SEARCH, params=params, timeout=sub_request_timeout())
     except httpx.HTTPError as exc:
         logger.warning("source=google_news status=network_error detail=%s", type(exc).__name__)
         return ""

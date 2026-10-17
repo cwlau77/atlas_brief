@@ -8,6 +8,7 @@ import httpx
 
 from backend.config import settings
 from backend.focus_terms import keyword_hit
+from backend.ingestion.common import sub_request_timeout
 from backend.models import Article
 from backend.search_plan import SearchPlan
 
@@ -114,7 +115,11 @@ def _parse_feed(outlet: str, content: str, keywords: list[str]) -> list[Article]
 
 async def _fetch_feed_text(client: httpx.AsyncClient, outlet: str, url: str) -> str:
     try:
-        resp = await client.get(url)
+        # A per-request timeout shorter than the per-source budget: ~27 feeds
+        # share one asyncio.wait_for(source_timeout_seconds) in the registry,
+        # so one hung feed must fail on its own with margin to spare rather
+        # than consuming the whole budget and wiping every feed's results.
+        resp = await client.get(url, timeout=sub_request_timeout())
         resp.raise_for_status()
         return resp.text
     except Exception as exc:
