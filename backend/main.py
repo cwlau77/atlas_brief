@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend.ingestion import IngestResult, ingest
 from backend.models import Briefing, BriefingRequest
-from backend.processing import deduplicate, embed_texts, filter_by_relevance
+from backend.processing import deduplicate, embed_texts
+from backend.processing.rerank import rank_articles
 from backend.processing.urls import dedupe_exact
 from backend.rate_limit import SlidingWindowLimiter
 from backend.search_plan import SearchPlan, plan_search
@@ -89,6 +90,7 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
             return cached[0]
 
     # Layer 2: plan + ingest (parallel fan-out across all enabled sources)
+    ingest_started = time.monotonic()
     plan = await plan_search(focus)
     ingest_result = await _ingest_all(plan)
     articles = ingest_result.articles
@@ -113,7 +115,17 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     embeddings = await embed_texts(texts)
 
     articles, embeddings = deduplicate(articles, embeddings)
-    articles, embeddings = await filter_by_relevance(focus, articles, embeddings)
+    rank_result = await rank_articles(focus, plan, articles, embeddings)
+    deduped_count = len(articles)
+    articles = rank_result.articles
+    logger.info(
+        "briefing pipeline focus=%r plan=%s queries=%s country=%s domains=%s sources=%s "
+        "merged=%d deduped=%d candidates=%d kept=%d reranked=%s elapsed_ms=%d",
+        focus, plan.source, plan.queries, plan.country, plan.domains,
+        {name: f"{s.count}/{s.status}/{s.ms}ms" for name, s in ingest_result.stats.items()},
+        merged_count, deduped_count, rank_result.candidates, len(articles), rank_result.reranked,
+        int((time.monotonic() - ingest_started) * 1000),
+    )
 
     logger.info("post-processing article count: %d", len(articles))
     if not articles:
