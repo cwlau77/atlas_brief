@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     guardian_api_key: Optional[str] = None
     gnews_api_key: Optional[str] = None
     newsdata_api_key: Optional[str] = None
+    brave_api_key: Optional[str] = None
+    tavily_api_key: Optional[str] = None
+    exa_api_key: Optional[str] = None
 
     max_articles_per_source: int = 15
     # GDELT allows ~1 request per 5s per IP; all outbound GDELT calls from this
