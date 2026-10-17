@@ -13,7 +13,7 @@ from typing import Awaitable, Callable
 import httpx
 
 from backend.config import settings
-from backend.ingestion import brave_source, exa_source, gdelt_source, gnews_source, google_news_source, guardian_source, newsapi_source, newsdata_source, rss_source, tavily_source
+from backend.ingestion import alphavantage_source, brave_source, exa_source, finnhub_source, gdelt_source, gnews_source, google_news_source, guardian_source, marketaux_source, newsapi_source, newsdata_source, rss_source, tavily_source
 from backend.ingestion.common import USER_AGENT
 from backend.models import Article
 from backend.search_plan import SearchPlan
@@ -52,7 +52,7 @@ def source_from_module(module: ModuleType) -> Source:
     )
 
 
-SOURCES: list[Source] = [source_from_module(m) for m in (newsapi_source, gdelt_source, rss_source, google_news_source, guardian_source, gnews_source, newsdata_source, brave_source, tavily_source, exa_source)]
+SOURCES: list[Source] = [source_from_module(m) for m in (newsapi_source, gdelt_source, rss_source, google_news_source, guardian_source, gnews_source, newsdata_source, brave_source, tavily_source, exa_source, finnhub_source, marketaux_source, alphavantage_source)]
 
 
 async def _run(source: Source, plan: SearchPlan, client: httpx.AsyncClient) -> tuple[list[Article], SourceStat]:

@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     brave_api_key: Optional[str] = None
     tavily_api_key: Optional[str] = None
     exa_api_key: Optional[str] = None
+    finnhub_api_key: Optional[str] = None
+    marketaux_api_key: Optional[str] = None
+    alphavantage_api_key: Optional[str] = None
 
     max_articles_per_source: int = 15
     # GDELT allows ~1 request per 5s per IP; all outbound GDELT calls from this
