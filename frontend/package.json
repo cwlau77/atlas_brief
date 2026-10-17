@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "build:land": "node scripts/build-land-points.mjs",
     "dev:live": "VITE_API_TARGET=https://guaihack-global-brief-gen-1-491x.onrender.com vite"
   },
   "dependencies": {
