@@ -13,6 +13,33 @@ services:
         sync: false
       - key: NEWSAPI_KEY
         sync: false
+      # Optional news sources; each is skipped when its key is unset.
+      - key: GUARDIAN_API_KEY
+        sync: false
+      - key: GNEWS_API_KEY
+        sync: false
+      - key: NEWSDATA_API_KEY
+        sync: false
+      - key: BRAVE_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: MARKETAUX_API_KEY
+        sync: false
+      - key: ALPHAVANTAGE_API_KEY
+        sync: false
+      - key: SOURCE_TIMEOUT_SECONDS
+        value: "8"
+      - key: INGEST_DEADLINE_SECONDS
+        value: "15"
+      - key: SEARCH_PLAN_ENABLED
+        value: "true"
+      - key: RERANK_ENABLED
+        value: "true"
       # Comma-separated browser origins allowed by CORS. The Vercel rewrite
       # proxy makes production traffic same-origin, so this is a backup layer.
       # Set to the real Vercel URL after the first deploy.

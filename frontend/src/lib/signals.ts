@@ -5,6 +5,16 @@ export const SOURCE_LABELS: Record<string, string> = {
   newsapi: 'NewsAPI',
   gdelt: 'GDELT',
   rss: 'Wire feeds',
+  google_news: 'Google News',
+  guardian: 'The Guardian',
+  gnews: 'GNews',
+  newsdata: 'NewsData',
+  brave: 'Brave News',
+  tavily: 'Tavily',
+  exa: 'Exa',
+  finnhub: 'Finnhub',
+  marketaux: 'Marketaux',
+  alphavantage: 'Alpha Vantage',
 }
 
 export interface Share {

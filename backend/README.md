@@ -3,18 +3,17 @@
 FastAPI service that turns a single focus phrase (e.g. `"South Asian security"`) into a structured
 daily intelligence briefing synthesized from NewsAPI, GDELT, and curated RSS feeds.
 
-## Architecture (5 layers)
+## Architecture (6 layers)
 
 1. **Input** — `POST /briefing` with `{"focus": "..."}`.
-2. **Ingestion** — `ingestion/` fans out to NewsAPI, GDELT DOC 2.0, and RSS (BBC World, Al Jazeera, Reuters) in parallel.
-3. **Processing** — `processing/` embeds article text via HuggingFace Inference API
-   (`sentence-transformers/all-MiniLM-L6-v2`), deduplicates via cosine similarity, and filters by
-   keyword + semantic relevance to the focus phrase.
-4. **Synthesis** — `synthesis/briefing.py` calls Claude Sonnet 4.6 once with all filtered articles and
+2. **Plan** — `search_plan.py` turns the focus into a `SearchPlan` (queries, must-terms, synonyms, coverage country, domains, tickers) with Claude Haiku, falling back to deterministic rules.
+3. **Ingestion** — `ingestion/registry.py` runs every enabled source in parallel (8 s per source, 15 s overall), each guarded by a daily quota: NewsAPI, GDELT, curated RSS (world, US, tech and finance desks), Google News RSS search, The Guardian, GNews, NewsData.io, Brave News, Tavily, Exa, and — for finance topics only — Finnhub, Marketaux and Alpha Vantage.
+4. **Processing** — exact URL/title dedupe (`processing/urls.py`), embedding dedupe, a candidate pre-filter, and a Claude Haiku relevance rerank (`processing/rerank.py`) with the keyword + TF-IDF filter as fallback.
+5. **Synthesis** — `synthesis/briefing.py` calls Claude Sonnet 4.6 once with all filtered articles and
    returns structured JSON: key developments, emerging tensions, cross-source contradictions,
    priority alerts, and recommended readings. `synthesis/context.py` then fans out per key
    development to Claude Haiku 4.5 for short historical-context paragraphs.
-5. **Output** — a `Briefing` object (see `models.py`) returned as JSON to the frontend.
+6. **Output** — a `Briefing` object (see `models.py`) returned as JSON to the frontend.
 
 ## Setup
 
@@ -25,17 +24,31 @@ pip install -r requirements.txt
 cp .env.example .env   # then fill in real keys
 ```
 
-Required keys in `.env`:
+Keys in `.env` (all optional except Anthropic for real synthesis):
 
-- `ANTHROPIC_API_KEY` — Claude API
-- `NEWSAPI_KEY` — https://newsapi.org
-- `HUGGINGFACE_API_KEY` — https://huggingface.co/settings/tokens
+| Variable | Where to get it | Free tier |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | console.anthropic.com | paid usage |
+| `NEWSAPI_KEY` | newsapi.org | 100/day, 24 h delay, development plan |
+| `GUARDIAN_API_KEY` | open-platform.theguardian.com | 5,000/day |
+| `GNEWS_API_KEY` | gnews.io | 100/day, 12 h delay, non-commercial |
+| `NEWSDATA_API_KEY` | newsdata.io | 200 credits/day |
+| `BRAVE_API_KEY` | brave.com/search/api | ~$5 monthly credit (card required) |
+| `TAVILY_API_KEY` | tavily.com | 1,000 credits/month |
+| `EXA_API_KEY` | exa.ai | $10 monthly credit |
+| `FINNHUB_API_KEY` | finnhub.io | 60 calls/min |
+| `MARKETAUX_API_KEY` | marketaux.com | 100/day |
+| `ALPHAVANTAGE_API_KEY` | alphavantage.co | 25/day |
+
+GDELT, the RSS feeds and Google News RSS search need no key. Daily request budgets per source are configurable with `QUOTA_<SOURCE>_PER_DAY` (see `config.py`).
 
 ## Run
 
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000
 ```
+
+Run from the repo root (matching `render.yaml`).
 
 Then:
 

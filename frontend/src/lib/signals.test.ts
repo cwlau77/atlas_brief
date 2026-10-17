@@ -22,6 +22,17 @@ describe('shares', () => {
   })
 })
 
+describe('SOURCE_LABELS', () => {
+  it('labels every backend source type', () => {
+    for (const key of ['newsapi', 'gdelt', 'rss', 'google_news', 'guardian', 'gnews', 'newsdata',
+      'brave', 'tavily', 'exa', 'finnhub', 'marketaux', 'alphavantage']) {
+      expect(SOURCE_LABELS[key]).toBeTruthy()
+    }
+    expect(SOURCE_LABELS.google_news).toBe('Google News')
+    expect(SOURCE_LABELS.alphavantage).toBe('Alpha Vantage')
+  })
+})
+
 describe('topEntries', () => {
   it('returns the n largest positive entries', () => {
     expect(topEntries({ a: 1, b: 5, c: 0, d: 3 }, 2)).toEqual([['b', 5], ['d', 3]])
