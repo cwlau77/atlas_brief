@@ -87,6 +87,23 @@ async def test_alphavantage_limit_messages_are_empty(keys, body):
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_marketaux_and_alphavantage_skip_malformed_entries(keys):
+    """Malformed entries (non-dict) should be skipped without raising."""
+    mx_malformed = {"data": [None, "x", {"title": "Valid", "description": "Item.", "url": "https://mx.com/v",
+                                          "published_at": "2026-10-16T13:00:00.000000Z", "source": "mx.com"}]}
+    av_malformed = {"feed": [None, {"title": "Inflation cools in September", "url": "https://av.example.com/1",
+                                    "time_published": "20261016T143000", "summary": "CPI eases.", "source": "Benzinga"}]}
+    respx.get(marketaux_source.MARKETAUX_NEWS).mock(return_value=httpx.Response(200, json=mx_malformed))
+    respx.get(alphavantage_source.ALPHAVANTAGE_QUERY).mock(return_value=httpx.Response(200, json=av_malformed))
+    async with httpx.AsyncClient() as client:
+        mx_articles = await marketaux_source.fetch(FIN, client)
+        av_articles = await alphavantage_source.fetch(TOPIC_ONLY, client)
+    assert len(mx_articles) == 1 and mx_articles[0].title == "Valid"
+    assert len(av_articles) == 1 and av_articles[0].title == "Inflation cools in September"
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_finance_sources_not_called_for_general_topics(keys):
     routes = [respx.get(url).mock(return_value=httpx.Response(200, json={}))
               for url in (finnhub_source.FINNHUB_MARKET_NEWS, marketaux_source.MARKETAUX_NEWS,

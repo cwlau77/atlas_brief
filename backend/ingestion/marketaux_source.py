@@ -36,6 +36,8 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     items = payload.get("data") if isinstance(payload, dict) else None
     articles: list[Article] = []
     for item in items or []:
+        if not isinstance(item, dict):
+            continue
         title, url = clean_text(item.get("title")), item.get("url") or ""
         if not title or not url:
             continue
