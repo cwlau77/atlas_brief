@@ -195,6 +195,23 @@ def _str_list(value: object, limit: int, *, lower: bool = False) -> list[str]:
     return out
 
 
+def _plural_variants(must_terms: list[str]) -> list[str]:
+    """Plural/singular counterpart of each must-term's last word, so a plan with
+    must-term "data center" still matches text saying "data centers" --
+    keyword_hit is whole-word, not stemmed. Skip short last words (<= 3
+    chars): pluralizing jargon like "ai", "eu", "ipo" produces noise, not
+    a useful variant."""
+    variants: list[str] = []
+    for term in must_terms:
+        last = term.rpartition(" ")[2]
+        if len(last) <= 3:
+            continue
+        variant = _plural_variant(term)
+        if variant != term:
+            variants.append(variant)
+    return variants
+
+
 def _clamp(data: dict, fallback: SearchPlan) -> SearchPlan:
     queries = _str_list(data.get("queries"), 3)
     if not queries:
@@ -203,11 +220,14 @@ def _clamp(data: dict, fallback: SearchPlan) -> SearchPlan:
     country = raw_country.strip().upper() if isinstance(raw_country, str) and _COUNTRY_OK.match(raw_country.strip()) else None
     domains = [d for d in _str_list(data.get("domains"), 4, lower=True) if d in _DOMAINS] or ["general"]
     llm_tickers = [t.upper() for t in _str_list(data.get("tickers"), 5) if _TICKER_OK.match(t.upper())]
+    must_terms = _str_list(data.get("must_terms"), 4, lower=True) or fallback.must_terms
+    synonyms = _str_list(data.get("synonyms"), 8, lower=True)
+    synonyms = list(dict.fromkeys([*synonyms, *_plural_variants(must_terms)]))[:8]
     return SearchPlan(
         phrase=fallback.phrase,
         queries=queries,
-        must_terms=_str_list(data.get("must_terms"), 4, lower=True) or fallback.must_terms,
-        synonyms=_str_list(data.get("synonyms"), 8, lower=True),
+        must_terms=must_terms,
+        synonyms=synonyms,
         country=country or fallback.country,
         domains=domains,
         tickers=list(dict.fromkeys([*fallback.tickers, *llm_tickers]))[:5],

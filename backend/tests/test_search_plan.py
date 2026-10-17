@@ -5,6 +5,7 @@ import pytest
 
 import backend.search_plan as search_plan
 from backend.config import settings
+from backend.ingestion.common import matches_plan
 from backend.search_plan import SearchPlan, plan_search, rule_plan
 
 
@@ -189,6 +190,35 @@ async def test_llm_failures_fall_back_to_rules(fake_llm, reply):
     plan = await plan_search("Data centers and privacy in the US")
     assert plan.source == "rules"
     assert plan.queries[0] == '"data centers" privacy'
+
+
+@pytest.mark.asyncio
+async def test_llm_must_terms_get_plural_variants_for_matching(fake_llm):
+    fake_llm.reply = json.dumps({
+        "queries": ["data center privacy"],
+        "must_terms": ["data center"],
+        "synonyms": [],
+        "country": None,
+        "domains": ["general"],
+        "tickers": [],
+    })
+    plan = await plan_search("data center privacy")
+    assert "data centers" in plan.synonyms
+    assert matches_plan("New data centers draw privacy scrutiny", plan)
+
+
+@pytest.mark.asyncio
+async def test_llm_must_term_short_last_token_gets_no_plural_variant(fake_llm):
+    fake_llm.reply = json.dumps({
+        "queries": ["ai policy"],
+        "must_terms": ["ai"],
+        "synonyms": [],
+        "country": None,
+        "domains": ["tech"],
+        "tickers": [],
+    })
+    plan = await plan_search("ai policy")
+    assert "ais" not in plan.synonyms
 
 
 @pytest.mark.asyncio
