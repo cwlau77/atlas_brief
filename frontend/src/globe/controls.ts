@@ -38,15 +38,23 @@ export function attachDrag(el: HTMLElement, engine: Pick<GlobeEngine, 'rotateBy'
     const clampFling = (v: number) => Math.max(-MAX_FLING, Math.min(MAX_FLING, v))
     engine.release(stale ? 0 : clampFling(vx), stale ? 0 : clampFling(vy))
   }
+  const cancel = (e: PointerEvent) => {
+    if (!dragging || e.pointerId !== pointerId) return
+    dragging = false
+    try { el.releasePointerCapture(pointerId) } catch { /* already released */ }
+    el.classList.remove('dragging')
+    // The browser took over the gesture (e.g. a touch pan) — stop, don't fling.
+    engine.release(0, 0)
+  }
 
   el.addEventListener('pointerdown', down)
   el.addEventListener('pointermove', move)
   el.addEventListener('pointerup', up)
-  el.addEventListener('pointercancel', up)
+  el.addEventListener('pointercancel', cancel)
   return () => {
     el.removeEventListener('pointerdown', down)
     el.removeEventListener('pointermove', move)
     el.removeEventListener('pointerup', up)
-    el.removeEventListener('pointercancel', up)
+    el.removeEventListener('pointercancel', cancel)
   }
 }

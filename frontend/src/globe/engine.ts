@@ -214,9 +214,17 @@ export class GlobeEngine {
     this.hotGeo.setAttribute('aSeed', new THREE.Float32BufferAttribute(list.map((_, i) => i * 1.7), 1))
   }
 
-  /** Ease the view so (lat, lng) faces the camera. */
+  /** Ease the view so (lat, lng) faces the camera; snaps instantly under reduced motion. */
   focusOn(lat: number, lng: number): void {
-    this.target = { yaw: -lng * DEG, pitch: clamp(lat * DEG, -PITCH_LIMIT, PITCH_LIMIT) }
+    const yaw = -lng * DEG
+    const pitch = clamp(lat * DEG, -PITCH_LIMIT, PITCH_LIMIT)
+    if (this.opts.reducedMotion) {
+      this.target = null
+      this.yaw = yaw
+      this.pitch = pitch
+    } else {
+      this.target = { yaw, pitch }
+    }
     this.lastInteraction = performance.now()
   }
 
@@ -231,8 +239,8 @@ export class GlobeEngine {
   }
 
   release(vYaw: number, vPitch: number): void {
-    this.vyaw = vYaw
-    this.vpitch = vPitch
+    this.vyaw = this.opts.reducedMotion ? 0 : vYaw
+    this.vpitch = this.opts.reducedMotion ? 0 : vPitch
     this.lastInteraction = performance.now()
   }
 
@@ -279,7 +287,7 @@ export class GlobeEngine {
     if (!this.running || document.hidden) return
 
     const u = this.uniforms
-    u.uTime.value += dt
+    if (!this.opts.reducedMotion) u.uTime.value += dt
     if (!this.introDone) {
       const p = Math.min(1, (now - this.introStart) / INTRO_MS)
       u.uIntro.value = p

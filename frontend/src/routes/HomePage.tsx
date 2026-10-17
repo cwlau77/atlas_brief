@@ -40,6 +40,7 @@ export function HomePage() {
       window.clearTimeout(t)
       window.removeEventListener('pointerdown', end)
       window.removeEventListener('keydown', end)
+      markIntroPlayed()
     }
   }, [intro])
 
