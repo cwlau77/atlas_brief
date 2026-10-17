@@ -21,7 +21,9 @@ def enabled() -> bool:
 async def _search(client: httpx.AsyncClient, query: str) -> list[Article]:
     params = {
         "q": and_query(query),
-        "api-key": settings.guardian_api_key,  # the Content API only accepts the key as a parameter
+        # The Content API only accepts the key as a query parameter; main.py
+        # silences httpx's INFO request logging so this never leaks the key.
+        "api-key": settings.guardian_api_key,
         "order-by": "newest",
         "page-size": settings.max_articles_per_source,
         "show-fields": "trailText",

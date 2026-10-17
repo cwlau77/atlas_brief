@@ -22,6 +22,12 @@ from backend.synthesis import (
 
 logger = logging.getLogger("briefing")
 logging.basicConfig(level=logging.INFO)
+# httpx/httpcore log "HTTP Request: GET <full URL>" at INFO, and several sources
+# (guardian, gnews, newsdata, alphavantage, marketaux) must send their API key as
+# a query parameter because those APIs don't accept it any other way. Keep those
+# loggers at WARNING so request URLs (and the keys in them) never hit INFO logs.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 app = FastAPI(title="Atlas Brief API", version="0.2.0")
 

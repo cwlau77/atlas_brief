@@ -1,3 +1,5 @@
+import logging
+
 import httpx
 import pytest
 import respx
@@ -93,3 +95,16 @@ async def test_http_errors_and_missing_keys(module, url_attr, keys, monkeypatch)
 
 def test_registered():
     assert {"guardian", "gnews", "newsdata"} <= {s.name for s in SOURCES}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_api_key_not_logged_by_httpx_at_info_level(monkeypatch, caplog):
+    import backend.main  # noqa: F401 -- applies the httpx/httpcore logger silencing
+
+    monkeypatch.setattr(settings, "gnews_api_key", "SECRET123")
+    respx.get(gnews_source.GNEWS_SEARCH).mock(return_value=httpx.Response(200, json=GNEWS))
+    caplog.set_level(logging.INFO)
+    async with httpx.AsyncClient() as client:
+        await gnews_source.fetch(PLAN, client)
+    assert "SECRET123" not in caplog.text

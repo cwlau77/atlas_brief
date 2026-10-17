@@ -24,6 +24,8 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     """NEWS_SENTIMENT by tickers, or by mapped topics (then keyword-filtered). 25 requests/day free."""
     if not enabled() or not quota.take(SOURCE_NAME):
         return []
+    # Alpha Vantage only accepts the key as a query parameter; main.py silences
+    # httpx's INFO request logging so this never leaks the key.
     params = {"function": "NEWS_SENTIMENT", "sort": "LATEST", "limit": 50, "apikey": settings.alphavantage_api_key}
     if plan.tickers:
         params["tickers"] = ",".join(plan.tickers)

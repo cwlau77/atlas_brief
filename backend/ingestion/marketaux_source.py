@@ -21,6 +21,8 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     if not enabled() or not quota.take(SOURCE_NAME):
         return []
     params = {
+        # Marketaux only accepts the key as a query parameter; main.py silences
+        # httpx's INFO request logging so this never leaks the key.
         "api_token": settings.marketaux_api_key,
         "language": "en",
         "limit": 3,

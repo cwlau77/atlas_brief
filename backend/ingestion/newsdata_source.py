@@ -25,6 +25,8 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     """NewsData.io free tier: 200 credits/day, 10 articles per credit."""
     if not enabled() or not quota.take(SOURCE_NAME):
         return []
+    # NewsData only accepts the key as a query parameter; main.py silences
+    # httpx's INFO request logging so this never leaks the key.
     params = {"apikey": settings.newsdata_api_key, "q": best_query(plan)[:_MAX_QUERY_CHARS], "language": "en"}
     if plan.country:
         params["country"] = plan.country.lower()

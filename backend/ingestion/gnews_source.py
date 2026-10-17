@@ -26,6 +26,8 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
         "max": 10,
         "sortby": "publishedAt",
         "from": lookback_start().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        # GNews only accepts the key as a query parameter; main.py silences
+        # httpx's INFO request logging so this never leaks the key.
         "apikey": settings.gnews_api_key,
     }
     if plan.country:
