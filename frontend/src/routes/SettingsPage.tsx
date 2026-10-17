@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { useAppState } from '../state/hooks'
 import type { UserProfile, UserSettings } from '../state/settings'
+import { TimeZonePicker } from '../components/TimeZonePicker'
 import '../components/profile.css'
 
 type ToggleKey = Exclude<keyof UserSettings, 'timeZone'>
@@ -53,6 +54,11 @@ export function SettingsPage() {
         </div>
         <button type="button" className="btn btn-primary" onClick={persist} data-cursor="link">{savedFlash ? 'Saved' : 'Save profile'}</button>
         <p className="profile-note label">Stored only in this browser.</p>
+      </section>
+
+      <section className="settings-card" aria-labelledby="time-h">
+        <h2 id="time-h" className="label">Time</h2>
+        <TimeZonePicker value={settings.timeZone} onChange={(tz) => updateSettings({ timeZone: tz })} />
       </section>
 
       <section className="settings-card" aria-labelledby="prefs-h">

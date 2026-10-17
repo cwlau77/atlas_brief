@@ -1,0 +1,14 @@
+.tz { display: grid; gap: 10px; }
+.tz-label { font-weight: 600; }
+.tz-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.tz-row input {
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+.tz-row input:focus-visible { outline: 2px solid var(--moss); outline-offset: 1px; }
+.tz-status { color: var(--ink-3); font-size: 0.92rem; }
+.tz-error { color: var(--terra-ink); }
