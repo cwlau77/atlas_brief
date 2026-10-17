@@ -5,7 +5,7 @@ import type { SavedBriefing } from '../lib/normalize'
 import { relativeTime } from '../lib/relativeTime'
 import { formatDateTime } from '../lib/time'
 import { useAppState } from '../state/hooks'
-import '../components/saved.css'
+import './archive.css'
 
 function CompareColumn({ briefing, timeZone }: { briefing: SavedBriefing; timeZone: string }) {
   return (

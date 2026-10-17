@@ -125,20 +125,6 @@ input, select, textarea { font: inherit; color: inherit; }
 .btn-quiet:hover { border-color: var(--moss); color: var(--ink); }
 .btn-quiet:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Legacy primitives used by not-yet-migrated components. Task 14 deletes them. */
-.panel { position: relative; background: var(--paper); border: 1px solid var(--rule-soft); border-radius: var(--radius); }
-.panel.spot::before { display: none; }
-.glass { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius); }
-.signal-label {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--terra-ink);
-  display: flex;
-  gap: 0.7rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

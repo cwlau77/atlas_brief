@@ -24,6 +24,12 @@ contains a space (`… /Atlas Brief/ …`). Run it through a space-free symlink:
 ln -sfn "$(cd .. && pwd)" /tmp/atlasbrief && cd /tmp/atlasbrief/frontend && npx vitest run
 ```
 
+## Globe land data
+
+`src/globe/landPoints.ts` is generated from `world-atlas` by
+`npm run build:land`. Re-run it only after upgrading `world-atlas`, and
+commit the regenerated file.
+
 ## Architecture notes
 
 - `src/styles/tokens.css` is the single source of truth for color/type/motion.

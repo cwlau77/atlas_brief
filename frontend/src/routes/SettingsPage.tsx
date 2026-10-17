@@ -2,7 +2,7 @@ import { useState, type ChangeEvent } from 'react'
 import { useAppState } from '../state/hooks'
 import type { UserProfile, UserSettings } from '../state/settings'
 import { TimeZonePicker } from '../components/TimeZonePicker'
-import '../components/profile.css'
+import './settings.css'
 
 type ToggleKey = Exclude<keyof UserSettings, 'timeZone'>
 
