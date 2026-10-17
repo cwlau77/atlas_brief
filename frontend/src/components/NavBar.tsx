@@ -1,60 +1,40 @@
-import { useEffect, useState } from 'react'
-import { CompassIcon } from './icons'
+import { Link, NavLink, useLocation } from 'react-router'
+import { useClock } from '../lib/useClock'
+import { useAppState } from '../state/hooks'
+import { latestBriefingId } from '../state/resolveBriefing'
 import './navbar.css'
 
-export type Page = 'briefing' | 'saved' | 'profile'
+const linkClass = ({ isActive }: { isActive: boolean }) => `nav-link ${isActive ? 'active' : ''}`
 
-const TABS: { id: Page; label: string }[] = [
-  { id: 'briefing', label: 'Briefing' },
-  { id: 'saved', label: 'Archive' },
-  { id: 'profile', label: 'Profile' },
-]
+export function NavBar() {
+  const { session, saved, settings } = useAppState()
+  const clock = useClock(settings.timeZone, 30_000)
+  const { pathname } = useLocation()
+  const latest = latestBriefingId(session, saved)
+  const onBriefing = pathname.startsWith('/brief/')
 
-function useUtcClock(): string {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 30_000)
-    return () => clearInterval(t)
-  }, [])
-  return `${now.toISOString().slice(11, 16)} UTC`
-}
-
-function useScrolled(threshold = 8): boolean {
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > threshold)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [threshold])
-  return scrolled
-}
-
-export function NavBar({ page, onNavigate }: { page: Page; onNavigate: (p: Page) => void }) {
-  const clock = useUtcClock()
-  const scrolled = useScrolled()
   return (
-    <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-      <div className="navbar-inner">
-        <button className="wordmark" onClick={() => onNavigate('briefing')} aria-label="Atlas Brief home">
-          <CompassIcon size={22} className="wordmark-icon" />
-          <span className="wordmark-text">
-            Atlas<em>Brief</em>
-          </span>
-        </button>
-        <nav className="nav-tabs" aria-label="Primary">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={`nav-tab ${page === t.id ? 'active' : ''}`}
-              aria-current={page === t.id ? 'page' : undefined}
-              onClick={() => onNavigate(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
+    <header className="nav">
+      <div className="nav-inner wrap">
+        <Link className="wordmark" to="/" aria-label="Atlas Brief home" data-cursor="link">
+          <b>Atlas</b>
+          <i>Brief</i>
+        </Link>
+        <nav className="nav-links" aria-label="Primary">
+          <Link
+            className={`nav-link ${onBriefing ? 'active' : ''}`}
+            to={latest ? `/brief/${latest}` : '/'}
+            aria-current={onBriefing ? 'page' : undefined}
+            data-cursor="link"
+          >
+            Briefing
+          </Link>
+          <NavLink className={linkClass} to="/archive" data-cursor="link">Archive</NavLink>
+          <NavLink className={linkClass} to="/settings" data-cursor="link">Settings</NavLink>
         </nav>
-        <div className="nav-clock mono" title="Coordinated Universal Time">{clock}</div>
+        <Link className="nav-clock label" to="/settings" title="Change the time zone in Settings" data-cursor="link">
+          {clock.time}
+        </Link>
       </div>
     </header>
   )
