@@ -1,8 +1,11 @@
 # Atlas Brief — frontend
 
-Vite + React + TypeScript SPA. Design system: **Midnight Signal** — near-black
-layered surfaces, one chartreuse accent (`--signal`), Instrument Serif display
-over Geist body with Geist Mono data. Dark-only; print styles force ink-on-paper.
+Vite + React + TypeScript SPA. Design system: **Oat**, a warm paper surface
+(oat, oat-deep, paper) with ink text and a terracotta accent for high-severity
+items, moss and sand for the globe and secondary marks. Type is Hanken
+Grotesk for UI text, Fraunces (italic) for display and pull quotes, and IBM
+Plex Mono for data and labels, all loaded from Google Fonts. Light-only;
+print styles force ink-on-paper.
 
 ## Dev
 
@@ -32,11 +35,26 @@ commit the regenerated file.
 
 ## Architecture notes
 
-- `src/styles/tokens.css` is the single source of truth for color/type/motion.
-- `.panel.spot` cards get a cursor-tracked spotlight via `lib/useSpotlight.ts`.
-- The globe (`GlobeCanvas`) is lazy-loaded; hotspot markers are imperative DOM
-  positioned by globe.gl, and their dropdowns scroll to `#dev-N` anchors in
-  `KeyDevelopments`.
-- Do not wrap the hero mode switch in `AnimatePresence mode="wait"` — exit
-  waiting deadlocks when the leaving subtree contains the Suspense globe.
-- All motion respects `prefers-reduced-motion` (global kill switch in base.css).
+- `src/styles/tokens.css` is the single source of truth for color, type and
+  motion tokens (the oat/terracotta/moss palette, font stacks, spacing).
+- Pages live in `src/routes/`: `HomePage` (ask form, rotating headline,
+  intro), the Briefing view's `StoryTab` and `SignalsTab`, `ArchivePage` and
+  `SettingsPage`. Routing is plain `react-router` (no data router), with
+  scroll and focus handled by `lib/useRouteFocus.ts`.
+- `src/globe/` is a custom three.js globe, not globe.gl: `engine.ts` owns the
+  THREE.WebGLRenderer, shaders and animation loop; `controls.ts` handles
+  pointer drag and momentum; `GlobeView.tsx` is the lazy-loaded React wrapper
+  that reads hotspot screen positions each frame and renders the hotspot
+  panel and a visually-hidden list for screen readers. `StaticGlobe.tsx` is
+  the no-WebGL fallback. Hotspot selection scrolls to `#dev-N` anchors
+  rendered by `components/briefing/Timeline.tsx` / `DevelopmentCard.tsx`.
+- `src/state/` holds shared app state: `AppState.tsx` is the provider
+  (saved briefings, starred ids, session briefing, settings, profile,
+  toasts, all persisted to `localStorage`/`sessionStorage` with functional
+  state updates so overlapping writes never read stale state); `hooks.ts`
+  exposes `useAppState`/`useSettings`; `settings.ts` parses and defaults
+  user settings, including the time-zone setting (`"auto"` or an IANA zone)
+  used to format every timestamp in the app.
+- All motion respects `prefers-reduced-motion`: no intro, no rotating
+  headline or typewriter prompts, no globe auto-spin or liquid cursor
+  response, instant transitions instead of eased ones.
