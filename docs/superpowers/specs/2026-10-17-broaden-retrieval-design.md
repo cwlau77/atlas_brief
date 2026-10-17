@@ -43,11 +43,13 @@ class SearchPlan(BaseModel):
     must_terms: list[str]  # concepts a relevant article must touch, e.g. ["data center", "privacy"]
     synonyms: list[str]    # extra terms for keyword matching, e.g. ["hyperscale", "data broker"]
     country: str | None    # ISO-3166 alpha-2, e.g. "US"; None when not specified
+    domains: list[Literal["finance", "tech", "politics", "general"]]  # topic areas; drives finance-source gating
+    tickers: list[str]     # stock symbols when the focus names listed companies, e.g. ["NVDA", "MSFT"]; ≤ 5
     source: Literal["llm", "rules"]
 ```
 
 `async def plan_search(focus: str) -> SearchPlan`:
-- **LLM planner:** `claude-haiku-4-5` (configurable via `SEARCH_PLAN_MODEL`) through the existing `AsyncAnthropic` client, prompted to return JSON only; parsed with the existing `extract_json` helper and validated with the Pydantic model. Request timeout 4 s, `max_retries=0`, `max_tokens` 512. Output clamped: ≤ 3 queries, ≤ 4 must_terms, ≤ 8 synonyms, each ≤ 80 chars; country upper-cased and validated as two letters.
+- **LLM planner:** `claude-haiku-4-5` (configurable via `SEARCH_PLAN_MODEL`) through the existing `AsyncAnthropic` client, prompted to return JSON only; parsed with the existing `extract_json` helper and validated with the Pydantic model. Request timeout 4 s, `max_retries=0`, `max_tokens` 512. Output clamped: ≤ 3 queries, ≤ 4 must_terms, ≤ 8 synonyms, ≤ 5 tickers (A–Z, 1–5 chars, optional `.X` suffix), each string ≤ 80 chars; country upper-cased and validated as two letters; unknown domains dropped.
 - **Rule planner (fallback and no-key path):**
   - Place qualifiers are extracted into `country` and removed from the phrase: "in the US", "U.S.", "US" (only when typed in capitals), "United States", "America"; "UK"/"United Kingdom"/"Britain"; "EU"/"European Union"; plus any country name in `centroids.py` matched as a trailing "in <country>".
   - The pronoun "us" (lowercase) is a stopword.
@@ -55,6 +57,8 @@ class SearchPlan(BaseModel):
   - `must_terms`: the pair plus each remaining content token. Singular/plural variants are added for the pair ("data center", "data centers").
   - Existing behavior is preserved for single-word focuses (aliases from `_TERM_ALIASES`) and for entity names with a distinctive anchor token (e.g. "Regeneron Pharmaceuticals" → anchor "regeneron").
   - `queries`: `["\"data centers\" privacy", "\"data center\" privacy"]` style variants (≤ 3).
+  - `domains`: `["finance"]` when the focus contains a finance cue (stock, stocks, shares, market, markets, earnings, IPO, bond, bonds, yields, Fed, interest rate, inflation, recession, crypto, bitcoin, ETF, merger, acquisition, dividend, Wall Street, S&P, Nasdaq, Dow) or a `$TICKER`; otherwise `["general"]`.
+  - `tickers`: only explicit `$TICKER` tokens (the rule planner does not guess symbols from company names).
 - Any LLM failure (timeout, API error, invalid JSON, empty queries) → rule planner. Logged once per request.
 
 `build_boolean_query` in `focus_terms.py` is replaced by per-source query formatting from the plan (3.2); `extract_focus_terms` stays for the RSS/keyword fallback but gains the stopword and place-qualifier fixes.
@@ -83,16 +87,23 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]
 | Brave News Search (`brave`) | `BRAVE_API_KEY` | ~$5 monthly credit (≈ 1,000 queries); free tier retired for new accounts Feb 2026, card required | 1 | `/res/v1/news/search`, `freshness=pw` |
 | Tavily (`tavily`) | `TAVILY_API_KEY` | 1,000 credits/month | 1 | `topic=news`, `days=7` |
 | Exa (`exa`) | `EXA_API_KEY` | $10 monthly credit (≈ 1,400 searches) | 1 | `category=news`, published within 7 days |
+| Finnhub (`finnhub`) | `FINNHUB_API_KEY` | 60 calls/min, personal use | finance only: 1 market-news call (`/news?category=general`), plus 1 company-news call per ticker (≤ 3) over the lookback window | Market news has no query parameter, so results are keyword-filtered locally with must_terms/synonyms |
+| Marketaux (`marketaux`) | `MARKETAUX_API_KEY` | 100 requests/day, 3 articles/request | finance only: 1 (`search=` best query, `symbols=` when tickers, `countries=` when country) | Low yield per call; used for its entity/sentiment-tagged finance coverage |
+| Alpha Vantage (`alphavantage`) | `ALPHAVANTAGE_API_KEY` | 25 requests/day, 5/min | finance only: 1 `NEWS_SENTIMENT` call (`tickers=` when present, else `topics=` mapped from the plan, e.g. `economy_macro`, `financial_markets`, `technology`) | Lowest quota; never called for non-finance focuses |
+
+**Finance gating:** Finnhub, Marketaux and Alpha Vantage run only when `"finance" in plan.domains` or `plan.tickers` is non-empty. Finance RSS feeds (§3.3) always run, since they are free and keyword-filtered.
 
 Each module maps results to `Article` (title, snippet, url, source outlet, `published_at` as UTC-aware datetime when available, `country` when given, `raw_source_type`). `Article.raw_source_type` widens to the union of the names above.
 
 ### 3.3 RSS additions
 
-Added to `RSS_FEEDS` (US/tech/policy desks): NPR News, AP Top News (if a stable feed URL is available; otherwise Reuters via Google News is covered by 3.2), NYT Technology, NYT U.S., Washington Post Technology, Axios, Politico, The Verge, Ars Technica, Wired. Exact URLs are validated at implementation time; a feed that fails to fetch is already logged and skipped by the existing code.
+Added to `RSS_FEEDS` (US/tech/policy desks): NPR News, AP Top News (if a stable feed URL is available; otherwise Reuters via Google News is covered by 3.2), NYT Technology, NYT U.S., Washington Post Technology, Axios, Politico, The Verge, Ars Technica, Wired. Finance desks are added too: MarketWatch Top Stories (`feeds.marketwatch.com/marketwatch/topstories`), CNBC Top News, Yahoo Finance, Investing.com news, and Financial Times headlines (headline + summary only; links may be paywalled).
+
+Exact URLs are validated at implementation time; a feed that fails to fetch is already logged and skipped by the existing code.
 
 ### 3.4 Quota guard (`backend/ingestion/quota.py`)
 
-In-process per-source daily counter keyed by UTC date. Budgets (configurable env vars, defaults): `newsapi 90`, `gnews 90`, `newsdata 180`, `guardian 4500`, `brave 30`, `tavily 30`, `exa 40`, `google_news 300`. A source whose budget is spent is skipped for the rest of the UTC day (logged once). Counters reset on process restart, which is acceptable at this traffic level. The existing 15-minute per-focus cache prevents repeat spend.
+In-process per-source daily counter keyed by UTC date. Budgets (configurable env vars, defaults): `newsapi 90`, `gnews 90`, `newsdata 180`, `guardian 4500`, `brave 30`, `tavily 30`, `exa 40`, `google_news 300`, `finnhub 1000`, `marketaux 90`, `alphavantage 20`. A source whose budget is spent is skipped for the rest of the UTC day (logged once). Counters reset on process restart, which is acceptable at this traffic level. The existing 15-minute per-focus cache prevents repeat spend.
 
 ### 3.5 Merge, URL normalization and dedupe
 
@@ -109,7 +120,7 @@ In-process per-source daily counter keyed by UTC date. Budgets (configurable env
 ### 3.7 API and frontend
 
 - `POST /briefing` request/response shapes are unchanged. `source_breakdown` gains the new source names.
-- Frontend `SOURCE_LABELS` (`frontend/src/lib/signals.ts`) gains: `google_news → Google News`, `guardian → The Guardian`, `gnews → GNews`, `newsdata → NewsData`, `brave → Brave News`, `tavily → Tavily`, `exa → Exa`.
+- Frontend `SOURCE_LABELS` (`frontend/src/lib/signals.ts`) gains: `google_news → Google News`, `guardian → The Guardian`, `gnews → GNews`, `newsdata → NewsData`, `brave → Brave News`, `tavily → Tavily`, `exa → Exa`, `finnhub → Finnhub`, `marketaux → Marketaux`, `alphavantage → Alpha Vantage`.
 - The 502 "no articles" message lists sources skipped for missing keys.
 
 ## 4. Configuration
@@ -118,7 +129,7 @@ New optional settings in `backend/config.py`, documented in `render.yaml` (as `s
 
 | Setting | Default |
 |---|---|
-| `GUARDIAN_API_KEY`, `GNEWS_API_KEY`, `NEWSDATA_API_KEY`, `BRAVE_API_KEY`, `TAVILY_API_KEY`, `EXA_API_KEY` | unset (source disabled) |
+| `GUARDIAN_API_KEY`, `GNEWS_API_KEY`, `NEWSDATA_API_KEY`, `BRAVE_API_KEY`, `TAVILY_API_KEY`, `EXA_API_KEY`, `FINNHUB_API_KEY`, `MARKETAUX_API_KEY`, `ALPHAVANTAGE_API_KEY` | unset (source disabled) |
 | `SEARCH_PLAN_ENABLED` / `SEARCH_PLAN_MODEL` | `true` / `claude-haiku-4-5` |
 | `RERANK_ENABLED` / `RERANK_MODEL` | `true` / `claude-haiku-4-5` |
 | `RERANK_MAX_CANDIDATES` / `RERANK_KEEP` | `60` / `25` |
@@ -131,12 +142,13 @@ LLM calls use the pinned `anthropic==0.40.0` SDK with prompt-instructed JSON + `
 
 One structured log line per briefing: planner source (llm/rules) and latency; per-source `{count, status, ms}`; merged, deduped, pre-filtered, and kept counts; rerank latency and fallback flag; total ingestion ms.
 
-## 6. Decision for the owner: NewsAPI in production
+## 6. NewsAPI in production (owner decision recorded)
 
-NewsAPI's free Developer plan states it "cannot be used in a staging or production environment." The live Render deployment currently uses a `NEWSAPI_KEY`. Options: (a) remove `NEWSAPI_KEY` from Render and rely on the new sources (recommended; keeps the code path for local development), (b) upgrade NewsAPI to a paid plan, (c) accept the terms risk. The implementation keeps NewsAPI optional either way.
+NewsAPI's free Developer plan terms state it "cannot be used in a staging or production environment"; the restriction is contractual, not technical, so requests from Render still succeed. **Decision (2026-10-17, owner): keep using the existing `NEWSAPI_KEY` in production**, accepting the risk that NewsAPI may suspend the key. The source stays optional, so a suspended or removed key only drops it from the fan-out.
 
 ## 7. Testing
 
+- **Finance gating:** finance APIs are not called for "data centers and privacy in the US"; they are called for "Nvidia earnings and AI chip stocks" (LLM plan with tickers) and for "$NVDA guidance" (rule plan); Finnhub market news is filtered by must_terms locally.
 - **Rule planner:** the failing example → phrase `data centers privacy`, country `US`, must_terms include `data center(s)` and `privacy`, no `us`; "U.S."/"United States"/"in the UK" variants; "Regeneron Pharmaceuticals" keeps anchor-based behavior; "climate" keeps aliases; existing `test_focus_terms.py` cases updated only where the old exact-phrase behavior was the bug.
 - **LLM planner:** valid JSON parsed and clamped; invalid JSON, timeout, API error, and missing key → rules (mocked client).
 - **Each source:** respx-mocked success mapped to `Article` with UTC dates; missing key → `enabled()` false and no request; non-2xx/429/malformed → `[]`; country/query parameters formed correctly; quota exhaustion skips the call.
@@ -144,7 +156,7 @@ NewsAPI's free Developer plan states it "cannot be used in a staging or producti
 - **URL normalization/dedupe:** tracking params stripped; duplicates across sources collapsed.
 - **Rerank:** mocked scores applied, threshold and cap respected, missing indices = 0, malformed output → fallback; pre-filter rejects the "us" + "data" noise article.
 - **Relevance regression:** existing labeled precision/recall test stays green (fallback path); new labeled set for broad domestic topics (data centers & privacy, student loans, wildfire insurance) asserts must-term pre-filter recall ≥ 0.9 on relevant items and rejection of pronoun/generic-word noise.
-- **Manual end-to-end (keys in `backend/.env`):** success criteria in §1, with per-stage timings from the §5 log line.
+- **Manual end-to-end (keys in `backend/.env`):** success criteria in §1, with per-stage timings from the §5 log line; plus "Nvidia earnings and AI chip stocks" returns finance-source articles (Finnhub/Marketaux/Alpha Vantage or finance RSS) among the kept set.
 
 ## 8. Out of scope
 
