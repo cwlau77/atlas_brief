@@ -101,6 +101,24 @@ async def test_rank_articles_falls_back_to_relevance_filter(make_article, monkey
 
 
 @pytest.mark.asyncio
+async def test_rank_articles_fallback_uses_place_stripped_phrase_not_raw_focus(make_article, monkeypatch):
+    # Regression guard: passing the raw focus (with "... in the United
+    # States" still attached) into the fallback relevance filter makes
+    # "united"/"states" count as keywords, letting an article through on a
+    # place-name match alone instead of the actual topic.
+    monkeypatch.setattr(settings, "anthropic_api_key", None)
+    focus = "Data centers and privacy in the United States"
+    plan = rule_plan(focus)
+    on_topic = make_article(title="New data center privacy rules unveiled",
+                             snippet="Regulators target hyperscale facilities.")
+    off_topic = make_article(title="United States privacy debate widens",
+                              snippet="Lawmakers discuss privacy broadly nationwide.")
+    articles = [on_topic, off_topic]
+    result = await rank_articles(focus, plan, articles, await _embed(articles))
+    assert [a.title for a in result.articles] == [on_topic.title]
+
+
+@pytest.mark.asyncio
 async def test_rank_articles_uses_rerank_when_available(fake_llm, make_article):
     plan = SearchPlan(phrase="privacy", queries=["privacy"], must_terms=["privacy"])
     articles = [make_article(title="Privacy bill advances"), make_article(title="Privacy app update")]

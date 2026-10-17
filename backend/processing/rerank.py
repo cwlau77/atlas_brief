@@ -107,5 +107,10 @@ async def rank_articles(focus: str, plan: SearchPlan, articles: list[Article], e
     ranked = await rerank(plan, candidates)
     if ranked is not None:
         return RankResult(articles=ranked, candidates=len(candidates), reranked=True)
-    kept, _ = await filter_by_relevance(focus, candidates, candidate_emb)
+    # Use the plan's place-stripped phrase, not the raw focus: "... in the
+    # United States" would otherwise make "united"/"states" count as
+    # keywords in the fallback filter, letting place-name mentions alone
+    # pass articles that aren't actually about the focus.
+    fallback_focus = plan.phrase or focus
+    kept, _ = await filter_by_relevance(fallback_focus, candidates, candidate_emb)
     return RankResult(articles=kept[: settings.rerank_keep], candidates=len(candidates), reranked=False)
