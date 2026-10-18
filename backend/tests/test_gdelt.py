@@ -73,3 +73,19 @@ async def test_gdelt_uses_best_query_country_filter_and_drops_short_terms():
     assert '"data centers"' in query
     assert "sourcecountry:UK" in query
     assert " ai " not in f" {query} "  # GDELT rejects terms shorter than 3 characters
+
+
+@pytest.mark.asyncio
+async def test_gdelt_uses_its_own_short_timeout(monkeypatch):
+    # GDELT is frequently slow/429 from shared IPs; as the slowest source it set the
+    # whole ingest time, so it gets a tighter cap than the other sources.
+    monkeypatch.setattr(settings, "gdelt_timeout_seconds", 3.0)
+    seen = {}
+
+    class FakeClient:
+        async def get(self, url, **kwargs):
+            seen["timeout"] = kwargs.get("timeout")
+            return httpx.Response(200, json=GDELT_PAYLOAD, request=httpx.Request("GET", url))
+
+    await fetch(PLAN, FakeClient())
+    assert seen["timeout"].read == 3.0

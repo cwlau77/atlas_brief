@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # GDELT allows ~1 request per 5s per IP; all outbound GDELT calls from this
     # process are serialized and spaced by at least this many seconds.
     gdelt_min_interval_seconds: float = 5.5
+    # GDELT is often slow or 429s from shared IPs; as the slowest source it set the
+    # whole ingest time, so it gets a tighter cap than source_timeout_seconds.
+    gdelt_timeout_seconds: float = 4.0
     dedup_similarity_threshold: float = 0.85
     relevance_similarity_threshold: float = 0.30
     hours_lookback: int = 24

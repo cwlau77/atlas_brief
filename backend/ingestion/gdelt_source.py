@@ -5,7 +5,7 @@ import time
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import parse_datetime, sub_request_timeout
+from backend.ingestion.common import parse_datetime
 from backend.ingestion.query_format import best_query, query_terms
 from backend.models import Article
 from backend.search_plan import SearchPlan
@@ -65,7 +65,7 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     }
     try:
         await _pace()
-        resp = await client.get(GDELT_DOC_API, params=params, timeout=sub_request_timeout())
+        resp = await client.get(GDELT_DOC_API, params=params, timeout=httpx.Timeout(settings.gdelt_timeout_seconds))
         resp.raise_for_status()
         payload = resp.json()
     except httpx.HTTPStatusError as exc:
