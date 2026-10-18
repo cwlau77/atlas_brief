@@ -74,12 +74,9 @@
   gap: 4px;
   padding-left: 12px;
   border-left: 2px solid var(--rule);
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-variation-settings: var(--serif-vars);
   color: var(--ink-2);
 }
-.dev-context .label { font-style: normal; color: var(--ink-3); }
+.dev-context .label { color: var(--ink-3); }
 
 .t-links { grid-column: 4; position: relative; z-index: 1; display: grid; gap: 14px; align-content: start; }
 .link-card { display: grid; gap: 6px; padding: 16px 18px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--rule); background: var(--oat); }

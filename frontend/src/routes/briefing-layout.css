@@ -5,6 +5,8 @@
 .masthead-title {
   position: relative;
   z-index: 1;
+  font-weight: 500;
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 5.4vw, 4.4rem);
   letter-spacing: -0.035em;
   line-height: 1;

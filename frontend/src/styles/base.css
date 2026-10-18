@@ -1,4 +1,4 @@
-/* Atlas Brief base: reset, type, shared primitives, print. */
+/* Atlas base: reset, type, shared primitives, print. */
 *,
 *::before,
 *::after {
@@ -38,9 +38,9 @@ body::after {
 }
 
 h1, h2, h3, h4 {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.015em;
   line-height: 1.15;
   color: var(--ink);
   text-wrap: balance;
@@ -69,13 +69,6 @@ input, select, textarea { font: inherit; color: inherit; }
   max-width: var(--maxw);
   margin-inline: auto;
   padding-inline: var(--gutter);
-}
-
-.serif {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 380;
-  font-variation-settings: var(--serif-vars);
 }
 
 .mono {

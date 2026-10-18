@@ -1,4 +1,4 @@
-/* Atlas Brief design tokens: "Oat". Light only. */
+/* Atlas design tokens: "Oat". Light only. */
 :root {
   color-scheme: light;
 
@@ -11,6 +11,9 @@
   --rule: #D6CDBA;
   --rule-soft: #E2DACA;
   --moss: #3D5A45;
+  --moss-light: #6F8A6F;
+  --moss-deep: #2A3F31;
+  --moss-wash: rgba(61, 90, 69, 0.10);
   --sage: #9AAA92;
   --sand: #C7B89C;
   --terra: #B5532E;
@@ -19,9 +22,8 @@
   --ochre: #9C7026;
 
   --font-sans: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif;
-  --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-display: 'Jost', 'Futura', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
-  --serif-vars: 'SOFT' 100, 'opsz' 120;
 
   --radius: 14px;
   --radius-sm: 10px;

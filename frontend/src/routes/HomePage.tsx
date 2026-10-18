@@ -53,7 +53,7 @@ export function HomePage() {
           <RotatingHeadline />
           <p className="home-lede">
             Atlas searches up to thirteen news sources and 26 newsroom feeds, then tells you{' '}
-            <em className="serif">what changed, where it happened,</em> and what to read next.
+            <em>what changed, where it happened,</em> and what to read next.
           </p>
           <div className="home-ask">
             <AskForm id="home-ask" loading={loading} error={error} onGenerate={generate} onRetry={retry} placeholder={placeholder} />

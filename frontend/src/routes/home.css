@@ -11,7 +11,8 @@
 .eyebrow { display: flex; flex-wrap: wrap; gap: 10px 18px; color: var(--ink-3); }
 .eyebrow span + span::before { content: '·'; margin-right: 18px; color: var(--sand); }
 .home-title {
-  font-weight: 600;
+  font-weight: 400;
+  font-family: var(--font-display);
   letter-spacing: -0.04em;
   line-height: 0.96;
   font-size: clamp(3rem, 7.4vw, 6.6rem);

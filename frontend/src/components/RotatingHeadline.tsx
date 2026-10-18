@@ -19,11 +19,11 @@ export function RotatingHeadline({ intervalMs = 3200 }: { intervalMs?: number })
       <span className="l1" aria-hidden="true">Brief me on</span>
       <span className="rot" aria-hidden="true">
         {reduced ? (
-          <span className="rot-word serif">{TOPICS[0]}</span>
+          <span className="rot-word">{TOPICS[0]}</span>
         ) : (
           <>
-            {tick > 0 && <span key={`out-${tick}`} className="rot-word serif out">{TOPICS[prev]}</span>}
-            <span key={`in-${tick}`} className="rot-word serif in">{TOPICS[index]}</span>
+            {tick > 0 && <span key={`out-${tick}`} className="rot-word out">{TOPICS[prev]}</span>}
+            <span key={`in-${tick}`} className="rot-word in">{TOPICS[index]}</span>
           </>
         )}
       </span>

@@ -2,7 +2,6 @@
 .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 20px; }
 .wordmark { display: flex; align-items: baseline; gap: 8px; text-decoration: none; color: var(--ink); }
 .wordmark b { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.03em; }
-.wordmark i { font-family: var(--font-serif); font-variation-settings: var(--serif-vars); font-size: 1.2rem; color: var(--terra-ink); }
 .nav-links { display: flex; gap: 4px; }
 .nav-link {
   text-decoration: none;
