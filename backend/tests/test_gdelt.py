@@ -38,15 +38,14 @@ async def test_gdelt_dates_are_utc_aware():
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_gdelt_retries_once_on_429(monkeypatch):
-    monkeypatch.setattr(gdelt_module, "_GDELT_RETRY_DELAY_SECONDS", 0.0)
-    monkeypatch.setattr(gdelt_module.random, "random", lambda: 0.0)
-    route = respx.get(GDELT_DOC_API)
-    route.side_effect = [httpx.Response(429), httpx.Response(200, json=GDELT_PAYLOAD)]
+async def test_gdelt_gives_up_immediately_on_429():
+    # A 5.5 s retry can't fit the 8 s source budget, so a 429 must return
+    # empty at once instead of burning the whole budget on a doomed retry.
+    route = respx.get(GDELT_DOC_API).mock(return_value=httpx.Response(429))
     async with httpx.AsyncClient() as client:
         articles = await fetch(PLAN, client)
-    assert len(articles) == 1
-    assert route.call_count == 2
+    assert articles == []
+    assert route.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -61,17 +60,6 @@ async def test_gdelt_concurrent_requests_are_paced(monkeypatch):
     async with httpx.AsyncClient() as client:
         await asyncio.gather(fetch(PLAN, client), fetch(PLAN, client))
     assert time.monotonic() - start >= 0.3  # second call waited for the pacer
-
-
-@pytest.mark.asyncio
-@respx.mock
-async def test_gdelt_gives_up_after_second_429(monkeypatch):
-    monkeypatch.setattr(gdelt_module, "_GDELT_RETRY_DELAY_SECONDS", 0.0)
-    monkeypatch.setattr(gdelt_module.random, "random", lambda: 0.0)
-    respx.get(GDELT_DOC_API).mock(return_value=httpx.Response(429))
-    async with httpx.AsyncClient() as client:
-        articles = await fetch(PLAN, client)
-    assert articles == []
 
 
 @pytest.mark.asyncio

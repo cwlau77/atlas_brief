@@ -1,12 +1,11 @@
 import asyncio
 import logging
-import random
 import time
 
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import parse_datetime
+from backend.ingestion.common import parse_datetime, sub_request_timeout
 from backend.ingestion.query_format import best_query, query_terms
 from backend.models import Article
 from backend.search_plan import SearchPlan
@@ -15,10 +14,8 @@ logger = logging.getLogger("briefing.gdelt")
 
 GDELT_DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc"
 
-# GDELT enforces ~1 request per 5s per IP. Render uses shared egress IPs which
-# often trip this limit. One retry with jittered backoff resolves most 429s
-# without blowing the request timeout budget.
-_GDELT_RETRY_DELAY_SECONDS = 5.5
+# GDELT enforces ~1 request per 5s per IP and Render uses shared egress IPs, so
+# 429s are common. A retry can't fit the 8 s source budget, so a 429 returns empty.
 
 # Process-global pacer: concurrent briefing requests must not fire GDELT calls
 # closer together than the per-IP limit allows, or they 429 each other.
@@ -57,7 +54,7 @@ def _gdelt_query(plan: SearchPlan) -> str:
 
 
 async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
-    """GDELT DOC 2.0 ArtList for the plan's best query (paced, one retry on 429)."""
+    """GDELT DOC 2.0 ArtList for the plan's best query (paced; empty on 429)."""
     params = {
         "query": _gdelt_query(plan),
         "mode": "ArtList",
@@ -66,23 +63,15 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
         "timespan": f"{max(settings.hours_lookback, 1)}h",
         "sort": "DateDesc",
     }
-    payload = None
     try:
-        for attempt in (1, 2):
-            try:
-                await _pace()
-                resp = await client.get(GDELT_DOC_API, params=params)
-                resp.raise_for_status()
-                payload = resp.json()
-                break
-            except httpx.HTTPStatusError as exc:
-                if exc.response.status_code == 429 and attempt == 1:
-                    backoff = _GDELT_RETRY_DELAY_SECONDS + random.random()
-                    logger.info("source=gdelt status=rate_limited retry_in=%.1fs", backoff)
-                    await asyncio.sleep(backoff)
-                    continue
-                logger.warning("source=gdelt status=http_%d", exc.response.status_code)
-                return []
+        await _pace()
+        resp = await client.get(GDELT_DOC_API, params=params, timeout=sub_request_timeout())
+        resp.raise_for_status()
+        payload = resp.json()
+    except httpx.HTTPStatusError as exc:
+        status = "rate_limited" if exc.response.status_code == 429 else f"http_{exc.response.status_code}"
+        logger.warning("source=gdelt status=%s", status)
+        return []
     except Exception as exc:
         logger.warning("source=gdelt status=network_error detail=%s", type(exc).__name__)
         return []
