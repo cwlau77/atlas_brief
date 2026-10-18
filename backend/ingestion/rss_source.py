@@ -33,13 +33,12 @@ RSS_FEEDS: list[tuple[str, str]] = [
     ("CNN World", "http://rss.cnn.com/rss/edition_world.rss"),
     ("Fox News World", "https://moxie.foxnews.com/google-publisher/world.xml"),
     ("New York Times World", "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
-    ("Washington Post World", "https://feeds.washingtonpost.com/rss/world"),
     ("ABC News International", "https://abcnews.go.com/abcnews/internationalheadlines"),
     ("CBS News World", "https://www.cbsnews.com/latest/rss/world"),
     # US national, tech and policy desks (domestic coverage the world desks miss).
-    # Verified live 2026-10-17; two candidates were dropped after failing curl
-    # verification: Washington Post Technology (502 from feeds.washingtonpost.com)
-    # and Yahoo Finance (404 on every known RSS path) — see task-4-report.md.
+    # Verified live 2026-10-17. Dropped for failing verification: Washington Post
+    # World and Technology (feeds.washingtonpost.com hangs ~9 s, then 502s, which
+    # stalled the whole RSS source) and Yahoo Finance (404 on every known path).
     ("NPR News", "https://feeds.npr.org/1001/rss.xml"),
     ("New York Times U.S.", "https://rss.nytimes.com/services/xml/rss/nyt/US.xml"),
     ("New York Times Technology", "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"),

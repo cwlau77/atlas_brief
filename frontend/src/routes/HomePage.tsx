@@ -52,7 +52,7 @@ export function HomePage() {
           <p className="eyebrow label"><span>{clock.day}</span><span>{clock.time}</span><span>Global intelligence</span></p>
           <RotatingHeadline />
           <p className="home-lede">
-            Atlas searches up to thirteen news sources and 27 newsroom feeds, then tells you{' '}
+            Atlas searches up to thirteen news sources and 26 newsroom feeds, then tells you{' '}
             <em className="serif">what changed, where it happened,</em> and what to read next.
           </p>
           <div className="home-ask">
@@ -66,7 +66,7 @@ export function HomePage() {
             </div>
           </div>
           <p className="provenance label">
-            <span>Google News</span><span>NewsAPI</span><span>GDELT 2.0</span><span>27 newsroom feeds</span><span>Model-written, source-cited</span>
+            <span>Google News</span><span>NewsAPI</span><span>GDELT 2.0</span><span>26 newsroom feeds</span><span>Model-written, source-cited</span>
           </p>
         </div>
         <div className="home-globe">
