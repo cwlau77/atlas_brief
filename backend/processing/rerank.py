@@ -13,7 +13,7 @@ from backend.config import settings
 from backend.focus_terms import keyword_hit
 from backend.models import Article
 from backend.search_plan import SearchPlan
-from backend.synthesis.briefing import extract_json
+from backend.llm_json import extract_json
 
 from .embeddings import cosine_similarity, embed_texts
 from .relevance import filter_by_relevance

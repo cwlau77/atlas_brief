@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from backend.config import settings
 from backend.focus_terms import _TERM_ALIASES, _normalize_focus_tokens, distinctive_tokens, topic_heads
-from backend.synthesis.briefing import extract_json
+from backend.llm_json import extract_json
 
 logger = logging.getLogger("briefing.search_plan")
 
