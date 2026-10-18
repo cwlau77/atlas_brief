@@ -79,7 +79,8 @@ _PLACE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
 _TICKER = re.compile(r"\$([A-Z]{1,5}(?:\.[A-Z]{1,2})?)\b")
 
 _FINANCE_CUES = (
-    "stock", "stocks", "shares", "share price", "market", "markets", "earnings", "ipo",
+    "stock", "stocks", "shares", "share price", "stock market", "stock markets",
+    "financial markets", "emerging markets", "bond market", "market cap", "earnings", "ipo",
     "bond", "bonds", "yield", "yields", "fed", "federal reserve", "interest rate",
     "interest rates", "inflation", "recession", "crypto", "bitcoin", "etf", "merger",
     "acquisition", "dividend", "wall street", "s&p", "nasdaq", "dow",
@@ -170,7 +171,7 @@ Return ONLY a JSON object with exactly these keys:
 - "must_terms": 1-4 lowercase concepts that a relevant article must mention, in the words journalists use.
 - "synonyms": up to 8 lowercase alternative terms journalists use for the same concepts.
 - "country": an ISO 3166-1 alpha-2 code only if the focus limits coverage to one country's domestic news (for example "in the US" -> "US"); otherwise null. A country that is the subject of the story (for example "elections in Iran") is not a filter, so use null.
-- "domains": one or more of "finance", "tech", "politics", "general".
+- "domains": one or more of "finance", "tech", "politics", "general". Use "finance" only when the focus is about markets, investing, company earnings or monetary policy, not merely because a topic has a business angle (for example "data centers in Virginia" -> ["tech", "politics"]).
 - "tickers": uppercase stock ticker symbols only for publicly listed companies named in the focus; otherwise []."""
 
 _DOMAINS = {"finance", "tech", "politics", "general"}

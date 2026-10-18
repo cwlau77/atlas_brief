@@ -229,3 +229,16 @@ async def test_no_key_or_disabled_uses_rules_without_calling_llm(fake_llm, monke
     monkeypatch.setattr(settings, "search_plan_enabled", False)
     assert (await plan_search("climate")).source == "rules"
     assert fake_llm.calls == []
+
+
+def test_market_alone_is_not_a_finance_cue():
+    # "labor market" / "housing market" briefings must not spend finance-API quota.
+    assert rule_plan("labor market in America").is_finance is False
+    assert rule_plan("housing market slowdown").is_finance is False
+    assert rule_plan("stock market selloff").is_finance is True
+    assert rule_plan("emerging markets debt").is_finance is True
+
+
+def test_llm_prompt_reserves_finance_for_market_topics():
+    from backend.search_plan import PLAN_SYSTEM_PROMPT
+    assert "only when" in PLAN_SYSTEM_PROMPT.split('"domains"')[1].split("\n")[0]
