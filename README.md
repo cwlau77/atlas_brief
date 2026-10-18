@@ -1,4 +1,4 @@
-# Atlas Brief
+# Atlas
 
 Global news intelligence for time-constrained readers: one focus phrase in, a
 synthesized briefing out — key developments with historical context, emerging

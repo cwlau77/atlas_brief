@@ -38,7 +38,7 @@ function Shell() {
       </main>
       <footer className="footer">
         <div className="wrap">
-          <span>Atlas Brief · thirteen news sources and 26 newsroom feeds</span>
+          <span>Atlas · thirteen news sources and 26 newsroom feeds</span>
           <span>Analysis is model-written. Check it against the cited sources.</span>
         </div>
       </footer>

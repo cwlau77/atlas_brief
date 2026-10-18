@@ -1,4 +1,4 @@
-# Atlas Brief — frontend
+# Atlas — frontend
 
 Vite + React + TypeScript SPA. Design system: **Oat**, a warm paper surface
 (oat, oat-deep, paper) with ink text and a terracotta accent for high-severity
