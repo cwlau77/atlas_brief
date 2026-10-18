@@ -38,7 +38,7 @@ function Shell() {
       </main>
       <footer className="footer">
         <div className="wrap">
-          <span>Atlas Brief · NewsAPI, GDELT and fifteen wire services</span>
+          <span>Atlas Brief · thirteen news sources and 27 newsroom feeds</span>
           <span>Analysis is model-written. Check it against the cited sources.</span>
         </div>
       </footer>

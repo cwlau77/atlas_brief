@@ -11,7 +11,7 @@ import { useSettings } from '../state/hooks'
 import { useGenerateBriefing } from '../state/useGenerateBriefing'
 import './home.css'
 
-const SUGGESTIONS = ['Red Sea shipping', 'Sahel security', 'Chip export controls', 'Climate finance']
+const SUGGESTIONS = ['Red Sea shipping', 'Data centers and privacy', 'Chip export controls', 'Climate finance']
 const PROMPTS = ['about the Strait of Hormuz', 'about lithium supply in the Andes', 'about the ECB rate decision', 'about Sudan’s ceasefire talks'] as const
 const CONTOURS: ContourCenter[] = [
   { x: 0.74, y: 0.48, rings: 22, step: 26, seed: 1.7 },
@@ -52,7 +52,7 @@ export function HomePage() {
           <p className="eyebrow label"><span>{clock.day}</span><span>{clock.time}</span><span>Global intelligence</span></p>
           <RotatingHeadline />
           <p className="home-lede">
-            Atlas reads NewsAPI, GDELT and fifteen wire services, then tells you{' '}
+            Atlas searches up to thirteen news sources and 27 newsroom feeds, then tells you{' '}
             <em className="serif">what changed, where it happened,</em> and what to read next.
           </p>
           <div className="home-ask">
@@ -66,7 +66,7 @@ export function HomePage() {
             </div>
           </div>
           <p className="provenance label">
-            <span>NewsAPI</span><span>GDELT 2.0</span><span>15 wire feeds</span><span>Model-written, source-cited</span>
+            <span>Google News</span><span>NewsAPI</span><span>GDELT 2.0</span><span>27 newsroom feeds</span><span>Model-written, source-cited</span>
           </p>
         </div>
         <div className="home-globe">
