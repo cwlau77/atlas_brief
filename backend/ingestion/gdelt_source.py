@@ -5,13 +5,15 @@ import time
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import parse_datetime
+from backend.ingestion.common import dict_items, make_article
 from backend.ingestion.query_format import best_query, query_terms
 from backend.models import Article
 from backend.search_plan import SearchPlan
 
 logger = logging.getLogger("briefing.gdelt")
 
+SOURCE_NAME = "gdelt"
+FINANCE_ONLY = False
 GDELT_DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 # GDELT enforces ~1 request per 5s per IP and Render uses shared egress IPs, so
@@ -31,9 +33,6 @@ async def _pace() -> None:
             await asyncio.sleep(wait)
         _last_request_at = time.monotonic()
 
-
-SOURCE_NAME = "gdelt"
-FINANCE_ONLY = False
 
 # GDELT sourcecountry takes FIPS codes; only the ones the planner commonly emits are mapped.
 _FIPS = {"US": "US", "GB": "UK"}
@@ -77,16 +76,9 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
         return []
     if not isinstance(payload, dict):
         return []
-    articles: list[Article] = []
-    for item in payload.get("articles") or []:
-        title, url = item.get("title") or "", item.get("url") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title, snippet=title, url=url,
-            source=item.get("domain") or "GDELT",
-            published_at=parse_datetime(item.get("seendate")),
-            country=item.get("sourcecountry") or None,
-            raw_source_type="gdelt",
-        ))
-    return articles
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"), outlet=item.get("domain") or "GDELT",
+                     published_at=item.get("seendate"), country=item.get("sourcecountry") or None)
+        for item in dict_items(payload.get("articles"))
+    ]
+    return [a for a in articles if a]

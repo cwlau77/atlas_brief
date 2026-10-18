@@ -3,7 +3,7 @@ import logging
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, parse_datetime
+from backend.ingestion.common import dict_items, get_json, make_article
 from backend.ingestion.query_format import or_of_ands
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -35,19 +35,12 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
                              headers={"X-Api-Key": settings.newsapi_key})
     if not isinstance(payload, dict):
         return []
-    articles: list[Article] = []
-    for item in payload.get("articles") or []:
-        title, url = item.get("title") or "", item.get("url") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(item.get("description") or item.get("content")) or title,
-            url=url,
-            source=(item.get("source") or {}).get("name") or "NewsAPI",
-            published_at=parse_datetime(item.get("publishedAt")),
-            country=None,
-            raw_source_type="newsapi",
-        ))
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"),
+                     snippet=item.get("description") or item.get("content"),
+                     outlet=(item.get("source") or {}).get("name") or "NewsAPI", published_at=item.get("publishedAt"))
+        for item in dict_items(payload.get("articles"))
+    ]
+    articles = [a for a in articles if a]
     logger.info("source=%s count=%d totalResults=%s", SOURCE_NAME, len(articles), payload.get("totalResults"))
     return articles

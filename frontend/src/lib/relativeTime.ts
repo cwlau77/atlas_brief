@@ -1,10 +1,3 @@
-export function formatDate(value: string | null | undefined): string {
-  const parsed = value ? new Date(value) : new Date()
-  return parsed.toLocaleString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit',
-  })
-}
-
 export function relativeTime(value: string | null | undefined): string {
   if (!value) return 'just now'
   const parsed = new Date(value)

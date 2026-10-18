@@ -1,8 +1,7 @@
 """Turn a free-text focus into a SearchPlan: search strings, required concepts,
 an optional coverage-country filter and topic domains.
 
-rule_plan is deterministic and always available; plan_search (below, Task 2)
-layers an LLM planner on top and falls back to rule_plan on any failure.
+rule_plan is deterministic and always available; plan_search layers an LLM planner on top and falls back to rule_plan on any failure.
 """
 
 from __future__ import annotations
@@ -11,9 +10,9 @@ import logging
 import re
 from typing import Literal
 
-from anthropic import AsyncAnthropic
 from pydantic import BaseModel, Field
 
+from backend import llm
 from backend.config import settings
 from backend.focus_terms import _TERM_ALIASES, _normalize_focus_tokens, distinctive_tokens, topic_heads
 from backend.llm_json import extract_json
@@ -237,18 +236,13 @@ def _clamp(data: dict, fallback: SearchPlan) -> SearchPlan:
 
 
 async def _llm_plan(focus: str, fallback: SearchPlan) -> SearchPlan:
-    client = AsyncAnthropic(
-        api_key=settings.anthropic_api_key,
-        timeout=settings.search_plan_timeout_seconds,
-        max_retries=0,
-    )
-    response = await client.messages.create(
+    raw = await llm.complete(
         model=settings.search_plan_model,
-        max_tokens=512,
         system=PLAN_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": f"Focus: {focus}"}],
+        max_tokens=512,
+        timeout=settings.search_plan_timeout_seconds,
     )
-    raw = "".join(block.text for block in response.content if getattr(block, "type", "") == "text")
     return _clamp(extract_json(raw), fallback)
 
 

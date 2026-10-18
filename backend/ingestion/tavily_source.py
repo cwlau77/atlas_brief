@@ -1,7 +1,7 @@
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, outlet_from_url, parse_datetime, post_json
+from backend.ingestion.common import dict_items, make_article, outlet_from_url, post_json
 from backend.ingestion.query_format import best_query
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -23,21 +23,10 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     body = {"query": best_query(plan), "topic": "news", "days": 7, "max_results": 15, "search_depth": "basic"}
     payload = await post_json(client, TAVILY_SEARCH, source=SOURCE_NAME, json_body=body,
                               headers={"Authorization": f"Bearer {settings.tavily_api_key}"})
-    items = payload.get("results") if isinstance(payload, dict) else None
-    articles: list[Article] = []
-    for item in items or []:
-        if not isinstance(item, dict):
-            continue
-        title, url = clean_text(item.get("title")), item.get("url") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(item.get("content")) or title,
-            url=url,
-            source=outlet_from_url(url) or "Tavily",
-            published_at=parse_datetime(item.get("published_date")),
-            country=None,
-            raw_source_type="tavily",
-        ))
-    return articles
+    items = dict_items(payload.get("results") if isinstance(payload, dict) else None)
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"), snippet=item.get("content"),
+                     outlet=outlet_from_url(item.get("url") or "") or "Tavily", published_at=item.get("published_date"))
+        for item in items
+    ]
+    return [a for a in articles if a]

@@ -8,11 +8,14 @@ import httpx
 
 from backend.config import settings
 from backend.focus_terms import keyword_hit
-from backend.ingestion.common import sub_request_timeout
+from backend.ingestion.common import make_article, sub_request_timeout
 from backend.models import Article
 from backend.search_plan import SearchPlan
 
 logger = logging.getLogger("briefing.rss")
+
+SOURCE_NAME = "rss"
+FINANCE_ONLY = False
 
 # Deliberately spans regions: a "global briefing" product fed only by Western
 # outlets can't surface cross-region framing differences. All feeds verified
@@ -54,13 +57,8 @@ RSS_FEEDS: list[tuple[str, str]] = [
     ("Financial Times", "https://www.ft.com/rss/home"),
 ]
 
-def _entry_to_article(outlet: str, entry) -> Article | None:
-    title = getattr(entry, "title", "") or ""
-    link = getattr(entry, "link", "") or ""
-    snippet = getattr(entry, "summary", "") or title
-    if not title or not link:
-        return None
 
+def _entry_to_article(outlet: str, entry) -> Article | None:
     published_at = None
     struct_time = getattr(entry, "published_parsed", None) or getattr(entry, "updated_parsed", None)
     if struct_time:
@@ -72,15 +70,8 @@ def _entry_to_article(outlet: str, entry) -> Article | None:
         except Exception:
             published_at = None
 
-    return Article(
-        title=title,
-        snippet=snippet,
-        url=link,
-        source=outlet,
-        published_at=published_at,
-        country=None,
-        raw_source_type="rss",
-    )
+    return make_article(SOURCE_NAME, title=getattr(entry, "title", ""), url=getattr(entry, "link", ""),
+                        snippet=getattr(entry, "summary", ""), outlet=outlet, published_at=published_at)
 
 
 def _parse_feed(outlet: str, content: str, keywords: list[str]) -> list[Article]:
@@ -127,10 +118,6 @@ async def _fetch_feed_text(client: httpx.AsyncClient, outlet: str, url: str) -> 
     except Exception as exc:
         logger.warning("feed %s (%s) fetch failed: %s", outlet, url, exc or type(exc).__name__)
         return ""
-
-
-SOURCE_NAME = "rss"
-FINANCE_ONLY = False
 
 
 def enabled() -> bool:

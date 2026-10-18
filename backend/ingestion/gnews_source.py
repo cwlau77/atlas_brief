@@ -1,7 +1,7 @@
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, lookback_start, parse_datetime
+from backend.ingestion.common import dict_items, get_json, lookback_start, make_article
 from backend.ingestion.query_format import best_query
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -33,19 +33,10 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     if plan.country:
         params["country"] = plan.country.lower()
     payload = await get_json(client, GNEWS_SEARCH, source=SOURCE_NAME, params=params)
-    articles: list[Article] = []
-    items = payload.get("articles") if isinstance(payload, dict) else None
-    for item in items or []:
-        title, url = item.get("title") or "", item.get("url") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(item.get("description")) or title,
-            url=url,
-            source=(item.get("source") or {}).get("name") or "GNews",
-            published_at=parse_datetime(item.get("publishedAt")),
-            country=None,
-            raw_source_type="gnews",
-        ))
-    return articles
+    items = dict_items(payload.get("articles") if isinstance(payload, dict) else None)
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"), snippet=item.get("description"),
+                     outlet=(item.get("source") or {}).get("name") or "GNews", published_at=item.get("publishedAt"))
+        for item in items
+    ]
+    return [a for a in articles if a]

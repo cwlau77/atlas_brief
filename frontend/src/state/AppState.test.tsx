@@ -1,6 +1,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { KEYS } from '../lib/storage'
 import { makeBriefing } from '../test/fixtures'
 import { AppStateProvider } from './AppState'
 import type { AppStateValue } from './context'
@@ -35,6 +36,28 @@ describe('AppStateProvider', () => {
   afterEach(() => {
     act(() => root.unmount())
     container.remove()
+    vi.restoreAllMocks()
+  })
+
+  it('persists archive changes to localStorage', () => {
+    act(() => {
+      latestApi!.fileBriefing(makeBriefing({ id: 'p', area: 'topic-p' }))
+    })
+    expect(JSON.parse(window.localStorage.getItem(KEYS.saved)!).map((b: { id: string }) => b.id)).toEqual(['p'])
+  })
+
+  it('shows one storage-failure toast when a delete cannot be saved', () => {
+    act(() => {
+      latestApi!.fileBriefing(makeBriefing({ id: 'd', area: 'topic-d' }))
+    })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    act(() => {
+      latestApi!.removeBriefing('d')
+    })
+    expect(latestApi!.saved).toEqual([])
+    expect(latestApi!.toasts.filter((t) => t.tone === 'error')).toHaveLength(1)
   })
 
   it('keeps both entries when fileBriefing is called twice before a re-render settles', () => {

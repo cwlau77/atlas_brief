@@ -7,13 +7,13 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
-from anthropic import AsyncAnthropic
 
+from backend import llm
 from backend.config import settings
 from backend.focus_terms import keyword_hit
+from backend.llm_json import extract_json
 from backend.models import Article
 from backend.search_plan import SearchPlan
-from backend.llm_json import extract_json
 
 from .embeddings import cosine_similarity, embed_texts
 from .relevance import filter_by_relevance
@@ -89,14 +89,13 @@ async def rerank(plan: SearchPlan, candidates: list[Article]) -> list[Article] |
     if not candidates or not (settings.rerank_enabled and settings.anthropic_api_key):
         return None
     try:
-        client = AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=settings.rerank_timeout_seconds, max_retries=0)
-        response = await client.messages.create(
+        raw = await llm.complete(
             model=settings.rerank_model,
-            max_tokens=1500,
             system=RERANK_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": _prompt(plan, candidates)}],
+            max_tokens=1500,
+            timeout=settings.rerank_timeout_seconds,
         )
-        raw = "".join(block.text for block in response.content if getattr(block, "type", "") == "text")
         scores = _parse_scores(extract_json(raw), len(candidates))
         if not scores:
             # No usable entries at all (empty "scores" list, or every entry

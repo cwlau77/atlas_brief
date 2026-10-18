@@ -3,7 +3,7 @@ import logging
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, matches_plan, parse_datetime
+from backend.ingestion.common import dict_items, get_json, make_article, matches_plan
 from backend.ingestion.quota import quota
 from backend.models import Article
 from backend.search_plan import SearchPlan
@@ -38,22 +38,10 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
         # Throttling and errors come back as HTTP 200 with an Information/Note/Error message.
         logger.warning("source=alphavantage status=api_error")
         return []
-    articles: list[Article] = []
-    for item in payload.get("feed") or []:
-        if not isinstance(item, dict):
-            continue
-        title, url = clean_text(item.get("title")), item.get("url") or ""
-        if not title or not url:
-            continue
-        article = Article(
-            title=title,
-            snippet=clean_text(item.get("summary")) or title,
-            url=url,
-            source=item.get("source") or "Alpha Vantage",
-            published_at=parse_datetime(item.get("time_published")),
-            country=None,
-            raw_source_type="alphavantage",
-        )
-        if plan.tickers or matches_plan(f"{article.title} {article.snippet}", plan):
-            articles.append(article)
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"), snippet=item.get("summary"),
+                     outlet=item.get("source") or "Alpha Vantage", published_at=item.get("time_published"))
+        for item in dict_items(payload["feed"])
+    ]
+    articles = [a for a in articles if a and (plan.tickers or matches_plan(f"{a.title} {a.snippet}", plan))]
     return articles[: settings.max_articles_per_source]

@@ -17,7 +17,7 @@ def client(monkeypatch, make_article):
             skipped_missing_key=[],
         )
 
-    monkeypatch.setattr(main, "_ingest_all", fake_ingest)
+    monkeypatch.setattr(main, "ingest", fake_ingest)
     # Demo mode exercises the full pipeline without the Anthropic SDK.
     monkeypatch.setattr(settings, "anthropic_api_key", None)
     monkeypatch.setattr(settings, "demo_mode", True)
@@ -61,13 +61,13 @@ def test_rate_limit_429(client, monkeypatch):
 def test_cache_serves_second_request(client, monkeypatch):
     monkeypatch.setattr(settings, "cache_ttl_minutes", 15)
     calls = {"n": 0}
-    real_ingest = main._ingest_all
+    real_ingest = main.ingest
 
-    async def counting_ingest(focus):
+    async def counting_ingest(plan):
         calls["n"] += 1
-        return await real_ingest(focus)
+        return await real_ingest(plan)
 
-    monkeypatch.setattr(main, "_ingest_all", counting_ingest)
+    monkeypatch.setattr(main, "ingest", counting_ingest)
     assert client.post("/briefing", json={"focus": "cache probe"}).status_code == 200
     assert client.post("/briefing", json={"focus": "cache probe"}).status_code == 200
     assert calls["n"] == 1  # second response came from cache
@@ -82,7 +82,7 @@ def test_root_is_api_info_not_html(client):
 def test_502_names_sources_skipped_for_missing_keys(client, monkeypatch):
     async def empty_ingest(plan):
         return IngestResult(articles=[], stats={}, skipped_missing_key=["guardian", "tavily"])
-    monkeypatch.setattr(main, "_ingest_all", empty_ingest)
+    monkeypatch.setattr(main, "ingest", empty_ingest)
     r = client.post("/briefing", json={"focus": "trade policy"})
     assert r.status_code == 502
     assert "guardian" in r.json()["detail"] and "tavily" in r.json()["detail"]
@@ -98,7 +98,7 @@ def test_422_names_sources_skipped_for_missing_keys(client, monkeypatch, make_ar
     async def rank_nothing(focus, plan, articles, embeddings):
         return RankResult(articles=[], candidates=1, reranked=False)
 
-    monkeypatch.setattr(main, "_ingest_all", thin_ingest)
+    monkeypatch.setattr(main, "ingest", thin_ingest)
     monkeypatch.setattr(main, "rank_articles", rank_nothing)
     r = client.post("/briefing", json={"focus": "trade policy"})
     assert r.status_code == 422

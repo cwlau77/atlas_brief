@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, lookback_start, matches_plan, parse_datetime
+from backend.ingestion.common import dict_items, get_json, lookback_start, make_article, matches_plan
 from backend.ingestion.quota import quota
 from backend.models import Article
 from backend.search_plan import SearchPlan
@@ -21,23 +21,12 @@ def enabled() -> bool:
 
 
 def _to_articles(items: object) -> list[Article]:
-    articles: list[Article] = []
-    for item in items if isinstance(items, list) else []:
-        if not isinstance(item, dict):
-            continue
-        title, url = clean_text(item.get("headline")), item.get("url") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(item.get("summary")) or title,
-            url=url,
-            source=item.get("source") or "Finnhub",
-            published_at=parse_datetime(item.get("datetime")),
-            country=None,
-            raw_source_type="finnhub",
-        ))
-    return articles
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("headline"), url=item.get("url"), snippet=item.get("summary"),
+                     outlet=item.get("source") or "Finnhub", published_at=item.get("datetime"))
+        for item in dict_items(items)
+    ]
+    return [a for a in articles if a]
 
 
 async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:

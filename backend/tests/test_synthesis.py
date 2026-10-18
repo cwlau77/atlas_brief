@@ -85,7 +85,7 @@ async def test_synthesis_uses_configured_max_tokens(monkeypatch, make_article):
     # 25 articles with long Google News URLs overflowed the old hard-coded 4000-token cap.
     import json
     from types import SimpleNamespace
-    from backend.synthesis import briefing as briefing_mod
+    import backend.llm as llm
 
     calls = []
 
@@ -98,7 +98,7 @@ async def test_synthesis_uses_configured_max_tokens(monkeypatch, make_article):
         def __init__(self, **_):
             self.messages = FakeMessages()
 
-    monkeypatch.setattr(briefing_mod, "AsyncAnthropic", FakeClient)
+    monkeypatch.setattr(llm, "AsyncAnthropic", FakeClient)
     monkeypatch.setattr(settings, "anthropic_api_key", "test-key")
     monkeypatch.setattr(settings, "synthesis_max_tokens", 12000)
     await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])

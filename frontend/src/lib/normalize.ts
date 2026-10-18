@@ -1,6 +1,5 @@
-// Faithful port of the legacy normalizeBriefing/flattenSourceCitations
-// (index.html:2039-2115). SavedBriefing is the persisted view-model — its shape
-// must stay readable by entries already sitting in users' localStorage.
+// API briefing -> SavedBriefing, the persisted view-model. Its shape must stay
+// readable by entries already sitting in users' localStorage.
 
 import type { ApiBriefing, Contradiction, SourceCitation } from './types'
 

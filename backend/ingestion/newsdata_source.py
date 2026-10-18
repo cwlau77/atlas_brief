@@ -3,7 +3,7 @@ import logging
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, parse_datetime
+from backend.ingestion.common import dict_items, get_json, make_article
 from backend.ingestion.query_format import best_query
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -36,20 +36,10 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     if payload.get("status") != "success":
         logger.warning("source=newsdata status=api_error")
         return []
-    articles: list[Article] = []
-    for item in payload.get("results") or []:
-        if not isinstance(item, dict):
-            continue
-        title, url = item.get("title") or "", item.get("link") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(item.get("description")) or title,
-            url=url,
-            source=item.get("source_name") or item.get("source_id") or "NewsData",
-            published_at=parse_datetime(item.get("pubDate")),
-            country=None,
-            raw_source_type="newsdata",
-        ))
-    return articles
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("link"), snippet=item.get("description"),
+                     outlet=item.get("source_name") or item.get("source_id") or "NewsData",
+                     published_at=item.get("pubDate"))
+        for item in dict_items(payload.get("results"))
+    ]
+    return [a for a in articles if a]

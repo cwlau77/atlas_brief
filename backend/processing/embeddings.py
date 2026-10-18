@@ -1,21 +1,13 @@
-"""Local TF-IDF-style hashing vectorizer for article/focus embedding.
+"""Local hashing vectorizer (unigrams + half-weight bigrams) for article/focus similarity.
 
-We used to call the HuggingFace Inference API here (sentence-transformers/all-MiniLM-L6-v2),
-but HF's serverless endpoint keeps breaking (most recently returning 404 for POST requests).
-For a hackathon-scale app with tens of articles per request, a pure-numpy hashing
-vectorizer with unigrams+bigrams is more reliable, deterministic across process
-restarts (zlib.crc32 for stable hashing), and has zero network latency.
-
-Empirically, cosine similarity on these vectors gives good rankings for
-"focus keyword mentioned" vs "off-topic" article discrimination — which is all
-the downstream filter (filter_by_relevance) needs.
+Deterministic across processes (zlib.crc32) and free of network calls; for tens
+of articles per request it separates on-topic from off-topic well enough for the
+dedup, prefilter and fallback relevance passes.
 """
 
 import logging
 import re
 import zlib
-from typing import Any, Optional
-
 import numpy as np
 
 logger = logging.getLogger("briefing.embeddings")
@@ -64,41 +56,25 @@ def _embed_one(text: str) -> np.ndarray:
     for a, b in zip(tokens, tokens[1:]):
         vec[_bucket(f"{a}_{b}")] += 0.5
 
-    # L2-normalize so cosine similarity reduces to a dot product, matching the
-    # cosine_similarity helpers below.
+    # L2-normalize so cosine similarity reduces to a dot product.
     norm = np.linalg.norm(vec)
     if norm > 0:
         vec /= norm
     return vec
 
 
-async def embed_texts(texts: list[str], client: Optional[Any] = None) -> np.ndarray:
+async def embed_texts(texts: list[str]) -> np.ndarray:
     """Embed a batch of texts into a (len(texts), _DIM) float32 matrix.
-
-    The `client` kwarg is accepted for backward compatibility with callers that
-    pass a shared httpx client; it is now unused since embedding is local.
 
     Returns an empty (0, _DIM) array for empty input so callers can rely on
     `.shape[1]` being well-defined.
     """
-    del client  # preserved for signature compatibility; embedding is local
     if not texts:
         return np.zeros((0, _DIM), dtype=np.float32)
 
     vectors = np.stack([_embed_one(t) for t in texts], axis=0)
     logger.info("embedded %d texts locally (dim=%d)", len(texts), _DIM)
     return vectors
-
-
-def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
-    if vectors.size == 0:
-        return np.zeros((0, 0), dtype=np.float32)
-    # Vectors are already L2-normalized by _embed_one. Renormalize to be safe
-    # in case callers pass in unnormalized matrices.
-    norms = np.linalg.norm(vectors, axis=1, keepdims=True)
-    norms = np.where(norms == 0, 1.0, norms)
-    normed = vectors / norms
-    return normed @ normed.T
 
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> np.ndarray:

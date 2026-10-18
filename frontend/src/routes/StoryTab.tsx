@@ -7,12 +7,12 @@ import { Globe } from '../globe/Globe'
 import { buildRegionPoints } from '../globe/regions'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { usePrintOnLoad } from '../lib/usePrintOnLoad'
-import { useSettings } from '../state/hooks'
+import { useAppState } from '../state/hooks'
 import { useBriefing } from './briefingContext'
 
 export function StoryTab() {
   const briefing = useBriefing()
-  const { settings } = useSettings()
+  const { settings } = useAppState()
   const reduced = usePrefersReducedMotion()
   usePrintOnLoad()
   const regions = useMemo(() => buildRegionPoints(briefing), [briefing])

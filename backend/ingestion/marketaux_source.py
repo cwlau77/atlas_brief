@@ -1,7 +1,7 @@
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, lookback_start, outlet_from_url, parse_datetime
+from backend.ingestion.common import dict_items, get_json, lookback_start, make_article, outlet_from_url
 from backend.ingestion.query_format import best_query
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -35,21 +35,12 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     if plan.country:
         params["countries"] = plan.country.lower()
     payload = await get_json(client, MARKETAUX_NEWS, source=SOURCE_NAME, params=params)
-    items = payload.get("data") if isinstance(payload, dict) else None
-    articles: list[Article] = []
-    for item in items or []:
-        if not isinstance(item, dict):
-            continue
-        title, url = clean_text(item.get("title")), item.get("url") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(item.get("description") or item.get("snippet")) or title,
-            url=url,
-            source=item.get("source") or outlet_from_url(url) or "Marketaux",
-            published_at=parse_datetime(item.get("published_at")),
-            country=None,
-            raw_source_type="marketaux",
-        ))
-    return articles
+    items = dict_items(payload.get("data") if isinstance(payload, dict) else None)
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"),
+                     snippet=item.get("description") or item.get("snippet"),
+                     outlet=item.get("source") or outlet_from_url(item.get("url") or "") or "Marketaux",
+                     published_at=item.get("published_at"))
+        for item in items
+    ]
+    return [a for a in articles if a]

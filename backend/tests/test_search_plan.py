@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import backend.search_plan as search_plan
+import backend.llm as llm
 from backend.config import settings
 from backend.ingestion.common import matches_plan
 from backend.search_plan import SearchPlan, plan_search, rule_plan
@@ -148,7 +148,7 @@ class _FakeAnthropic:
 @pytest.fixture
 def fake_llm(monkeypatch):
     _FakeAnthropic.calls = []
-    monkeypatch.setattr(search_plan, "AsyncAnthropic", _FakeAnthropic)
+    monkeypatch.setattr(llm, "AsyncAnthropic", _FakeAnthropic)
     monkeypatch.setattr(settings, "anthropic_api_key", "test-key")
     monkeypatch.setattr(settings, "search_plan_enabled", True)
     return _FakeAnthropic

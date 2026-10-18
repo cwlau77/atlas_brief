@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { ToastItem } from '../components/Toast'
 import type { SavedBriefing } from '../lib/normalize'
 import { KEYS, loadJSON, saveJSON } from '../lib/storage'
@@ -38,6 +38,16 @@ function loadStarred(): string[] {
   return Array.isArray(value) ? value.filter((x): x is string => typeof x === 'string') : []
 }
 
+/** Writes `value` to localStorage whenever it changes after load; `onFail` runs when the write fails. */
+function usePersist(key: string, value: unknown, onFail: () => void): void {
+  const written = useRef(value)
+  useEffect(() => {
+    if (value === written.current) return
+    written.current = value
+    if (!saveJSON(key, value)) onFail()
+  }, [key, value, onFail])
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [saved, setSaved] = useState<SavedBriefing[]>(loadSaved)
   const [starred, setStarred] = useState<string[]>(loadStarred)
@@ -57,37 +67,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [pushToast],
   )
 
+  usePersist(KEYS.saved, saved, storageFailed)
+  usePersist(KEYS.starred, starred, storageFailed)
+  usePersist(KEYS.settings, settings, storageFailed)
+
   const fileBriefing = useCallback((briefing: SavedBriefing) => {
     // Replace any same-topic entry, newest first, keep twelve (legacy behavior).
-    setSaved((prev) => {
-      const next = [briefing, ...prev.filter((b) => b.area !== briefing.area)].slice(0, ARCHIVE_LIMIT)
-      if (!saveJSON(KEYS.saved, next)) storageFailed()
-      return next
-    })
-  }, [storageFailed])
+    setSaved((prev) => [briefing, ...prev.filter((b) => b.area !== briefing.area)].slice(0, ARCHIVE_LIMIT))
+  }, [])
 
   const removeBriefing = useCallback((id: string) => {
-    let failed = false
-    setSaved((prev) => {
-      const next = prev.filter((b) => b.id !== id)
-      if (!saveJSON(KEYS.saved, next)) failed = true
-      return next
-    })
-    setStarred((prev) => {
-      const next = prev.filter((s) => s !== id)
-      if (!saveJSON(KEYS.starred, next)) failed = true
-      return next
-    })
-    if (failed) storageFailed()
-  }, [storageFailed])
+    setSaved((prev) => prev.filter((b) => b.id !== id))
+    setStarred((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : prev))
+  }, [])
 
   const toggleStar = useCallback((id: string) => {
-    setStarred((prev) => {
-      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-      if (!saveJSON(KEYS.starred, next)) storageFailed()
-      return next
-    })
-  }, [storageFailed])
+    setStarred((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]))
+  }, [])
 
   const setSession = useCallback((briefing: SavedBriefing) => {
     setSessionState(briefing)
@@ -95,12 +91,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateSettings = useCallback((patch: Partial<UserSettings>) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...patch }
-      if (!saveJSON(KEYS.settings, next)) storageFailed()
-      return next
-    })
-  }, [storageFailed])
+    setSettings((prev) => ({ ...prev, ...patch }))
+  }, [])
 
   const saveProfile = useCallback((next: UserProfile) => {
     setProfile(next)

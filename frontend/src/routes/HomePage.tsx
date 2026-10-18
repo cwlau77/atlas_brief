@@ -7,7 +7,7 @@ import { markIntroPlayed, shouldPlayIntro } from '../lib/intro'
 import { useClock } from '../lib/useClock'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { useTypewriter } from '../lib/useTypewriter'
-import { useSettings } from '../state/hooks'
+import { useAppState } from '../state/hooks'
 import { useGenerateBriefing } from '../state/useGenerateBriefing'
 import './home.css'
 
@@ -21,7 +21,7 @@ const INTRO_MS = 2600
 
 export function HomePage() {
   const reduced = usePrefersReducedMotion()
-  const { settings } = useSettings()
+  const { settings } = useAppState()
   const clock = useClock(settings.timeZone, 15_000)
   const { generate, retry, loading, error } = useGenerateBriefing()
   const [intro, setIntro] = useState(() => shouldPlayIntro(reduced))

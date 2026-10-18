@@ -3,7 +3,7 @@ import asyncio
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, lookback_start, parse_datetime, sub_request_timeout
+from backend.ingestion.common import dict_items, get_json, lookback_start, make_article, sub_request_timeout
 from backend.ingestion.query_format import and_query
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -35,21 +35,13 @@ async def _search(client: httpx.AsyncClient, query: str) -> list[Article]:
     payload = await get_json(client, GUARDIAN_SEARCH, source=SOURCE_NAME, params=params, timeout=sub_request_timeout())
     response = payload.get("response") if isinstance(payload, dict) else None
     results = response.get("results") if isinstance(response, dict) else None
-    articles: list[Article] = []
-    for item in results or []:
-        title, url = item.get("webTitle") or "", item.get("webUrl") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text((item.get("fields") or {}).get("trailText")) or title,
-            url=url,
-            source="The Guardian",
-            published_at=parse_datetime(item.get("webPublicationDate")),
-            country="GB",
-            raw_source_type="guardian",
-        ))
-    return articles
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("webTitle"), url=item.get("webUrl"),
+                     snippet=(item.get("fields") or {}).get("trailText"), outlet="The Guardian",
+                     published_at=item.get("webPublicationDate"), country="GB")
+        for item in dict_items(results)
+    ]
+    return [a for a in articles if a]
 
 
 async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:

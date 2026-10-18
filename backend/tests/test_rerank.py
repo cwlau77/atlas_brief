@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import backend.processing.rerank as rerank_module
+import backend.llm as llm_module
 from backend.config import settings
 from backend.processing.embeddings import embed_texts
 from backend.processing.rerank import _parse_scores, prefilter, rank_articles, rerank
@@ -28,7 +28,7 @@ class _FakeAnthropic:
 @pytest.fixture
 def fake_llm(monkeypatch):
     _FakeAnthropic.calls = []
-    monkeypatch.setattr(rerank_module, "AsyncAnthropic", _FakeAnthropic)
+    monkeypatch.setattr(llm_module, "AsyncAnthropic", _FakeAnthropic)
     monkeypatch.setattr(settings, "anthropic_api_key", "test-key")
     monkeypatch.setattr(settings, "rerank_enabled", True)
     return _FakeAnthropic

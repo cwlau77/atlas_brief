@@ -1,7 +1,7 @@
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, get_json, outlet_from_url, parse_datetime
+from backend.ingestion.common import dict_items, get_json, make_article, outlet_from_url
 from backend.ingestion.query_format import best_query
 from backend.ingestion.quota import quota
 from backend.models import Article
@@ -25,21 +25,11 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
         params["country"] = plan.country.upper()
     payload = await get_json(client, BRAVE_NEWS, source=SOURCE_NAME, params=params,
                              headers={"X-Subscription-Token": settings.brave_api_key, "Accept": "application/json"})
-    items = payload.get("results") if isinstance(payload, dict) else None
-    articles: list[Article] = []
-    for item in items or []:
-        if not isinstance(item, dict):
-            continue
-        title, url = clean_text(item.get("title")), item.get("url") or ""
-        if not title or not url:
-            continue
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(item.get("description")) or title,
-            url=url,
-            source=(item.get("profile") or {}).get("name") or outlet_from_url(url) or "Brave",
-            published_at=parse_datetime(item.get("page_age")),
-            country=None,
-            raw_source_type="brave",
-        ))
-    return articles
+    items = dict_items(payload.get("results") if isinstance(payload, dict) else None)
+    articles = [
+        make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"), snippet=item.get("description"),
+                     outlet=(item.get("profile") or {}).get("name") or outlet_from_url(item.get("url") or "") or "Brave",
+                     published_at=item.get("page_age"))
+        for item in items
+    ]
+    return [a for a in articles if a]

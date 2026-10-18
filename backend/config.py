@@ -43,7 +43,6 @@ class Settings(BaseSettings):
     # Output cap for the briefing JSON. 25 articles with long Google News URLs
     # overflowed 4000 tokens and truncated the JSON mid-reply.
     synthesis_max_tokens: int = 12000
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Without an Anthropic key the server refuses to synthesize (503) unless this
     # flag explicitly opts into the keyword-matched fallback "demo" briefing.

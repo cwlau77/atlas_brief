@@ -2,8 +2,7 @@ import re
 from collections import Counter
 from datetime import datetime, timezone
 
-from anthropic import AsyncAnthropic
-
+from backend import llm
 from backend.config import settings
 from backend.llm_json import extract_json
 from backend.models import (
@@ -16,6 +15,7 @@ from backend.models import (
     SourceCitation,
     Tension,
 )
+
 
 class SynthesisUnavailableError(RuntimeError):
     """Synthesis cannot run at all (no API key and demo mode disabled)."""
@@ -112,10 +112,7 @@ def _build_user_prompt(focus: str, articles: list[Article]) -> str:
 
 
 def _source_breakdown(articles: list[Article]) -> dict[str, int]:
-    counts: dict[str, int] = {}
-    for a in articles:
-        counts[a.raw_source_type] = counts.get(a.raw_source_type, 0) + 1
-    return counts
+    return dict(Counter(a.raw_source_type for a in articles))
 
 
 def _article_at(item, articles: list[Article]) -> Article | None:
@@ -290,7 +287,7 @@ def _fallback_briefing(focus: str, articles: list[Article]) -> Briefing:
         priority_alerts=priority_alerts,
         recommended_readings=recommended_readings,
         article_count=article_count,
-        source_breakdown=dict(Counter(article.raw_source_type for article in articles)),
+        source_breakdown=_source_breakdown(articles),
     )
 
 
@@ -382,19 +379,16 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
             return _fallback_briefing(focus, articles)
         raise SynthesisUnavailableError("ANTHROPIC_API_KEY is not configured")
 
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     messages: list[dict] = [{"role": "user", "content": _build_user_prompt(focus, articles)}]
 
     last_error: Exception | None = None
     for _attempt in (1, 2):
-        response = await client.messages.create(
+        raw_text = await llm.complete(
             model=settings.synthesis_model,
-            max_tokens=settings.synthesis_max_tokens,
             system=SYSTEM_PROMPT,
             messages=messages,
+            max_tokens=settings.synthesis_max_tokens,
         )
-        text_parts = [block.text for block in response.content if getattr(block, "type", "") == "text"]
-        raw_text = "".join(text_parts).strip()
         try:
             data = extract_json(raw_text)
             return briefing_from_data(data, focus, articles)

@@ -5,13 +5,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
-from backend.ingestion import IngestResult, ingest
+from backend.ingestion import ingest
 from backend.models import Briefing, BriefingRequest
 from backend.processing import deduplicate, embed_texts
 from backend.processing.rerank import rank_articles
 from backend.processing.urls import dedupe_exact
 from backend.rate_limit import SlidingWindowLimiter
-from backend.search_plan import SearchPlan, plan_search
+from backend.search_plan import plan_search
 from backend.synthesis import (
     SynthesisFailedError,
     SynthesisUnavailableError,
@@ -57,17 +57,6 @@ async def root() -> dict[str, str]:
     return {"service": "atlas-brief-api", "docs": "/docs", "health": "/health"}
 
 
-async def _ingest_all(plan: SearchPlan) -> IngestResult:
-    result = await ingest(plan)
-    logger.info(
-        "ingestion summary phrase=%r plan=%s: %s skipped=%s",
-        plan.phrase, plan.source,
-        {name: (s.count, s.status, s.ms) for name, s in result.stats.items()},
-        result.skipped_missing_key,
-    )
-    return result
-
-
 def _client_ip(request: Request) -> str:
     # Render/Vercel sit behind proxies; the first X-Forwarded-For hop is the client.
     forwarded = request.headers.get("x-forwarded-for")
@@ -91,50 +80,37 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     focus = req.focus.strip()
     cache_key = focus.lower()
 
-    # Check cache first — skip the whole pipeline if we have a fresh briefing
-    # for this focus within the configured TTL.
     if settings.cache_ttl_minutes > 0:
         cached = _briefing_cache.get(cache_key)
         if cached and cached[1] > time.time():
             logger.info("cache hit for focus=%r", focus)
             return cached[0]
 
-    # Layer 2: plan + ingest (parallel fan-out across all enabled sources)
-    ingest_started = time.monotonic()
+    started = time.monotonic()
     plan = await plan_search(focus)
-    ingest_result = await _ingest_all(plan)
-    articles = ingest_result.articles
-    merged_count = len(articles)
-    articles = dedupe_exact(articles)
-    logger.info("exact dedupe for focus=%r: %d -> %d articles", focus, merged_count, len(articles))
-    logger.info("ingested %d raw articles for focus=%r", len(articles), focus)
+    ingest_result = await ingest(plan)
+    articles = dedupe_exact(ingest_result.articles)
+    merged_count = len(ingest_result.articles)
     if not articles:
         hint = _missing_key_hint(ingest_result.skipped_missing_key) or (
             " All upstream sources returned zero articles — try a broader focus, or retry in a minute in case an upstream rate limit is in effect."
         )
         raise HTTPException(status_code=502, detail=f"No articles could be fetched from any source.{hint}")
 
-    # Layer 3: process (embed -> dedupe -> relevance filter)
-    # Embedding is now a local TF-IDF hashing vectorizer — no external calls,
-    # no API key required, no rate limits. It returns a populated matrix
-    # unconditionally (unless the input list is empty).
-    texts = [f"{a.title}. {a.snippet}" for a in articles]
-    embeddings = await embed_texts(texts)
-
+    embeddings = await embed_texts([f"{a.title}. {a.snippet}" for a in articles])
     articles, embeddings = deduplicate(articles, embeddings)
-    rank_result = await rank_articles(focus, plan, articles, embeddings)
     deduped_count = len(articles)
+    rank_result = await rank_articles(focus, plan, articles, embeddings)
     articles = rank_result.articles
     logger.info(
-        "briefing pipeline focus=%r plan=%s queries=%s country=%s domains=%s sources=%s "
+        "briefing pipeline focus=%r plan=%s queries=%s country=%s domains=%s sources=%s skipped=%s "
         "merged=%d deduped=%d candidates=%d kept=%d reranked=%s elapsed_ms=%d",
         focus, plan.source, plan.queries, plan.country, plan.domains,
         {name: f"{s.count}/{s.status}/{s.ms}ms" for name, s in ingest_result.stats.items()},
+        ingest_result.skipped_missing_key,
         merged_count, deduped_count, rank_result.candidates, len(articles), rank_result.reranked,
-        int((time.monotonic() - ingest_started) * 1000),
+        int((time.monotonic() - started) * 1000),
     )
-
-    logger.info("post-processing article count: %d", len(articles))
     if not articles:
         hint = _missing_key_hint(ingest_result.skipped_missing_key)
         raise HTTPException(
@@ -142,7 +118,6 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
             detail=f"No recent articles matched the focus '{focus}'. Try a broader phrase or a different topic.{hint}",
         )
 
-    # Layer 4: synthesize structured briefing (Haiku by default, per settings.synthesis_model)
     try:
         briefing = await synthesize_briefing(focus, articles)
     except SynthesisUnavailableError:
@@ -159,14 +134,8 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
 
     # Server-side guarantee that every cited URL came from the ingested articles.
     briefing = enforce_url_allowlist(briefing, {a.url for a in articles})
-
-    # Layer 4b: enrich key developments with historical context (parallel Haiku calls,
-    # capped by context_enrichment_limit for speed).
     briefing = await enrich_with_historical_context(briefing)
 
-    # Populate cache.
     if settings.cache_ttl_minutes > 0:
         _briefing_cache[cache_key] = (briefing, time.time() + settings.cache_ttl_minutes * 60)
-
-    # Layer 5: return
     return briefing

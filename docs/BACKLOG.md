@@ -1,11 +1,11 @@
 # Atlas backlog
 
-Ideas captured for later. Each needs its own design pass (brainstorm → spec → plan) before work starts. The longer product backlog (Kano-ranked: watchlist and deltas, time-budget path, framing compass, shareable links, and more) is in `docs/HANDOFF-code-review-and-backlog-2026-10-17.txt`, Part B.
+Ideas captured for later. Each needs its own design pass (brainstorm → spec → plan) before work starts. The longer product backlog (Kano-ranked: watchlist and deltas, time-budget path, framing compass, shareable links, and more) is in `docs/archive/HANDOFF-code-review-and-backlog-2026-10-17.txt`, Part B. Shipped implementation plans are in `docs/archive/plans/`.
 
 ## 0. Next up
 
-### Repo cleanup and code review
-A full code review and cleanup pass before new features: remove fluff and dead code, trim the docs (the 3k-line retrieval plan can be archived now that it has shipped), and clear the small follow-ups listed under §3.
+### ~~Repo cleanup and code review~~ (done 2026-10-18)
+Thermo-nuclear review pass. Shipped: one Claude call helper (`backend/llm.py`) for planning, rerank, synthesis and context; a shared `make_article` for all 13 sources; a single pipeline log line in `main.py`; dead code removed (unused embedding helpers and setting, redundant URL dedupe, unused icons and helpers); `AppState` persistence moved out of state updaters (fixes a delete-failure toast that never fired); shipped plans archived. Deferred findings are under §5.
 
 ### Rebrand to "Atlas"
 Rename the product from "Atlas Brief" to "Atlas", together with new brand work (logo, identity, UI refresh). This touches the masthead, footer and Home copy in `App.tsx` and `HomePage.tsx`, the page title and meta tags, the README files, and possibly the Vercel and Render project names. Do it as one pass with the logo so the product isn't rebranded twice.
@@ -44,7 +44,7 @@ Broaden retrieval shipped on 2026-10-17: query planning, 13 sources, URL dedupe,
 - **Live check with real keys.** "Data centers and privacy in the US" should return 15 or more on-topic articles from at least 4 source types. Use the `briefing pipeline` log line to check the rerank fallback rate and latency.
 - **Google News defaults to the US** (`google_news_source.py`: `plan.country or "US"`), which skews global topics. It also stores `news.google.com` wrapper URLs instead of the publisher URL, so the same Reuters story doesn't dedupe against Reuters from RSS.
 - **Quota is spent before the request.** Timeouts and 429s still use up the daily budget.
-- **Repeated article-building code.** Sources repeat the same "loop items → skip empty → build `Article`" code. A shared `article_from(...)` helper would remove one-off bugs, such as Guardian always being tagged `country="GB"`.
+- **Done 2026-10-18:** shared `make_article(...)` in `ingestion/common.py`. Still open: Guardian always tags `country="GB"`, even for non-UK stories.
 - **Rerank reply size.** The rerank reply may often hit the 8 s timeout at 60 candidates. If the live check shows frequent fallbacks, ask for a compact reply format.
 - **Coverage inspector.** Show article count, source mix and the time window used on Signals, so a thin brief can be explained from the UI.
 
@@ -55,3 +55,14 @@ Move user state off `localStorage` into Supabase. Today the archive, profile and
 - **First tables:** briefings (the archive), user profile/settings, and optionally the per-source daily quota counters and the briefing cache.
 - **Features it unlocks:** shareable read-only briefing links, watchlist and "what changed since the last brief", multi-device sync, and personas stored server-side.
 - **Open questions:** auth (Supabase Auth, or anonymous plus magic link), migrating existing `localStorage` archives, and row-level security policies.
+
+## 5. Code-review follow-ups (deferred from the 2026-10-18 review)
+
+These change behavior or need a live check, so they weren't folded into the cleanup.
+
+- **Two keyword systems.** `focus_terms` (curated aliases, distinctive tokens) drives the rerank fallback filter, while `SearchPlan.match_terms` drives the prefilter and RSS. The fallback re-filters the prefiltered candidates with a different vocabulary built from the same focus. Collapse to one: let `filter_by_relevance` take the plan instead of re-deriving terms from the phrase. Needs the live check in §3 first.
+- **Legacy citation dicts in synthesis.** `_parse_citations` and `_parse_readings` still accept `{"outlet", "url"}` dicts from before article-number citations. A reading dict with a URL but no title raises `KeyError`, which burns a full synthesis retry. Delete the legacy branches; `enforce_url_allowlist` stays as the backstop.
+- **Quota lookup by string.** `QuotaGuard.take` finds budgets with `getattr(settings, f"quota_{source}_per_day")`. A typo silently means unlimited. Use an explicit source-to-budget map.
+- **The "frequency" selector does nothing.** Daily, twice-daily and weekly only label the saved briefing. Decide in the UI pass whether to remove it or make it real (needs scheduling).
+- **Profile fields are unused.** Email and field of study are collected but never read. Fold into §2 onboarding or remove.
+

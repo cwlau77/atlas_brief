@@ -6,8 +6,3 @@ export function useAppState(): AppStateValue {
   if (!value) throw new Error('useAppState must be used inside AppStateProvider')
   return value
 }
-
-export function useSettings() {
-  const { settings, updateSettings } = useAppState()
-  return { settings, updateSettings }
-}

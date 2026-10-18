@@ -10,7 +10,7 @@ import feedparser
 import httpx
 
 from backend.config import settings
-from backend.ingestion.common import clean_text, sub_request_timeout
+from backend.ingestion.common import make_article, sub_request_timeout
 from backend.ingestion.quota import quota
 from backend.models import Article
 from backend.search_plan import SearchPlan
@@ -45,15 +45,10 @@ def _parse(text: str) -> list[Article]:
                 published_at = datetime.fromtimestamp(calendar.timegm(struct_time), tz=timezone.utc)
             except (OverflowError, ValueError):
                 published_at = None
-        articles.append(Article(
-            title=title,
-            snippet=clean_text(getattr(entry, "summary", "")) or title,
-            url=link,
-            source=outlet or "Google News",
-            published_at=published_at,
-            country=None,
-            raw_source_type="google_news",
-        ))
+        article = make_article(SOURCE_NAME, title=title, url=link, snippet=getattr(entry, "summary", ""),
+                               outlet=outlet or "Google News", published_at=published_at)
+        if article:
+            articles.append(article)
     return articles
 
 

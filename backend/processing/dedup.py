@@ -5,8 +5,9 @@ from backend.models import Article
 
 
 def deduplicate(articles: list[Article], embeddings: np.ndarray) -> tuple[list[Article], np.ndarray]:
-    """Greedy dedup: keep the first article, drop any later article whose embedding
-    has cosine similarity >= threshold with an already-kept article.
+    """Greedy near-duplicate removal: keep the first article, drop any later article
+    whose embedding has cosine similarity >= threshold with an already-kept one.
+    Exact URL/title duplicates are removed earlier by processing.urls.dedupe_exact.
 
     Returns (kept_articles, kept_embeddings) with aligned indices.
     """
@@ -21,12 +22,7 @@ def deduplicate(articles: list[Article], embeddings: np.ndarray) -> tuple[list[A
     kept_indices: list[int] = []
     kept_vecs: list[np.ndarray] = []
 
-    seen_urls: set[str] = set()
-
-    for i, article in enumerate(articles):
-        if article.url in seen_urls:
-            continue
-
+    for i in range(len(articles)):
         if kept_vecs:
             stack = np.stack(kept_vecs)
             sims = stack @ normed[i]
@@ -35,7 +31,6 @@ def deduplicate(articles: list[Article], embeddings: np.ndarray) -> tuple[list[A
 
         kept_indices.append(i)
         kept_vecs.append(normed[i])
-        seen_urls.add(article.url)
 
     kept_articles = [articles[i] for i in kept_indices]
     kept_embeddings = embeddings[kept_indices] if kept_indices else np.zeros((0, embeddings.shape[1]), dtype=np.float32)

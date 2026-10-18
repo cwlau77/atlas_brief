@@ -1,5 +1,5 @@
 """Shared helpers for source modules: tolerant HTTP JSON calls that never raise,
-date parsing to UTC, text cleanup, and plan keyword matching."""
+Article construction, date parsing to UTC, text cleanup, and plan keyword matching."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ import httpx
 
 from backend.config import settings
 from backend.focus_terms import keyword_hit
+from backend.models import Article, SourceType
 from backend.search_plan import SearchPlan
 
 logger = logging.getLogger("briefing.ingestion")
@@ -25,11 +26,13 @@ _COMPACT_FORMATS = ("%Y%m%dT%H%M%SZ", "%Y%m%dT%H%M%S")
 
 
 def parse_datetime(value: Any) -> datetime | None:
-    """Parse ISO-8601, RFC-822, compact GDELT/Alpha Vantage, or epoch seconds into UTC."""
+    """Parse ISO-8601, RFC-822, compact GDELT/Alpha Vantage, epoch seconds or a datetime into UTC."""
     if value is None or value == "":
         return None
     if isinstance(value, bool):
         return None
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
     if isinstance(value, (int, float)):
         try:
             return datetime.fromtimestamp(float(value), tz=timezone.utc)
@@ -61,6 +64,33 @@ def clean_text(value: Any, limit: int = 1000) -> str:
     if not isinstance(value, str):
         return ""
     return " ".join(_TAG.sub(" ", value).split())[:limit]
+
+
+def dict_items(value: Any) -> list[dict]:
+    """The dict entries of a JSON list; anything else (missing, wrong type) is empty."""
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
+def make_article(source_type: SourceType, *, title: Any, url: Any, outlet: str, snippet: Any = None,
+                 published_at: Any = None, country: str | None = None) -> Article | None:
+    """Build an Article from raw upstream fields, or None when the title or URL is missing.
+
+    Every source goes through here, so titles and snippets are cleaned the same
+    way everywhere and a missing snippet always falls back to the title.
+    """
+    title = clean_text(title)
+    url = url.strip() if isinstance(url, str) else ""
+    if not title or not url:
+        return None
+    return Article(
+        title=title,
+        snippet=clean_text(snippet) or title,
+        url=url,
+        source=outlet,
+        published_at=parse_datetime(published_at),
+        country=country,
+        raw_source_type=source_type,
+    )
 
 
 def outlet_from_url(url: str) -> str:
