@@ -64,9 +64,9 @@ Health check: `GET /health`.
 
 All knobs live in `.env` / `config.py`:
 
-- `MAX_ARTICLES_PER_SOURCE` (default 25)
+- `MAX_ARTICLES_PER_SOURCE` (default 15)
 - `DEDUP_SIMILARITY_THRESHOLD` (default 0.85 cosine)
-- `RELEVANCE_SIMILARITY_THRESHOLD` (default 0.35 cosine vs. focus embedding)
+- `RELEVANCE_SIMILARITY_THRESHOLD` (default 0.30 cosine vs. focus embedding; used only by the fallback ranker when Haiku rerank is off or fails)
 - `HOURS_LOOKBACK` (default 24)
 
 ## Response shape

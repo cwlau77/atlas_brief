@@ -1,0 +1,342 @@
+Atlas Brief — handoff for Claude
+================================
+Date: 2026-10-17
+Author: Cursor review session with Cameron (product). Read-only review; no code was changed in that session.
+Audience: Claude, currently working on backend article-retrieval fixes. Treat this as review context, not a mandate to implement the whole backlog in one pass.
+
+How to use this file
+--------------------
+1. Retrieval work is in flight. Do not duplicate or rewrite the broaden-retrieval epic blindly; reconcile with whatever you already have uncommitted.
+2. Code-review items in Part A apply to branch `retrieval/broaden` (HEAD 3016241) vs `main` (1b5557c) as of 2026-10-17 ~18:20 ET. Working tree was clean.
+3. Part B is product backlog (Kano). Do not start net-new product features until retrieval quality holds. Finish ranking / URL normalize / labels before adding more sources.
+4. Do not treat this document as approval to merge `retrieval/broaden`.
+
+Branch snapshot (at review time)
+--------------------------------
+- Current branch: retrieval/broaden
+- Notable commits on the branch: SearchPlan + rule/LLM planner; ingestion registry; NewsAPI/GDELT/RSS migrated; Google News RSS; Guardian, GNews, NewsData; quota guard; query_format helpers; US/tech/finance RSS; small CursorLens HTML-attribute fix.
+- Spec: docs/superpowers/specs/2026-10-17-broaden-retrieval-design.md
+- Plan (very long, 3k+ lines): docs/superpowers/plans/2026-10-17-broaden-retrieval.md
+- Existing backlog file (partial, stale vs this handoff): docs/BACKLOG.md
+
+Approved pipeline (spec) vs what shipped
+----------------------------------------
+Spec:
+  focus -> plan_search -> fan-out (parallel, deadline)
+        -> merge -> normalize URLs -> dedupe
+        -> pre-filter (<=60) -> Haiku rerank (keep <=25)
+        -> synthesis (unchanged)
+
+Shipped on retrieval/broaden:
+  focus -> plan_search -> fan-out
+        -> OLD embed -> embedding-dedupe -> filter_by_relevance(raw focus string)
+        -> synthesis
+
+Missing vs spec: processing/rerank.py, processing/urls.py, Haiku rerank settings,
+finance APIs (Brave/Tavily/Exa/Finnhub/Marketaux/Alpha Vantage), frontend SOURCE_LABELS
+for new sources, structured pipeline log line, NewsAPI-only 422 hint still leftover.
+
+
+================================================================================
+PART A — Thermo-nuclear code quality review (retrieval/broaden)
+================================================================================
+Bar: structural simplicity, no spaghetti growth, logic in the canonical layer,
+no file pushed over 1k lines without reason, no stubbed contracts that pretend
+the system is finished.
+
+Verdict: NOT merge-ready as a complete retrieval epic. Planner + registry are
+the right shape. Ranking never moved onto SearchPlan. Types/config describe
+sources that do not exist. Do not add more APIs until ranking and URL normalize
+exist — more sources without rerank make the product noisier.
+
+File-size note: no Python/TS implementation file crossed 1k lines. This is a
+finish-the-pipeline problem, not a split-the-file problem. The 3257-line plan
+markdown is a docs dump; keep the 163-line design spec as the living document.
+
+
+A1. BLOCKER — Ranking never moved onto SearchPlan
+-------------------------------------------------
+backend/main.py still does Layer 3 as:
+  embed_texts -> deduplicate -> filter_by_relevance(focus, articles, embeddings)
+
+There is no rerank.py. plan.must_terms and plan.synonyms are unused after ingest.
+filter_by_relevance still tokenizes the raw focus string (extract_focus_terms).
+
+must_terms/match_terms are used as OR ("any one term") in RSS / matches_plan.
+That is recall-oriented and only safe if pre-filter + rerank exist. Without them,
+"data centers and privacy" keeps privacy-only stories.
+
+Code judo: one rank_articles(plan, articles, embeddings). Delete the dual brain.
+Do not keep filter_by_relevance(focus, ...) as a parallel interpretation of the
+same phrase. Fallback of rank_articles may call the old keyword+TF-IDF path on
+the pre-filtered set (per spec), capped at RERANK_KEEP.
+
+Related leftover: 422 empty-after-filter still hints only at NEWSAPI_KEY.
+502 empty-ingest already lists skipped missing keys. Make those consistent.
+
+
+A2. BLOCKER — Types and config describe a system that does not exist
+--------------------------------------------------------------------
+backend/models.py SourceType already includes:
+  brave, tavily, exa, finnhub, marketaux, alphavantage
+backend/config.py already has daily quotas for all of them.
+registry.Source already has finance_only.
+SOURCES live list is only:
+  newsapi, gdelt, rss, google_news, guardian, gnews, newsdata
+
+Finance gating is tested with fake sources, which looks like product coverage.
+
+Code judo: shrink the union and quota table to live sources. Add a name when
+the module exists. Do not implement Brave/Tavily/Exa/finance APIs until ranking
+and URL normalize land.
+
+
+A3. GDELT never joined the new contract
+---------------------------------------
+Other sources use get_json / empty-on-error. GDELT still raise_for_status, own
+retry, process-global pacer, no quota.
+
+Source timeout is 8s; ingest deadline 15s. GDELT still does ~5.5s pacing PLUS
+5.5s+jitter retry on 429, on a shared httpx client whose timeout is also 8s.
+Under load this source will log timeout/deadline more often than ok. The retry
+is ornamental.
+
+Judo: one HTTP helper, one timeout budget. If GDELT cannot retry inside 8s,
+drop the retry or give it an explicit longer budget — do not leave both.
+
+
+A4. RSS is still "fetch the world, keyword-OR later"
+----------------------------------------------------
+rss_source.fetch always hits ~25 feeds (world + US/tech + finance) then
+keyword_hit on plan.match_terms. Spec said finance RSS always runs; that is a
+lot of concurrent GETs on every climate/security briefing, sharing the 15s
+deadline with the new APIs.
+
+RSS parses dates with time.mktime (local TZ). Google News uses calendar.timegm.
+Same feedparser struct_time, two clocks. Prefer timegm everywhere.
+
+If rerank is not ready, RSS OR-matching on a single must_term (e.g. "privacy")
+will dump noise into synthesis.
+
+
+A5. Google News defaults to the US (product + quality)
+------------------------------------------------------
+google_news_source.fetch:
+  cc = (plan.country or "US").upper()
+Encoded in tests. "South Asian security" and "Red Sea shipping" get gl=US.
+That fights the global-briefing product and the spec regression criteria.
+
+Feed items already have <source url="https://www.reuters.com">; stored URL is
+still news.google.com/rss/articles/.... Citations look like Google wrappers.
+When URL-dedupe lands, Reuters-via-Google will not collapse with Reuters-via-RSS.
+
+Judo: set gl/hl/ceid only when plan.country is set. Prefer publisher URL when
+present; keep the Google link only as fallback (per spec §3.5).
+
+
+A6. Duplication, layer leaks, quota, copy
+-----------------------------------------
+- Seven sources copy "loop items -> skip empty title/url -> Article(...)".
+  common.py already has parse_datetime, clean_text, get_json. A single
+  article_from(...) would prevent one-off bugs (Guardian always stamps
+  country="GB"; GDELT uses title as snippet).
+- search_plan.py imports extract_json from synthesis.briefing. Planning should
+  not depend on synthesis. Move extract_json to a tiny shared helper.
+- quota.take() runs BEFORE the HTTP call. Timeouts and 429s still spend daily
+  budget. Google News can spend up to 3 units per briefing even if searches fail.
+- Frontend SOURCE_LABELS (frontend/src/lib/signals.ts) is still newsapi/gdelt/rss.
+  Signals will show raw keys (google_news, guardian).
+- HomePage still says "NewsAPI, GDELT and fifteen wire services" / "15 wire feeds".
+  Feed list is ~25. Stale product copy.
+- huggingface_api_key still in config after that path was removed.
+- CursorLens data-cursor-mode fix is mixed into this retrieval branch (small;
+  not a blocker, but mixed scope).
+
+What is actually good (keep)
+----------------------------
+SearchPlan + rule_plan fallback; uniform fetch(plan, client); registry timeouts
+that isolate a bad source; query_format.py; in-process quotas; rule-planner tests
+for "Data centers and privacy in the US". Do not throw that layer away.
+
+
+Suggested implementation order for the retrieval epic (if not already underway)
+-------------------------------------------------------------------------------
+1. processing/urls.py: normalize_url, normalize_title, exact dedupe (keep earliest).
+2. rank_articles(plan, ...): must_term/synonym pre-filter + TF-IDF, cap 60;
+   Haiku rerank keep >=2, cap 25; fallback to existing filter on pre-filtered set.
+3. Wire main.py; one structured log line (planner source/latency, per-source
+   count/status/ms, merged/deduped/candidates/kept, reranked flag, elapsed).
+4. Google News locale + publisher URL.
+5. Shrink SourceType + quotas to live sources; source labels; Home provenance;
+   consistent empty-state hints.
+6. GDELT vs timeout budget; RSS date TZ; optional article_from helper.
+7. ONLY THEN additional sources (finance APIs, Brave, etc.).
+
+Do not: add more search APIs, chat-that-researches-again, or personas that
+change which facts are shown, until (1)-(5) work on real keys.
+
+
+================================================================================
+PART B — Product backlog (Kano)
+================================================================================
+Job to be done: one focus phrase -> a cited brief a time-constrained reader can
+finish before class or a standup. Differentiator is framing, disagreement, and
+change — not "another GPT wrapper on news."
+
+Existing ideas already in docs/BACKLOG.md (keep, do not lose):
+- Ask Atlas about this briefing (grounded only in current brief + cited URLs).
+- Onboarding / personas (role, regions, depth; extend userProfileV1).
+- Broaden article retrieval (this is the current epic; do not re-open as a
+  greenfield project).
+
+Overhaul summary also proposed (docs/OVERHAUL_SUMMARY.md):
+- Focus watchlist with delta briefings.
+- Globe as navigation/filter.
+- Reading-time budget mode (client-side).
+- Cross-region tension timeline across archive.
+
+
+B0. Now — productize retrieval (do this before net-new features)
+----------------------------------------------------------------
+Must-be / performance, not delighters.
+
+- Finish broaden-retrieval as a USER-VISIBLE outcome: US domestic focus returns
+  a full on-topic brief; no regression on South Asian security, Regeneron,
+  Red Sea shipping; Google News must not US-skew global foci.
+- Coverage / freshness inspector on Story or Signals: article count, source mix,
+  oldest/newest item, locale used. Cannot debug empty briefs from the UI today.
+- Recency that matches the product: backend lookback 24h vs Google News when:7d
+  vs NewsAPI with no `from`. Pick one window and show it ("last 24 hours").
+- Source labels + skipped-key messaging + honest Home provenance.
+- Suggested chips that match the new corpus (add a domestic/tech chip, e.g.
+  "Data centers and privacy") so new retrieval is exercised by default.
+
+Must-bes once people rely on it:
+- Brief is about the focus; real citations; no Google-wrapper URLs as the only
+  identity of a story.
+- Honest empty states ("we only found 3 on-topic pieces") vs a thin confident brief.
+- It finishes. Cold start + 15s ingest + multiple Haiku calls is already near
+  the pain line. Expansion cannot add another unexplained wait.
+- Nothing invented (URL allowlist is table stakes).
+
+
+B1. Next — high leverage, data we already have (Performance)
+------------------------------------------------------------
+1. Watchlist + "what changed since last brief"
+   Highest linear value for a daily user. Archive is already keyed by focus.
+   Mark new developments, dropped alerts, new contradictions.
+
+2. Time-to-understand path (5 / 12 / 25 minutes)
+   Same payload, different path: alerts -> top developments -> one contradiction
+   -> readings. compactMode is only spacing; this is the job-to-be-done toggle.
+
+3. Geographic coverage as a quality metric
+   Promote Signals source mix: "62% US wires, 1 African desk."
+
+4. Freshness and source depth (experienced as "this actually caught it")
+   Ranking quality is backend; UI should show the score.
+
+5. Repeatability
+   Same focus tomorrow should be a comparable edition, not a slot machine.
+
+6. Ask Atlas, grounded in THIS brief only
+   Performance, not a delighter (every AI product has chat). The delighter is
+   refusing to search when the brief does not cover the question. Do NOT let
+   chat trigger a fresh search when the briefing is thin — that hides retrieval
+   failure.
+
+7. "Go deeper on this development"
+   From a card, brief that thread using the headline as focus. Reuses POST /briefing.
+
+8. Globe as a filter
+   Click a region column; Story/Signals filter to those developments. Mapping
+   already exists; globe is decorative after generate.
+
+
+B2. Later — real expansion / unique Atlas delighters
+----------------------------------------------------
+Narrative geography:
+- Framing compass: Western wires vs regional desks vs state-adjacent, using the
+  RSS mix that already exists (BBC, Al Jazeera, The Hindu, AllAfrica, NYT, Guardian).
+- Contradiction as the hero: "split in the story" — two outlet clusters, one
+  factual delta. Zero contradictions = "unusually aligned coverage," not an empty card.
+- Silence detector: this focus went quiet vs last week (archive + source mix).
+- Delta globe: yesterday vs today region columns grow/shrink.
+- Campaign / flow map on Story: linked second-order effects (Red Sea -> Suez ->
+  insurers -> food prices) using existing branch/tension links.
+
+Time-constrained reader:
+- Sequenced reading pack: "read this first, this is the dissent, skip the third
+  if you only have 5 minutes." RecommendedReading.why already exists.
+- Seminar mode: three discussion questions extracted from THIS brief's
+  contradictions/tensions. Profile already has fieldOfStudy. Extractive only.
+- Devil's-advocate regen: same articles, steelman the underweighted account.
+  Labeled as a lens, not a new truth. Pairs with archive compare.
+- Lens toggle (analyst / investor / policy / journalist): SAME article set,
+  different emphasis. Citations stay identical. Personas must not change which
+  facts you see.
+
+Trust:
+- Citation hover = original snippet Atlas used. Cheap if snippets are persisted.
+  Delighter that becomes must-be.
+- "What would change this take": missing evidence ("no regulator filing,"
+  "no Iranian state-media account").
+- Outlet cluster graph on Signals.
+
+Habit / object:
+- Morning edition: 3 saved foci, one "plate," local timezone already stored.
+  Needs a warm backend or honest "edition ready when the server wakes."
+- 90-second spoken brief of alerts + top development (reverse for citation-skimmers).
+- Shareable edition link (read-only URL). Share was dropped in the overhaul
+  because there is no server store. This is how the product spreads.
+- Follow an actor across the archive ("Houthis", "Fed").
+- Alert only on threshold (browser notify for critical/high or a new contradiction).
+- Accounts/sync: only if share or multi-device is real. Do not add auth for
+  Settings name/email fields.
+- Longitudinal tensions: actor-pairs across archived briefs (secondary to deltas).
+- Paid/reliable compute: Render cold start (~1 min) and GDELT shared-IP 429s
+  are bigger UX wins than another news API.
+
+
+B3. Practical cut after retrieval ships (value per complexity)
+--------------------------------------------------------------
+ 1. Watchlist + what changed          Performance
+ 2. Citation snippet hover            Delighter -> must-be
+ 3. Time-budget path 5/12/25          Performance
+ 4. Framing compass / contradiction hero  Delighter (unfair advantage)
+ 5. Globe as filter + delta globe     Delighter
+ 6. Morning edition of 3 foci         Performance
+ 7. Lens toggle (same sources)        Delighter
+ 8. Shareable edition link            Performance
+ 9. Grounded ask                      Performance
+10. Seminar questions / follow-actor  Delighter
+
+
+B4. Do not backlog yet (indifferent or reverse)
+-----------------------------------------------
+- More search APIs (Brave, Tavily, Exa, Finnhub, ...) until ranking exists.
+- Infinite chat / "search again if thin."
+- More source logos on Home once coverage works.
+- Social feed, likes, comments.
+- Generic AI copilot sidebar.
+- Personalization that changes WHICH FACTS you see (lenses may change emphasis only).
+- Realtime ticker / live map of every story (wrong product).
+- Multilingual generation before English coverage is good.
+- Settings profile fields that do not affect the brief (today: name/email/field
+  of study are stored and unused) — either use them in seminar/lens or leave them.
+
+
+================================================================================
+PART C — Open questions / coordination
+================================================================================
+- Cameron's live product: frontend Vercel (atlasbrief-nine.vercel.app), backend
+  Render free tier (sleeps). No database; user state is localStorage.
+- NewsAPI free tier in production is an accepted contractual risk (owner decision
+  2026-10-17 in the design spec).
+- Success criteria for retrieval (spec §1) still need a manual e2e with real keys.
+- If this handoff conflicts with in-progress retrieval work, prefer: keep
+  SearchPlan + registry; land ranking + URL normalize; shrink dead source names;
+  fix Google News locale. Do not expand the source set to match the spec's full
+  table in the same PR as ranking.
+
+End of handoff.
