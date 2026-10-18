@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Override via SYNTHESIS_MODEL env var if you want higher-quality/slower Sonnet output.
     synthesis_model: str = "claude-haiku-4-5"
     context_model: str = "claude-haiku-4-5"
+    # Output cap for the briefing JSON. 25 articles with long Google News URLs
+    # overflowed 4000 tokens and truncated the JSON mid-reply.
+    synthesis_max_tokens: int = 12000
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Without an Anthropic key the server refuses to synthesize (503) unless this

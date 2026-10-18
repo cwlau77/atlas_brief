@@ -51,14 +51,14 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
       "headline": "string, <= 15 words",
       "summary": "string, 2-4 sentences of analytical summary",
       "regions": ["ISO-like region/country names"],
-      "sources": [{"outlet": "string", "url": "string", "published_at": "ISO8601 or null"}]
+      "sources": [article numbers, e.g. 3, 7]
     }
   ],
   "emerging_tensions": [
     {
       "description": "string, 1-3 sentences describing the tension and its trajectory",
       "actors": ["named states, groups, or institutions"],
-      "sources": [{"outlet": "string", "url": "string", "published_at": "ISO8601 or null"}]
+      "sources": [article numbers, e.g. 3, 7]
     }
   ],
   "contradictions": [
@@ -66,8 +66,8 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
       "topic": "string naming what outlets disagree about",
       "account_a": "one side's factual/framing claim",
       "account_b": "the other side's factual/framing claim",
-      "sources_a": [{"outlet": "string", "url": "string", "published_at": "ISO8601 or null"}],
-      "sources_b": [{"outlet": "string", "url": "string", "published_at": "ISO8601 or null"}]
+      "sources_a": [article numbers, e.g. 3, 7],
+      "sources_b": [article numbers, e.g. 3, 7]
     }
   ],
   "priority_alerts": [
@@ -75,17 +75,17 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
       "severity": "critical | high | elevated",
       "headline": "string, <= 15 words",
       "rationale": "1-2 sentences on why this warrants priority attention",
-      "sources": [{"outlet": "string", "url": "string", "published_at": "ISO8601 or null"}]
+      "sources": [article numbers, e.g. 3, 7]
     }
   ],
   "recommended_readings": [
-    {"title": "string", "outlet": "string", "url": "string", "why": "1 sentence on why this is worth reading"}
+    {"article": "article number", "why": "1 sentence on why this is worth reading"}
   ]
 }
 
 Constraints:
 - 3-6 key_developments, 0-4 emerging_tensions, 0-4 contradictions, 0-3 priority_alerts, 3-5 recommended_readings.
-- Every URL MUST be one that appears in the provided articles.
+- Cite sources ONLY by the bracketed article number from the article list (e.g. [3] -> 3). Never write URLs or outlet names in citations.
 - Omit sections (empty array) if evidence is insufficient rather than fabricating."""
 
 
@@ -95,7 +95,7 @@ def _format_articles(articles: list[Article]) -> str:
         ts = a.published_at.isoformat() if a.published_at else "unknown"
         country = f" [{a.country}]" if a.country else ""
         lines.append(
-            f"[{i}] ({a.source}{country}, {ts}) {a.title}\n    {a.snippet}\n    URL: {a.url}"
+            f"[{i}] ({a.source}{country}, {ts}) {a.title}\n    {a.snippet}"
         )
     return "\n\n".join(lines)
 
@@ -118,9 +118,31 @@ def _source_breakdown(articles: list[Article]) -> dict[str, int]:
     return counts
 
 
-def _parse_citations(raw: list[dict]) -> list[SourceCitation]:
+def _article_at(item, articles: list[Article]) -> Article | None:
+    """Map a model-supplied 1-based article number to the article it names."""
+    if isinstance(item, bool) or not isinstance(item, int):
+        return None
+    return articles[item - 1] if 1 <= item <= len(articles) else None
+
+
+def _parse_citations(raw: list, articles: list[Article]) -> list[SourceCitation]:
+    """Resolve citations to SourceCitations.
+
+    The model cites article numbers ([3] -> 3) so outlet, URL and date come
+    from our own data; legacy {"outlet", "url", "published_at"} dicts are still
+    accepted (and later filtered by enforce_url_allowlist).
+    """
     out: list[SourceCitation] = []
+    seen: set[int] = set()
     for item in raw or []:
+        article = _article_at(item, articles)
+        if article is not None:
+            if item not in seen:
+                seen.add(item)
+                out.append(SourceCitation(outlet=article.source, url=article.url, published_at=article.published_at))
+            continue
+        if not isinstance(item, dict):
+            continue
         try:
             published_at = None
             raw_ts = item.get("published_at")
@@ -138,6 +160,19 @@ def _parse_citations(raw: list[dict]) -> list[SourceCitation]:
             )
         except Exception:
             continue
+    return out
+
+
+def _parse_readings(raw: list, articles: list[Article]) -> list[RecommendedReading]:
+    out: list[RecommendedReading] = []
+    for r in raw or []:
+        if not isinstance(r, dict):
+            continue
+        article = _article_at(r.get("article"), articles)
+        if article is not None:
+            out.append(RecommendedReading(title=article.title, outlet=article.source, url=article.url, why=r.get("why") or ""))
+        elif "url" in r:
+            out.append(RecommendedReading(title=r["title"], outlet=r["outlet"], url=r["url"], why=r["why"]))
     return out
 
 
@@ -314,7 +349,7 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
             headline=kd["headline"],
             summary=kd["summary"],
             regions=kd.get("regions", []),
-            sources=_parse_citations(kd.get("sources", [])),
+            sources=_parse_citations(kd.get("sources", []), articles),
         )
         for kd in data.get("key_developments", [])
     ]
@@ -322,7 +357,7 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
         Tension(
             description=t["description"],
             actors=t.get("actors", []),
-            sources=_parse_citations(t.get("sources", [])),
+            sources=_parse_citations(t.get("sources", []), articles),
         )
         for t in data.get("emerging_tensions", [])
     ]
@@ -331,8 +366,8 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
             topic=c["topic"],
             account_a=c["account_a"],
             account_b=c["account_b"],
-            sources_a=_parse_citations(c.get("sources_a", [])),
-            sources_b=_parse_citations(c.get("sources_b", [])),
+            sources_a=_parse_citations(c.get("sources_a", []), articles),
+            sources_b=_parse_citations(c.get("sources_b", []), articles),
         )
         for c in data.get("contradictions", [])
     ]
@@ -341,14 +376,11 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
             severity=p["severity"],
             headline=p["headline"],
             rationale=p["rationale"],
-            sources=_parse_citations(p.get("sources", [])),
+            sources=_parse_citations(p.get("sources", []), articles),
         )
         for p in data.get("priority_alerts", [])
     ]
-    recommended = [
-        RecommendedReading(title=r["title"], outlet=r["outlet"], url=r["url"], why=r["why"])
-        for r in data.get("recommended_readings", [])
-    ]
+    recommended = _parse_readings(data.get("recommended_readings", []), articles)
 
     return Briefing(
         focus=focus,
@@ -382,7 +414,7 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
     for _attempt in (1, 2):
         response = await client.messages.create(
             model=settings.synthesis_model,
-            max_tokens=4000,
+            max_tokens=settings.synthesis_max_tokens,
             system=SYSTEM_PROMPT,
             messages=messages,
         )

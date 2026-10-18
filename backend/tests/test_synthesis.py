@@ -78,3 +78,60 @@ def test_fallback_briefing_survives_mixed_tz(make_article):
     aware = make_article(title="Attack reported near port city")
     b = _fallback_briefing("security", [naive, aware])  # must not raise TypeError
     assert b.article_count == 2
+
+
+@pytest.mark.asyncio
+async def test_synthesis_uses_configured_max_tokens(monkeypatch, make_article):
+    # 25 articles with long Google News URLs overflowed the old hard-coded 4000-token cap.
+    import json
+    from types import SimpleNamespace
+    from backend.synthesis import briefing as briefing_mod
+
+    calls = []
+
+    class FakeMessages:
+        async def create(self, **kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(content=[SimpleNamespace(type="text", text=json.dumps(DATA))])
+
+    class FakeClient:
+        def __init__(self, **_):
+            self.messages = FakeMessages()
+
+    monkeypatch.setattr(briefing_mod, "AsyncAnthropic", FakeClient)
+    monkeypatch.setattr(settings, "anthropic_api_key", "test-key")
+    monkeypatch.setattr(settings, "synthesis_max_tokens", 12000)
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert calls[0]["max_tokens"] == 12000
+
+
+def test_citations_by_article_number_resolve_server_side(make_article):
+    # The model cites [n] article numbers; outlet/url/date come from our own data,
+    # so long Google News URLs never pass through the model's output.
+    a1 = make_article(title="Moratorium bills filed", url="https://news.google.com/rss/articles/LONG1", source="WTOP")
+    a2 = make_article(title="Roanoke site confirmed", url="https://ex.com/2", source="Cardinal News")
+    data = {
+        "key_developments": [{"headline": "H", "summary": "S", "regions": ["Virginia"], "sources": [2, 1, 2, 99, 0, True, "x"]}],
+        "emerging_tensions": [{"description": "D", "actors": ["A"], "sources": [1]}],
+        "contradictions": [{"topic": "T", "account_a": "A", "account_b": "B", "sources_a": [1], "sources_b": [2]}],
+        "priority_alerts": [{"severity": "high", "headline": "H", "rationale": "R", "sources": [2]}],
+        "recommended_readings": [{"article": 2, "why": "primary"}, {"article": 7, "why": "out of range"}],
+    }
+    b = briefing_from_data(data, "data centers", [a1, a2])
+    dev = b.key_developments[0]
+    # valid numbers resolve in order, duplicates/out-of-range/non-int entries dropped
+    assert [(s.outlet, s.url) for s in dev.sources] == [("Cardinal News", "https://ex.com/2"), ("WTOP", a1.url)]
+    assert dev.sources[0].published_at == a2.published_at
+    assert b.emerging_tensions[0].sources[0].url == a1.url
+    assert b.contradictions[0].sources_b[0].url == "https://ex.com/2"
+    assert b.priority_alerts[0].sources[0].outlet == "Cardinal News"
+    assert [(r.title, r.outlet, r.url, r.why) for r in b.recommended_readings] == [
+        ("Roanoke site confirmed", "Cardinal News", "https://ex.com/2", "primary")]
+
+
+def test_schema_asks_for_article_numbers_not_urls(make_article):
+    from backend.synthesis.briefing import SCHEMA_INSTRUCTIONS, _build_user_prompt
+    assert '"url"' not in SCHEMA_INSTRUCTIONS
+    assert "article number" in SCHEMA_INSTRUCTIONS.lower()
+    p = _build_user_prompt("trade", [make_article(url="https://news.google.com/rss/articles/LONG")])
+    assert "news.google.com" not in p
