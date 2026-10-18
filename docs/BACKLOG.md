@@ -44,7 +44,6 @@ Broaden retrieval shipped on 2026-10-17: query planning, 13 sources, URL dedupe,
 - **Live check with real keys.** "Data centers and privacy in the US" should return 15 or more on-topic articles from at least 4 source types. Use the `briefing pipeline` log line to check the rerank fallback rate and latency.
 - **Google News defaults to the US** (`google_news_source.py`: `plan.country or "US"`), which skews global topics. It also stores `news.google.com` wrapper URLs instead of the publisher URL, so the same Reuters story doesn't dedupe against Reuters from RSS.
 - **Quota is spent before the request.** Timeouts and 429s still use up the daily budget.
-- **Wrong module dependency.** `search_plan.py` and `rerank.py` import `extract_json` from `synthesis.briefing`; move it to a small shared helper.
 - **Repeated article-building code.** Sources repeat the same "loop items → skip empty → build `Article`" code. A shared `article_from(...)` helper would remove one-off bugs, such as Guardian always being tagged `country="GB"`.
 - **Rerank reply size.** The rerank reply may often hit the 8 s timeout at 60 candidates. If the live check shows frequent fallbacks, ask for a compact reply format.
 - **Coverage inspector.** Show article count, source mix and the time window used on Signals, so a thin brief can be explained from the UI.
