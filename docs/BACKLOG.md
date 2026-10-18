@@ -40,16 +40,12 @@ A first-run flow that builds a user profile and tailors briefings to it.
 
 Broaden retrieval shipped on 2026-10-17: query planning, 13 sources, URL dedupe, and Haiku rerank. See `docs/superpowers/specs/2026-10-17-broaden-retrieval-design.md`. Still open:
 
+- **Done 2026-10-17:** GDELT fails fast on 429; finance mode only for market topics; empty-result hints name skipped sources; Home copy updated; briefing cites article numbers (synthesis was truncating on long Google News URLs).
 - **Live check with real keys.** "Data centers and privacy in the US" should return 15 or more on-topic articles from at least 4 source types. Use the `briefing pipeline` log line to check the rerank fallback rate and latency.
 - **Google News defaults to the US** (`google_news_source.py`: `plan.country or "US"`), which skews global topics. It also stores `news.google.com` wrapper URLs instead of the publisher URL, so the same Reuters story doesn't dedupe against Reuters from RSS.
-- **GDELT's retry doesn't fit the budget.** Its own pacer plus a 429 retry can't complete inside the 8 s source timeout. Drop the retry or give GDELT its own budget.
 - **Quota is spent before the request.** Timeouts and 429s still use up the daily budget.
 - **Wrong module dependency.** `search_plan.py` and `rerank.py` import `extract_json` from `synthesis.briefing`; move it to a small shared helper.
 - **Repeated article-building code.** Sources repeat the same "loop items → skip empty → build `Article`" code. A shared `article_from(...)` helper would remove one-off bugs, such as Guardian always being tagged `country="GB"`.
-- **Stale Home copy.** "NewsAPI, GDELT and fifteen wire services" / "15 wire feeds" (`App.tsx`, `HomePage.tsx`); there are now 13 sources and about 27 RSS feeds.
-- **422 hint mentions only NEWSAPI_KEY** (`main.py`), while the 502 hint lists every skipped key. Make them consistent.
-- **Dead `huggingface_api_key`** in `config.py`.
-- **Finance detection is too eager.** The word "market" turns on finance mode, so "labor market" topics call the finance APIs.
 - **Rerank reply size.** The rerank reply may often hit the 8 s timeout at 60 candidates. If the live check shows frequent fallbacks, ask for a compact reply format.
 - **Coverage inspector.** Show article count, source mix and the time window used on Signals, so a thin brief can be explained from the UI.
 
