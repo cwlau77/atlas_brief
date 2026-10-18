@@ -18,7 +18,7 @@
   font-size: clamp(3rem, 7.4vw, 6.6rem);
 }
 .home-title .l1 { display: block; }
-.rot { display: block; position: relative; height: 1.12em; color: var(--terra-ink); }
+.rot { display: block; position: relative; height: 1.12em; color: var(--moss); }
 .rot-word { position: absolute; left: 0; top: 0; white-space: nowrap; letter-spacing: -0.02em; }
 .rot-word.in { animation: rot-in 0.75s var(--ease-out) both; }
 .rot-word.out { animation: rot-out 0.45s cubic-bezier(0.5, 0, 0.75, 0) both; }

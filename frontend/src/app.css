@@ -15,12 +15,12 @@
 
 .page { padding-block: 40px 72px; display: grid; gap: 32px; align-content: start; }
 .page-head { display: grid; gap: 10px; }
-.page-kicker { color: var(--terra-ink); }
+.page-kicker { color: var(--moss); }
 .page-title { font-size: clamp(2.2rem, 4.6vw, 3.6rem); letter-spacing: -0.035em; line-height: 1.02; }
 .page-lede { color: var(--ink-2); max-width: 60ch; }
 .empty-state { justify-items: start; max-width: 680px; }
 .empty-state .actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.section-label { color: var(--terra-ink); margin-bottom: 20px; }
+.section-label { color: var(--moss); margin-bottom: 20px; }
 
 .footer { border-top: 1px solid var(--rule); padding-block: 32px 48px; color: var(--ink-3); }
 .footer .wrap {

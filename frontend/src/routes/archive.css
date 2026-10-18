@@ -36,13 +36,13 @@
 .compare-check input { accent-color: var(--moss); }
 
 .compare-panel { display: grid; gap: 16px; padding: 24px; border-radius: var(--radius); background: var(--paper); box-shadow: inset 0 0 0 1px var(--rule-soft); }
-.compare-panel > .label { color: var(--terra-ink); }
+.compare-panel > .label { color: var(--moss); }
 .compare-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
 .compare-col { display: grid; gap: 14px; align-content: start; }
 .compare-title { font-size: 1.15rem; }
 .compare-title::first-letter { text-transform: uppercase; }
 .compare-issued { color: var(--ink-3); }
 .compare-block { display: grid; gap: 6px; }
-.compare-block > .label { color: var(--terra-ink); }
+.compare-block > .label { color: var(--moss); }
 .compare-block ul { padding-left: 18px; display: grid; gap: 4px; color: var(--ink-2); }
 .compare-none { color: var(--ink-3); }

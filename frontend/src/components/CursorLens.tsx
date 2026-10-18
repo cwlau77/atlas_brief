@@ -5,7 +5,7 @@ import './cursor.css'
 
 const INTERACTIVE = '[data-cursor], a, button, input, select, textarea, label'
 
-/** A terracotta dot and trailing ring that adapts to what's under the pointer. */
+/** A moss dot and trailing ring that adapts to what's under the pointer. */
 export function CursorLens() {
   const reduced = usePrefersReducedMotion()
   const fine = useMediaQuery('(pointer: fine)')

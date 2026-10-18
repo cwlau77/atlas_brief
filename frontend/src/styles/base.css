@@ -51,7 +51,7 @@ a {
   text-underline-offset: 3px;
   text-decoration-color: var(--sand);
 }
-a:hover { text-decoration-color: var(--terra); }
+a:hover { text-decoration-color: var(--moss); }
 
 button { font: inherit; color: inherit; cursor: pointer; }
 input, select, textarea { font: inherit; color: inherit; }
@@ -111,8 +111,8 @@ input, select, textarea { font: inherit; color: inherit; }
     border-color var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--terra); color: #FBF6EE; }
-.btn-primary:hover { background: var(--terra-ink); }
+.btn-primary { background: var(--moss); color: #F3EEE3; }
+.btn-primary:hover { background: var(--moss-deep); }
 .btn-primary:disabled { background: var(--oat-deep); color: var(--ink-3); cursor: not-allowed; }
 .btn-quiet { background: transparent; color: var(--ink-2); border-color: var(--rule); }
 .btn-quiet:hover { border-color: var(--moss); color: var(--ink); }

@@ -1,7 +1,7 @@
 .briefing { padding-bottom: 56px; }
 .masthead { position: relative; display: grid; gap: 14px; padding-block: 24px 0; }
 .masthead-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1; }
-.masthead-kicker { color: var(--terra-ink); }
+.masthead-kicker { color: var(--moss); }
 .masthead-title {
   position: relative;
   z-index: 1;

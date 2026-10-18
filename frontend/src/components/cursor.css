@@ -1,24 +1,24 @@
 .has-cursor, .has-cursor * { cursor: none !important; }
 .cur { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; will-change: transform; transition: opacity 0.2s; }
 .cur.hidden { opacity: 0; }
-.cur-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--terra); transition: opacity 0.2s, width 0.2s, height 0.2s, margin 0.2s; }
+.cur-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--moss); transition: opacity 0.2s, width 0.2s, height 0.2s, margin 0.2s; }
 .cur-ring {
   width: 36px;
   height: 36px;
   margin: -18px 0 0 -18px;
   border-radius: 50%;
-  border: 1px solid var(--terra);
+  border: 1px solid var(--moss);
   transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out), margin 0.35s var(--ease-out),
     border-radius 0.35s var(--ease-out), background-color 0.3s, opacity 0.3s;
 }
-.cur-ring::before, .cur-ring::after { content: ''; position: absolute; background: var(--terra); opacity: 0; transition: opacity 0.3s; }
+.cur-ring::before, .cur-ring::after { content: ''; position: absolute; background: var(--moss); opacity: 0; transition: opacity 0.3s; }
 .cur-ring::before { left: 50%; top: -8px; bottom: -8px; width: 1px; margin-left: -0.5px; }
 .cur-ring::after { top: 50%; left: -8px; right: -8px; height: 1px; margin-top: -0.5px; }
-.cur-read { margin: 26px 0 0 30px; white-space: nowrap; color: var(--terra-ink); opacity: 0; transition: opacity 0.25s; }
+.cur-read { margin: 26px 0 0 30px; white-space: nowrap; color: var(--moss); opacity: 0; transition: opacity 0.25s; }
 
-html[data-cursor-mode="link"] .cur-ring { width: 58px; height: 58px; margin: -29px 0 0 -29px; background: var(--terra-wash); }
+html[data-cursor-mode="link"] .cur-ring { width: 58px; height: 58px; margin: -29px 0 0 -29px; background: var(--moss-wash); }
 html[data-cursor-mode="link"] .cur-dot { opacity: 0; }
-html[data-cursor-mode="text"] .cur-ring { width: 2px; height: 26px; margin: -13px 0 0 -1px; border-radius: 1px; background: var(--terra); }
+html[data-cursor-mode="text"] .cur-ring { width: 2px; height: 26px; margin: -13px 0 0 -1px; border-radius: 1px; background: var(--moss); }
 html[data-cursor-mode="text"] .cur-dot { opacity: 0; }
 html[data-cursor-mode="globe"] .cur-ring { width: 70px; height: 70px; margin: -35px 0 0 -35px; border-style: dashed; }
 html[data-cursor-mode="globe"] .cur-ring::before, html[data-cursor-mode="globe"] .cur-ring::after { opacity: 0.55; }

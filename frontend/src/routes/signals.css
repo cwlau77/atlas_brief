@@ -26,7 +26,7 @@
 .row-name { overflow-wrap: anywhere; }
 .bar { height: 6px; border-radius: 3px; background: var(--rule-soft); overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 3px; background: var(--moss); }
-.row:first-child .bar i { background: var(--terra); }
+.row:first-child .bar i { background: var(--moss); }
 .row-n { text-align: right; color: var(--ink-2); font-size: 0.8rem; }
 
 .compact .signals { gap: 28px; }
