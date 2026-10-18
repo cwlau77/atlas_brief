@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation } from 'react-router'
 import { useClock } from '../lib/useClock'
 import { useAppState } from '../state/hooks'
 import { latestBriefingId } from '../state/resolveBriefing'
+import { AtlasMark } from './AtlasMark'
 import './navbar.css'
 
 const linkClass = ({ isActive }: { isActive: boolean }) => `nav-link ${isActive ? 'active' : ''}`
@@ -16,9 +17,9 @@ export function NavBar() {
   return (
     <header className="nav">
       <div className="nav-inner wrap">
-        <Link className="wordmark" to="/" aria-label="Atlas Brief home" data-cursor="link">
-          <b>Atlas</b>
-          <i>Brief</i>
+        <Link className="wordmark" to="/" aria-label="Atlas home" data-cursor="link">
+          <AtlasMark className="wordmark-mark" />
+          <span className="wordmark-text">atlas</span>
         </Link>
         <nav className="nav-links" aria-label="Primary">
           <Link
