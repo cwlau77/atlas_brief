@@ -76,6 +76,10 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _missing_key_hint(skipped: list[str]) -> str:
+    return f" Sources skipped for missing API keys: {', '.join(skipped)}." if skipped else ""
+
+
 @app.post("/briefing", response_model=Briefing)
 async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     if settings.rate_limit_per_minute > 0 and not _limiter.allow(_client_ip(request)):
@@ -105,11 +109,8 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     logger.info("exact dedupe for focus=%r: %d -> %d articles", focus, merged_count, len(articles))
     logger.info("ingested %d raw articles for focus=%r", len(articles), focus)
     if not articles:
-        skipped = ingest_result.skipped_missing_key
-        hint = (
-            f" Sources skipped for missing API keys: {', '.join(skipped)}."
-            if skipped
-            else " All upstream sources returned zero articles — try a broader focus, or retry in a minute in case an upstream rate limit is in effect."
+        hint = _missing_key_hint(ingest_result.skipped_missing_key) or (
+            " All upstream sources returned zero articles — try a broader focus, or retry in a minute in case an upstream rate limit is in effect."
         )
         raise HTTPException(status_code=502, detail=f"No articles could be fetched from any source.{hint}")
 
@@ -135,11 +136,7 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
 
     logger.info("post-processing article count: %d", len(articles))
     if not articles:
-        hint = (
-            " Missing environment variable NEWSAPI_KEY may be reducing recall."
-            if not settings.newsapi_key
-            else ""
-        )
+        hint = _missing_key_hint(ingest_result.skipped_missing_key)
         raise HTTPException(
             status_code=422,
             detail=f"No recent articles matched the focus '{focus}'. Try a broader phrase or a different topic.{hint}",

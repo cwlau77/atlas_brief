@@ -15,7 +15,6 @@ class Settings(BaseSettings):
 
     anthropic_api_key: Optional[str] = None
     newsapi_key: Optional[str] = None
-    huggingface_api_key: Optional[str] = None
     guardian_api_key: Optional[str] = None
     gnews_api_key: Optional[str] = None
     newsdata_api_key: Optional[str] = None

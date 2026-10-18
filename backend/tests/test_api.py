@@ -86,3 +86,21 @@ def test_502_names_sources_skipped_for_missing_keys(client, monkeypatch):
     r = client.post("/briefing", json={"focus": "trade policy"})
     assert r.status_code == 502
     assert "guardian" in r.json()["detail"] and "tavily" in r.json()["detail"]
+
+
+def test_422_names_sources_skipped_for_missing_keys(client, monkeypatch, make_article):
+    from backend.processing.rerank import RankResult
+
+    async def thin_ingest(plan):
+        return IngestResult(articles=[make_article(url="https://ex.com/off")], stats={},
+                            skipped_missing_key=["guardian", "tavily"])
+
+    async def rank_nothing(focus, plan, articles, embeddings):
+        return RankResult(articles=[], candidates=1, reranked=False)
+
+    monkeypatch.setattr(main, "_ingest_all", thin_ingest)
+    monkeypatch.setattr(main, "rank_articles", rank_nothing)
+    r = client.post("/briefing", json={"focus": "trade policy"})
+    assert r.status_code == 422
+    assert "guardian" in r.json()["detail"] and "tavily" in r.json()["detail"]
+    assert "NEWSAPI_KEY" not in r.json()["detail"]
