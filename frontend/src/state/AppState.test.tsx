@@ -6,6 +6,7 @@ import { makeBriefing } from '../test/fixtures'
 import { AppStateProvider } from './AppState'
 import type { AppStateValue } from './context'
 import { useAppState } from './hooks'
+import { findBriefing } from './resolveBriefing'
 
 let latestApi: AppStateValue | null = null
 function Capture() {
@@ -88,4 +89,35 @@ describe('AppStateProvider', () => {
     })
     expect(latestApi!.saved.map((s) => s.id)).toEqual(['y'])
   })
+
+  it('keeps two briefings on the same topic', () => {
+    act(() => {
+      latestApi!.fileBriefing(makeBriefing({ id: 'r1', area: 'Red Sea shipping' }))
+      latestApi!.fileBriefing(makeBriefing({ id: 'r2', area: 'Red Sea shipping' }))
+    })
+    expect(latestApi!.saved.map((s) => s.id)).toEqual(['r2', 'r1'])
+  })
+
+  it('clearArchive empties saved and starred but keeps settings and profile', () => {
+    act(() => {
+      latestApi!.fileBriefing(makeBriefing({ id: 'c', area: 'topic-c' }))
+      latestApi!.toggleStar('c')
+      latestApi!.updateSettings({ compactMode: true })
+      latestApi!.saveProfile({ ...latestApi!.profile, firstName: 'Cam' })
+    })
+    act(() => latestApi!.clearArchive())
+    expect(latestApi!.saved).toEqual([])
+    expect(latestApi!.starred).toEqual([])
+    expect(latestApi!.settings.compactMode).toBe(true)
+    expect(latestApi!.profile.firstName).toBe('Cam')
+  })
+
+  it('a briefing dropped by the topic cap no longer resolves', () => {
+    act(() => {
+      for (let d = 1; d <= 5; d++) latestApi!.fileBriefing(makeBriefing({ id: `r${d}`, area: 'Red Sea shipping', generatedAt: new Date(Date.UTC(2026, 9, d)).toISOString() }))
+    })
+    expect(findBriefing('r1', null, latestApi!.saved)).toBeNull()
+    expect(findBriefing('r5', null, latestApi!.saved)?.id).toBe('r5')
+  })
 })
+

@@ -12,6 +12,7 @@ export interface AppStateValue {
   toasts: ToastItem[]
   fileBriefing: (briefing: SavedBriefing) => void
   removeBriefing: (id: string) => void
+  clearArchive: () => void
   toggleStar: (id: string) => void
   setSession: (briefing: SavedBriefing) => void
   updateSettings: (patch: Partial<UserSettings>) => void

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { ToastItem } from '../components/Toast'
 import type { SavedBriefing } from '../lib/normalize'
+import { fileInto } from '../lib/archive'
 import { KEYS, loadJSON, saveJSON } from '../lib/storage'
 import { AppStateContext, type AppStateValue } from './context'
 import { isSavedBriefing } from './resolveBriefing'
 import { parseProfile, parseSettings, type UserProfile, type UserSettings } from './settings'
 
 const SESSION_KEY = 'atlasSessionBriefing'
-const ARCHIVE_LIMIT = 12
 let toastSeq = 0
 
 function loadSession(): SavedBriefing | null {
@@ -71,9 +71,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   usePersist(KEYS.starred, starred, storageFailed)
   usePersist(KEYS.settings, settings, storageFailed)
 
+  // Read inside the setSaved updater so it stays pure while trimming prefers unstarred briefings.
+  const starredRef = useRef(starred)
+  useEffect(() => {
+    starredRef.current = starred
+  }, [starred])
+
   const fileBriefing = useCallback((briefing: SavedBriefing) => {
-    // Replace any same-topic entry, newest first, keep twelve (legacy behavior).
-    setSaved((prev) => [briefing, ...prev.filter((b) => b.area !== briefing.area)].slice(0, ARCHIVE_LIMIT))
+    setSaved((prev) => fileInto(prev, briefing, starredRef.current))
+  }, [])
+
+  const clearArchive = useCallback(() => {
+    setSaved([])
+    setStarred([])
   }, [])
 
   const removeBriefing = useCallback((id: string) => {
@@ -103,9 +113,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppStateValue>(() => ({
     saved, starred, session, settings, profile, toasts,
-    fileBriefing, removeBriefing, toggleStar, setSession, updateSettings, saveProfile, pushToast, dismissToast,
+    fileBriefing, removeBriefing, clearArchive, toggleStar, setSession, updateSettings, saveProfile, pushToast, dismissToast,
   }), [saved, starred, session, settings, profile, toasts,
-    fileBriefing, removeBriefing, toggleStar, setSession, updateSettings, saveProfile, pushToast, dismissToast])
+    fileBriefing, removeBriefing, clearArchive, toggleStar, setSession, updateSettings, saveProfile, pushToast, dismissToast])
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
 }
