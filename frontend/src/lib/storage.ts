@@ -27,3 +27,33 @@ export function saveJSON(key: string, value: unknown): boolean {
     return false // quota exceeded or storage disabled — callers degrade gracefully
   }
 }
+
+function readRaw(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+/** What this browser holds; `bytes` approximates UTF-16 storage of the four keys. */
+export function storageSummary(): { briefings: number; starred: number; bytes: number } {
+  const count = (key: string) => {
+    const v = loadJSON<unknown>(key, [])
+    return Array.isArray(v) ? v.length : 0
+  }
+  const bytes = Object.values(KEYS).reduce((n, key) => n + (readRaw(key)?.length ?? 0) * 2, 0)
+  return { briefings: count(KEYS.saved), starred: count(KEYS.starred), bytes }
+}
+
+/** Everything Atlas stores, as one downloadable JSON document. */
+export function exportBlob(): Blob {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    saved: loadJSON<unknown>(KEYS.saved, []),
+    starred: loadJSON<unknown>(KEYS.starred, []),
+    settings: loadJSON<unknown>(KEYS.settings, {}),
+    profile: loadJSON<unknown>(KEYS.profile, {}),
+  }
+  return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+}
