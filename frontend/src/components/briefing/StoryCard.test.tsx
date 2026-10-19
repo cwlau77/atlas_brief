@@ -35,7 +35,7 @@ describe('StoryCard', () => {
     expect(img.getAttribute('referrerpolicy')).toBe('no-referrer')
     expect(img.getAttribute('alt')).toBe('')
     expect(container.querySelector('.story-card-credit')?.textContent).toContain('Reuters')
-    expect(container.querySelector('svg[data-region-map]')).toBeNull()
+    expect(container.querySelector('[data-image-fallback]')).toBeNull()
   })
 
   it('shows the headline, the city or first region, and the source count', () => {
@@ -61,23 +61,29 @@ describe('StoryCard', () => {
     expect(container.querySelector('.story-card-credit')?.textContent).toBe('Photo · AP')
   })
 
-  it('swaps a failed image for the region map without changing the media box', () => {
+  const fallback = () => container.querySelector<HTMLElement>('.story-card-media [data-image-fallback]')
+
+  it('swaps a failed image for the grainy gradient without changing the media box', () => {
     render(0)
     const media = container.querySelector('.story-card-media')!
     const before = media.className
     act(() => { container.querySelector('img')!.dispatchEvent(new Event('error')) })
     expect(container.querySelector('img')).toBeNull()
-    const map = container.querySelector('svg[data-region-map]')
-    expect(map).not.toBeNull()
+    expect(fallback()).not.toBeNull()
+    expect(fallback()!.getAttribute('aria-hidden')).toBe('true')
     expect(container.querySelector('.story-card-media')?.className).toBe(before)
-    expect(container.querySelector('.story-card-media')?.textContent).toContain('Aden')
+    expect(container.querySelector('.story-card-media')?.textContent).toBe('')
     expect(container.querySelector('.story-card-credit')).toBeNull()
   })
 
-  it('draws the region map straight away when there is no image', () => {
+  it('draws a grainy gradient straight away when there is no image, varied per story', () => {
     render(1)
     expect(container.querySelector('img')).toBeNull()
-    expect(container.querySelector('svg[data-region-map]')).not.toBeNull()
-    expect(container.querySelector('.story-card-media')?.textContent).toContain('Red Sea')
+    const one = fallback()!.dataset.imageFallback
+    render(2)
+    const two = fallback()!.dataset.imageFallback
+    expect(one).toMatch(/^\d+$/)
+    expect(two).toMatch(/^\d+$/)
+    expect(one).not.toBe(two)
   })
 })

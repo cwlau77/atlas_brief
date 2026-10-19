@@ -39,11 +39,20 @@ export function StoryTab() {
   // The globe point whose carousel is open; a key that no longer matches (new briefing) reads as closed.
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const focused = regions.find((r) => pointKey(r) === focusedKey) ?? null
-  const onFocusPoint = useCallback((point: RegionPoint | null) => setFocusedKey(point ? pointKey(point) : null), [])
+  // The carousel outlives the zoom by its slide-out: closing zooms out at once, and the
+  // carousel unmounts when its exit animation ends.
+  const [shownKey, setShownKey] = useState<string | null>(null)
+  const shown = regions.find((r) => pointKey(r) === shownKey) ?? null
+  const onCarouselExited = useCallback(() => setShownKey(null), [])
+  const onFocusPoint = useCallback((point: RegionPoint | null) => {
+    const key = point ? pointKey(point) : null
+    setFocusedKey(key)
+    if (key) setShownKey(key)
+  }, [])
   const closeCarousel = useCallback(() => setFocusedKey(null), [])
-  const focusedDevs = useMemo(
-    () => (focused ? focused.stories.map((s) => Number(s.anchorId.replace('dev-', ''))) : []),
-    [focused],
+  const shownDevs = useMemo(
+    () => (shown ? shown.stories.map((s) => Number(s.anchorId.replace('dev-', ''))) : []),
+    [shown],
   )
 
   return (
@@ -65,15 +74,17 @@ export function StoryTab() {
             onArcHover={highlight.setHovered}
             label={`Globe marking ${regions.length} place${regions.length === 1 ? '' : 's'} from this briefing. Select a point to zoom in and browse its stories.`}
           />
-          {focused && (
+          {shown && (
             <StoryCarousel
-              key={focusedKey}
-              title={focused.name}
-              devIndexes={focusedDevs}
+              key={shownKey}
+              title={shown.name}
+              devIndexes={shownDevs}
               briefing={briefing}
               timeZone={settings.timeZone}
               onOpen={scrollToStory}
               onClose={closeCarousel}
+              closing={shownKey !== focusedKey}
+              onExited={onCarouselExited}
             />
           )}
         </div>

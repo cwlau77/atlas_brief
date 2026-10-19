@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { devAnchor } from '../../globe/regions'
 import type { ViewDevelopment } from '../../lib/normalize'
 import { plural } from '../../lib/plural'
 import { formatTime } from '../../lib/time'
-import { RegionMap } from '../RegionMap'
 import { PriorityMark } from './PriorityMark'
 import './cards.css'
 
-/** A photo card for one development; a missing or failed image shows the region map instead. */
+// Brand-palette grainy gradients for cards without a usable image (.story-card-grain in cards.css).
+// Keyed by development index: stable per story, and no repeats within any five stories.
+const GRADIENTS = 5
+
+/** A photo card for one development; a missing or failed image shows a grainy gradient instead. */
 export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
   dev: ViewDevelopment
   index: number
@@ -20,14 +22,13 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
   const imageSource = image ? dev.sources.find((s) => s.image_url === image) : undefined
   const credit = imageSource ? imageSource.image_outlet || imageSource.outlet : undefined
   const where = dev.place?.name ?? dev.regions[0] ?? ''
-  const anchor = devAnchor({ keyDevelopments: [dev] }, 0)
   return (
     <article className={`story-card story-card-${variant}`}>
       <div className="story-card-media">
         {image
           ? <img src={image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailedSrc(image)} />
-          : <RegionMap lat={anchor?.lat ?? NaN} lng={anchor?.lng ?? NaN} label={where} />}
-        {credit && <span className="story-card-credit label">Photo · {credit}</span>}
+          : <div className="story-card-grain" data-image-fallback={index % GRADIENTS} aria-hidden="true" />}
+        {credit && <span className="story-card-credit label"><span className="story-card-credit-prefix">Photo · </span>{credit}</span>}
       </div>
       <div className="story-card-body">
         <div className="story-card-meta">

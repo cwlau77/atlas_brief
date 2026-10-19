@@ -1,4 +1,4 @@
-/* Story cards (Top stories strip and the globe carousel) and the region-map fallback. */
+/* Story cards (Top stories strip and the globe carousel) and their grainy-gradient image fallback. */
 .story-card {
   position: relative;
   display: grid;
@@ -37,19 +37,29 @@
 .story-card-foot { color: var(--ink-3); }
 .story-card-cta { color: var(--celadon-deep); font-size: 0.86rem; }
 
-.region-map { position: absolute; inset: 0; background: var(--paper); }
-.region-map svg { display: block; width: 100%; height: 100%; }
-.region-map circle { fill: var(--celadon); opacity: 0.55; }
-.region-map .region-map-pin { fill: none; stroke: var(--celadon-deep); stroke-width: 0.35; opacity: 1; }
-.region-map-label {
+/* No usable image: a soft gradient in the brand palette under a film grain. */
+.story-card-grain {
   position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-2);
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  letter-spacing: 0.02em;
-  color: var(--celadon-deep);
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 18%, var(--g1) 0%, transparent 62%),
+    radial-gradient(circle at 82% 88%, var(--g3) 0%, transparent 58%),
+    linear-gradient(135deg, var(--g1), var(--g2));
 }
+.story-card-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+}
+.story-card-grain[data-image-fallback="0"] { --g1: var(--celadon-light); --g2: var(--celadon); --g3: var(--sand); }
+.story-card-grain[data-image-fallback="1"] { --g1: var(--sand); --g2: var(--oat-deep); --g3: var(--celadon-light); }
+.story-card-grain[data-image-fallback="2"] { --g1: var(--celadon); --g2: var(--celadon-deep); --g3: var(--celadon-light); }
+.story-card-grain[data-image-fallback="3"] { --g1: var(--oat-deep); --g2: var(--sand); --g3: var(--celadon); }
+.story-card-grain[data-image-fallback="4"] { --g1: var(--celadon-light); --g2: var(--sand); --g3: var(--celadon-deep); }
 
 .top-stories { display: grid; gap: var(--space-4); }
 .story-strip {
@@ -71,40 +81,64 @@
   .story-strip > li { scroll-snap-align: start; }
 }
 
-/* Globe carousel: one centred card, neighbours shrunk and faded. */
-.carousel { --card-w: min(78%, 280px); display: grid; gap: var(--space-3); margin-top: var(--space-4); border-radius: var(--radius); }
+/* Globe carousel: floats over the bottom of the zoomed map (StoryTab puts it inside .story-globe),
+   one centred compact card, neighbours shrunk and faded. Slides up on open, down on close. */
+.story-globe { position: relative; }
+.carousel {
+  /* Not a percentage: inside the track it would resolve against the padded content box and drift off centre. */
+  --card-w: min(300px, 78vw);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-7) 0 var(--space-1);
+  background: linear-gradient(to top, var(--oat) 58%, rgba(238, 232, 220, 0));
+  animation: carousel-in 380ms var(--ease-out) both;
+}
+.carousel.is-closing { animation: carousel-out 220ms ease-in both; pointer-events: none; }
+@keyframes carousel-in { from { opacity: 0; transform: translateY(24px); } }
+@keyframes carousel-out { to { opacity: 0; transform: translateY(24px); } }
 .carousel:focus { outline: none; }
-.carousel:focus-visible { outline: 2px solid var(--signal); outline-offset: var(--space-2); }
-.carousel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+/* Keyboard focus on the carousel shows on the card the arrow keys move. */
+.carousel:focus-visible .carousel-track > li[aria-current="true"] .story-card { box-shadow: inset 0 0 0 2px var(--signal), var(--shadow-lift); }
+.carousel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 0 var(--space-3); }
 .carousel-back {
   all: unset;
   cursor: pointer;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule-soft);
   color: var(--celadon-deep);
-  padding: var(--space-1) 0;
+  font-size: 0.72rem;
 }
+.carousel-back:hover { box-shadow: inset 0 0 0 1px var(--celadon); }
 .carousel-back:focus-visible, .carousel-arrows button:focus-visible, .carousel-dots button:focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
-.carousel-arrows { display: flex; gap: var(--space-2); }
+.carousel-arrows { display: flex; gap: var(--space-1); }
 .carousel-arrows button {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: 0;
   border-radius: 50%;
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--rule);
   color: var(--ink);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   line-height: 1;
   cursor: pointer;
 }
 .carousel-arrows button:disabled { color: var(--ink-3); opacity: 0.45; cursor: default; }
-.carousel-empty { color: var(--ink-2); }
+.carousel-empty { color: var(--ink-2); padding: 0 var(--space-3); }
 .carousel-track {
   list-style: none;
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   padding: var(--space-1) calc(50% - var(--card-w) / 2);
@@ -119,10 +153,10 @@
   transition: transform var(--dur-mid) var(--ease-out), opacity var(--dur-mid) var(--ease-out);
 }
 .carousel-track > li[aria-current="true"] { transform: none; opacity: 1; }
-.carousel-dots { display: flex; justify-content: center; gap: var(--space-1); }
+.carousel-dots { display: flex; justify-content: center; gap: 0; }
 .carousel-dots button {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border: 0;
   padding: 0;
   background: transparent;
@@ -131,16 +165,46 @@
 .carousel-dots button::before {
   content: '';
   display: block;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   margin: auto;
   border-radius: 50%;
-  background: var(--rule);
+  background: var(--sand);
+  transition: width var(--dur-mid) var(--ease-out), background-color var(--dur-mid);
 }
-.carousel-dots button[aria-current="true"]::before { background: var(--celadon-deep); }
+.carousel-dots button[aria-current="true"]::before { width: 16px; border-radius: 3px; background: var(--celadon-deep); }
+
+/* Compact card for the carousel: square thumbnail beside the text. */
+.story-card-carousel { grid-template-rows: none; grid-template-columns: 104px minmax(0, 1fr); box-shadow: inset 0 0 0 1px var(--rule-soft), var(--shadow-lift); }
+.story-card-carousel .story-card-media { aspect-ratio: auto; height: 100%; min-height: 116px; }
+.story-card-carousel .story-card-body { gap: var(--space-1); padding: var(--space-3); }
+.story-card-carousel .story-card-meta { justify-content: flex-start; }
+.story-card-carousel .story-card-title { font-size: 0.94rem; }
+/* Clamp the button's own text: clamping the heading misses its inline button. The button's overflow
+   doesn't clip the full-card ::after overlay, whose containing block is the card. */
+.story-card-carousel .story-card-open {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.story-card-carousel .story-card-cta { display: none; }
+.story-card-carousel .story-card-credit {
+  left: var(--space-1);
+  right: var(--space-1);
+  bottom: var(--space-1);
+  padding: 1px var(--space-1);
+  font-size: 0.56rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.story-card-carousel .story-card-credit-prefix { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .story-card, .carousel-track > li { transition: none; }
+  .story-card, .carousel-track > li, .carousel-dots button::before { transition: none; }
+  .carousel, .carousel.is-closing { animation: none; }
 }
 
 @media print {

@@ -4,23 +4,30 @@ import { usePrefersReducedMotion } from '../../lib/useMediaQuery'
 import { StoryCard } from './StoryCard'
 import './cards.css'
 
+// Comfortably longer than the 220ms slide-out in cards.css.
+const EXIT_FALLBACK_MS = 600
+
 function time(value: string): number {
   const t = Date.parse(value)
   return Number.isNaN(t) ? 0 : t
 }
 
 /**
- * The stories at one globe point, newest first, in a scroll-snap track that
- * centres one card; neighbours shrink and fade. Clicking a faded card centres
- * it, clicking the centred card opens it in the timeline. No looping.
+ * The stories at one globe point, newest first, floating over the zoomed map in
+ * a scroll-snap track that centres one card; neighbours shrink and fade.
+ * Clicking a faded card centres it, clicking the centred card opens it in the
+ * timeline. No looping. It slides up on open; with `closing` it slides down and
+ * then calls onExited so the page can unmount it.
  */
-export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, onClose }: {
+export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, onClose, closing = false, onExited }: {
   title: string
   devIndexes: number[]
   briefing: SavedBriefing
   timeZone: string
   onOpen: (anchorId: string) => void
   onClose: () => void
+  closing?: boolean
+  onExited?: () => void
 }) {
   const reduced = usePrefersReducedMotion()
   const devs = briefing.keyDevelopments
@@ -37,7 +44,9 @@ export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, o
   const centre = useCallback((i: number, behavior: ScrollBehavior = reduced ? 'auto' : 'smooth') => {
     const next = Math.max(0, Math.min(n - 1, i))
     setCurrent(next)
-    itemRefs.current[next]?.scrollIntoView({ inline: 'center', block: 'nearest', behavior })
+    // Scroll the track only: scrollIntoView would also scroll the page and pull the zooming globe out of view.
+    const track = trackRef.current, item = itemRefs.current[next]
+    if (track && item) track.scrollTo({ left: item.offsetLeft - (track.clientWidth - item.offsetWidth) / 2, behavior })
   }, [n, reduced])
 
   // Closing (Back, Esc, an ocean click) unmounts the carousel with focus inside it; hand focus back to the opener.
@@ -52,12 +61,26 @@ export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, o
     }
   }, [])
 
-  // Open on the newest card, bring the carousel into view, and take focus so the arrow keys work straight away.
+  // Open on the newest card and take focus so the arrow keys work straight away.
   useEffect(() => {
     centre(0, 'auto')
-    sectionRef.current?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' })
     sectionRef.current?.focus({ preventScroll: true })
-  }, [centre, reduced])
+  }, [centre])
+
+  // Wait for the slide-out to finish; under reduced motion there is none to wait for.
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!closing || !section) return
+    if (reduced) { onExited?.(); return }
+    const done = (e: Event) => { if (e.target === section) onExited?.() }
+    section.addEventListener('animationend', done)
+    // Fallback if the animation never runs (a hidden tab, print): don't leave a dead carousel behind.
+    const fallback = window.setTimeout(() => onExited?.(), EXIT_FALLBACK_MS)
+    return () => {
+      section.removeEventListener('animationend', done)
+      window.clearTimeout(fallback)
+    }
+  }, [closing, reduced, onExited])
 
   // Swipes and trackpad scrolls move the centred card; follow it.
   useEffect(() => {
@@ -81,7 +104,10 @@ export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, o
   }
 
   return (
-    <section ref={sectionRef} className="carousel" aria-label={`Stories in ${title}, ${n}`} tabIndex={-1} onKeyDown={onKeyDown}>
+    <section
+      ref={sectionRef} className={`carousel ${closing ? 'is-closing' : ''}`} aria-label={`Stories in ${title}, ${n}`}
+      tabIndex={-1} onKeyDown={onKeyDown} inert={closing}
+    >
       <div className="carousel-head">
         <button type="button" className="carousel-back label" onClick={onClose} data-cursor="link">← Back to world</button>
         <div className="carousel-arrows">

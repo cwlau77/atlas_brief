@@ -9,10 +9,14 @@ const briefing = makeBriefing()
 describe('StoryCarousel', () => {
   let container: HTMLDivElement
   let root: Root
+  // Page scrolls (scrollIntoView) must never happen: the carousel sits over the globe and the zoom must stay in view.
   let scrolled: Element[]
+  let trackScrolls: { el: Element; opts: ScrollToOptions }[]
   beforeEach(() => {
     scrolled = []
+    trackScrolls = []
     Element.prototype.scrollIntoView = vi.fn(function (this: Element) { scrolled.push(this) })
+    Element.prototype.scrollTo = vi.fn(function (this: Element, opts: ScrollToOptions) { trackScrolls.push({ el: this, opts }) }) as never
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
@@ -20,16 +24,22 @@ describe('StoryCarousel', () => {
   afterEach(() => {
     act(() => root.unmount())
     container.remove()
+    vi.unstubAllGlobals()
+    expect(scrolled).toEqual([])
   })
 
-  const render = (devIndexes = [0, 1, 2]) => {
+  const render = (devIndexes = [0, 1, 2], closing = false, onExited = vi.fn()) => {
     const onOpen = vi.fn()
     const onClose = vi.fn()
     act(() => root.render(
-      <StoryCarousel title="Red Sea" devIndexes={devIndexes} briefing={briefing} timeZone="UTC" onOpen={onOpen} onClose={onClose} />,
+      <StoryCarousel
+        title="Red Sea" devIndexes={devIndexes} briefing={briefing} timeZone="UTC"
+        onOpen={onOpen} onClose={onClose} closing={closing} onExited={onExited}
+      />,
     ))
-    return { onOpen, onClose }
+    return { onOpen, onClose, onExited }
   }
+  const lastTrackScroll = () => trackScrolls.at(-1)
   const section = () => container.querySelector('section')!
   const items = () => [...container.querySelectorAll<HTMLLIElement>('.carousel-track > li')]
   const currentTitle = () => container.querySelector('.carousel-track > li[aria-current="true"] .story-card-open')?.textContent
@@ -54,7 +64,9 @@ describe('StoryCarousel', () => {
     expect(currentTitle()).toBe(briefing.keyDevelopments[2].title)
     key('ArrowRight')
     expect(currentTitle()).toBe(briefing.keyDevelopments[1].title)
-    expect(scrolled.at(-1)).toBe(items()[1])
+    // Centring scrolls the track only, smoothly, never the page.
+    expect(lastTrackScroll()?.el).toBe(container.querySelector('.carousel-track'))
+    expect(lastTrackScroll()?.opts.behavior).toBe('smooth')
     key('ArrowRight')
     key('ArrowRight')
     expect(currentTitle()).toBe(briefing.keyDevelopments[0].title)
@@ -66,7 +78,7 @@ describe('StoryCarousel', () => {
     expect(dot).toBeDefined()
     act(() => dot.click())
     expect(currentTitle()).toBe(briefing.keyDevelopments[0].title)
-    expect(scrolled.at(-1)).toBe(items()[2])
+    expect(lastTrackScroll()?.el).toBe(container.querySelector('.carousel-track'))
   })
 
   it('centres a faded card on click and opens only the current one', () => {
@@ -112,5 +124,24 @@ describe('StoryCarousel', () => {
     act(() => root.render(<></>))
     expect(document.activeElement).toBe(opener)
     opener.remove()
+  })
+
+  it('slides in, and slides out before telling the page it can unmount', () => {
+    const { onExited } = render()
+    expect(section().classList.contains('is-closing')).toBe(false)
+    render([0, 1, 2], true, onExited)
+    expect(section().classList.contains('is-closing')).toBe(true)
+    expect(onExited).not.toHaveBeenCalled()
+    act(() => { section().dispatchEvent(new Event('animationend', { bubbles: true })) })
+    expect(onExited).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes at once under reduced motion', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)', media: query, addEventListener: () => {}, removeEventListener: () => {},
+    }))
+    const onExited = vi.fn()
+    render([0, 1, 2], true, onExited)
+    expect(onExited).toHaveBeenCalledTimes(1)
   })
 })

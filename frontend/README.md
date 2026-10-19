@@ -47,15 +47,17 @@ commit the regenerated file.
   panel and a visually-hidden list for screen readers. `StaticGlobe.tsx` is
   the no-WebGL fallback. Hotspot selection scrolls to `#dev-N` anchors
   rendered by `components/briefing/Timeline.tsx` / `DevelopmentCard.tsx`.
-- Briefing globes (not Home) zoom: clicking a point calls `engine.zoomTo` and
-  `StoryTab` opens `StoryCarousel` under the globe for that point's stories
-  (newest first, one centred card). Back, Esc or an ocean click zooms out.
+- Briefing globes (not Home) zoom: clicking a point calls `engine.zoomTo`
+  (which also lifts the point above centre) and `StoryTab` floats
+  `StoryCarousel` over the bottom of the zoomed map with that point's stories
+  (newest first, one centred compact card). It slides up on open and down on
+  close; Back, Esc or an ocean click zooms out. The page never scrolls, so
+  the zoom stays in view.
   Points come from `globe/regions.ts`: a development with a named `place`
   (resolved server-side from GeoNames) sits only at its city point.
 - `StoryCard` is shared by the carousel and the Top stories strip
   (`TopStories`, ranked by `lib/topStories.ts`). A missing or failed lead
-  image falls back to `RegionMap`, a crop of the globe's land dots (loaded
-  on demand, so the land data stays out of the main chunk).
+  image falls back to a grainy brand-palette gradient (`.story-card-grain`).
 - Routes (`lib/routes.ts`) are tensions or source disagreements linked to two
   or more developments. Up to five get a lane in the timeline gutter (fixed
   width, so the spine never moves), a key entry, a colour dot on their tabs

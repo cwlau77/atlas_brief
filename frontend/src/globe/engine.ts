@@ -13,6 +13,9 @@ export interface EngineOptions { reducedMotion: boolean; playIntro: boolean; bas
 
 const CAMERA_Z = 5
 const ZOOM_Z = 2.2
+// Zoomed in, the view shifts so the point sits this fraction of the height above centre,
+// clear of the story carousel that floats over the bottom of the map.
+const ZOOM_LIFT = 0.14
 const BASE_PITCH = 0.32
 const PITCH_LIMIT = 0.6
 // Zoomed in, the camera may tilt further so high-latitude places can be centred.
@@ -165,6 +168,7 @@ export class GlobeEngine {
   private hotVecs: THREE.Vector3[] = []
   private readonly land: Float32Array
   private camZ = CAMERA_Z
+  private viewZ = CAMERA_Z
   private camTarget = CAMERA_Z
   private zoomed = false
   private arcs: ArcLine[] = []
@@ -244,6 +248,15 @@ export class GlobeEngine {
     this.renderer.setSize(this.width, this.height, false)
     this.camera.aspect = this.width / this.height
     this.camera.updateProjectionMatrix()
+    this.applyView()
+  }
+
+  /** Shift the projection with the zoom so the focused point rises above the carousel; none when zoomed out. */
+  private applyView(): void {
+    this.viewZ = this.camZ
+    const k = (CAMERA_Z - this.camZ) / (CAMERA_Z - ZOOM_Z)
+    if (k > 0.001) this.camera.setViewOffset(this.width, this.height, 0, this.height * ZOOM_LIFT * k, this.width, this.height)
+    else this.camera.clearViewOffset()
   }
 
   setPointer(ndc: { x: number; y: number } | null): void {
@@ -460,6 +473,7 @@ export class GlobeEngine {
       if (Math.abs(this.camTarget - this.camZ) < 0.002) this.camZ = this.camTarget
     }
     this.camera.position.z = this.camZ
+    if (this.viewZ !== this.camZ) this.applyView()
     // The cursor ripple is sized for the whole globe; zoomed in it would swamp the view.
     u.uLiquid.value = this.opts.reducedMotion ? 0 : this.dragScale * this.dragScale
 
