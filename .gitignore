@@ -8,7 +8,7 @@ backend/.env
 backend/.venv/
 backend/__pycache__/
 backend/**/__pycache__/
-guaihack.global_brief_gen/
+atlas-hackathon/
 .claude/
 build_data_dictionary.py
 node_modules/
@@ -17,3 +17,6 @@ frontend/dist/
 
 # Higgsfield raw outputs (only the log is tracked)
 brandkit/*.png
+
+# Brainstorm visual companion sessions
+.superpowers/
