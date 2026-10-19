@@ -43,6 +43,7 @@ class KeyDevelopment(BaseModel):
     regions: list[str]
     sources: list[SourceCitation]
     historical_context: Optional[str] = None
+    place: Optional[Place] = None
 
 
 class Tension(BaseModel):

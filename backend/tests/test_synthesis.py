@@ -146,3 +146,29 @@ def test_citations_carry_the_article_image(make_article):
     assert dev.sources[1].image_url is None
     fallback = _fallback_briefing("focus", [a2])
     assert fallback.key_developments[0].sources[0].image_url == "https://i.ex/2.jpg"
+
+
+def test_schema_asks_for_a_city_or_null():
+    from backend.synthesis.briefing import SCHEMA_INSTRUCTIONS
+    assert '"city"' in SCHEMA_INSTRUCTIONS
+    assert "Name a city only if the cited articles place the events there; otherwise null" in SCHEMA_INSTRUCTIONS
+
+
+def _dev_with_city(city, regions, make_article):
+    data = {"key_developments": [{"headline": "H", "summary": "S", "regions": regions, "city": city, "sources": [1]}]}
+    return briefing_from_data(data, "focus", [make_article()]).key_developments[0]
+
+
+def test_resolved_city_becomes_place(make_article):
+    dev = _dev_with_city("Aden, Yemen", ["Yemen"], make_article)
+    assert dev.place.name == "Aden" and dev.place.country == "Yemen"
+
+
+@pytest.mark.parametrize("city,regions", [("Aden, Yemen", ["Egypt"]), (7, ["Yemen"]), (None, ["Yemen"])])
+def test_unresolvable_or_mismatched_city_is_dropped(city, regions, make_article):
+    assert _dev_with_city(city, regions, make_article).place is None
+
+
+def test_fallback_briefing_has_no_place(make_article):
+    b = _fallback_briefing("Aden port", [make_article(title="Strike near Aden port in Yemen")])
+    assert all(dev.place is None for dev in b.key_developments)

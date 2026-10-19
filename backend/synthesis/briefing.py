@@ -15,6 +15,7 @@ from backend.models import (
     SourceCitation,
     Tension,
 )
+from backend.places import resolve_city
 
 
 class SynthesisUnavailableError(RuntimeError):
@@ -51,6 +52,7 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
       "headline": "string, <= 15 words",
       "summary": "string, 2-4 sentences of analytical summary",
       "regions": ["ISO-like region/country names"],
+      "city": "City, Country of the most specific place the events happen, or null",
       "sources": [article numbers, e.g. 3, 7]
     }
   ],
@@ -86,7 +88,8 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
 Constraints:
 - 3-6 key_developments, 0-4 emerging_tensions, 0-4 contradictions, 0-3 priority_alerts, 3-5 recommended_readings.
 - Cite sources ONLY by the bracketed article number from the article list (e.g. [3] -> 3). Never write URLs or outlet names in citations.
-- Omit sections (empty array) if evidence is insufficient rather than fabricating."""
+- Omit sections (empty array) if evidence is insufficient rather than fabricating.
+- city: Name a city only if the cited articles place the events there; otherwise null."""
 
 
 def _format_articles(articles: list[Article]) -> str:
@@ -324,6 +327,7 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
             summary=kd["summary"],
             regions=kd.get("regions", []),
             sources=_parse_citations(kd.get("sources", []), articles),
+            place=resolve_city(kd.get("city") if isinstance(kd.get("city"), str) else None, kd.get("regions", [])),
         )
         for kd in data.get("key_developments", [])
     ]
