@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { ToastItem } from '../components/Toast'
 import type { SavedBriefing } from '../lib/normalize'
 import { fileInto } from '../lib/archive'
-import { KEYS, loadJSON, saveJSON } from '../lib/storage'
+import { KEYS, loadJSON, removeKeys, saveJSON } from '../lib/storage'
 import { AppStateContext, type AppStateValue } from './context'
 import { isSavedBriefing } from './resolveBriefing'
 import { parseProfile, parseSettings, type UserProfile, type UserSettings } from './settings'
@@ -62,10 +62,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setToasts((t) => [...t, { id, message, tone }])
     window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ttl)
   }, [])
-  const storageFailed = useCallback(
-    () => pushToast("Couldn't save in this browser. Storage is full or turned off.", 'error', 4000),
-    [pushToast],
-  )
+  // One toast per burst: saved and starred persist separately and can fail together.
+  const lastFailure = useRef(0)
+  const storageFailed = useCallback(() => {
+    const now = Date.now()
+    if (now - lastFailure.current < 1000) return
+    lastFailure.current = now
+    pushToast("Couldn't save in this browser. Storage is full or turned off.", 'error', 4000)
+  }, [pushToast])
 
   usePersist(KEYS.saved, saved, storageFailed)
   usePersist(KEYS.starred, starred, storageFailed)
@@ -77,13 +81,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     starredRef.current = starred
   }, [starred])
 
+  // Set inside the updater (idempotent under StrictMode), announced once the state lands.
+  const notFiled = useRef<string | null>(null)
   const fileBriefing = useCallback((briefing: SavedBriefing) => {
-    setSaved((prev) => fileInto(prev, briefing, starredRef.current))
+    setSaved((prev) => {
+      const next = fileInto(prev, briefing, starredRef.current)
+      if (!next.includes(briefing)) notFiled.current = briefing.id
+      return next
+    })
   }, [])
+  useEffect(() => {
+    if (!notFiled.current) return
+    notFiled.current = null
+    pushToast('This briefing was not saved to the archive: every older one it could replace is starred. Unstar one to make room.', 'info', 6000)
+  }, [saved, pushToast])
 
   const clearArchive = useCallback(() => {
+    const ok = removeKeys([KEYS.saved, KEYS.starred])
     setSaved([])
     setStarred([])
+    return ok
   }, [])
 
   const removeBriefing = useCallback((id: string) => {

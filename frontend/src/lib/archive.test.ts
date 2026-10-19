@@ -31,9 +31,9 @@ describe('fileInto', () => {
     expect(ids(next)).toEqual(['r5', 'r4', 'r2', 'r1'])
   })
 
-  it('drops the oldest when everything in the topic is starred', () => {
+  it('never drops a starred briefing: when every older one is starred, the new one is not archived', () => {
     const next = fileInto(fileAll(four), brief('r5', 'Red Sea shipping', 5), ['r1', 'r2', 'r3', 'r4'])
-    expect(ids(next)).toEqual(['r5', 'r4', 'r3', 'r2'])
+    expect(ids(next)).toEqual(['r4', 'r3', 'r2', 'r1'])
   })
 
   it('counts spellings that differ only by case and spacing as one topic', () => {
@@ -49,6 +49,13 @@ describe('fileInto', () => {
     expect(ids(next)).toContain('t0')
     expect(ids(next)).not.toContain('t1')
     expect(ids(next)[0]).toBe('new')
+  })
+
+  it('keeps a fully starred archive intact at the total cap', () => {
+    const many = Array.from({ length: 24 }, (_, i) => brief(`t${i}`, `topic ${i}`, i + 1))
+    const next = fileInto(fileAll(many), brief('new', 'topic new', 30), many.map((b) => b.id))
+    expect(ids(next)).not.toContain('new')
+    expect(next).toHaveLength(24)
   })
 })
 

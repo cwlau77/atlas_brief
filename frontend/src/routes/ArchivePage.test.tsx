@@ -71,4 +71,15 @@ describe('ArchivePage threads', () => {
     expect(container.textContent).toContain('No threads yet')
     expect([...container.querySelectorAll('a')].some((a) => a.textContent === 'Start a brief')).toBe(true)
   })
+
+  it('offers every briefing action without hover, for touch screens', () => {
+    mount()
+    const manage = rows()[0].querySelector('details.thread-manage')!
+    const items = [...manage.querySelectorAll('li')]
+    expect(items).toHaveLength(2)
+    expect(items[0].querySelector('a')!.getAttribute('href')).toBe('/brief/r1')
+    const names = [...items[0].querySelectorAll('button')].map((b) => b.getAttribute('aria-label'))
+    expect(names.some((n) => n?.startsWith('Star'))).toBe(true)
+    expect(names.some((n) => n?.startsWith('Delete'))).toBe(true)
+  })
 })

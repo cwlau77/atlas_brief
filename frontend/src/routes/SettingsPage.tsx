@@ -79,9 +79,9 @@ export function SettingsPage() {
     URL.revokeObjectURL(url)
   }
   const clear = () => {
-    clearArchive()
     setConfirmClear(false)
-    pushToast('Archive cleared', 'info', 2400)
+    // On failure the storage error toast from AppState already explains it.
+    if (clearArchive()) pushToast('Archive cleared', 'info', 2400)
   }
   const name = `${profile.firstName} ${profile.lastName}`.trim() || 'Unnamed analyst'
 

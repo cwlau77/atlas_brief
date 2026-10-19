@@ -182,7 +182,7 @@ The archive page becomes a list of **topic threads**.
   - Compare two. "Compare two" is a toggle that switches beads into selection mode. The existing compare panel (`compare-col`) is reused as is.
 - **Storage policy changes (owner's decision, 2026-10-19).** Today `fileBriefing` replaces any saved briefing with the same `area`, so a topic could never have more than one bead. Instead, filing keeps history:
   - Up to **4 briefings per topic** (matched by the normalised focus above) and **24 in total**, newest first.
-  - When either cap is exceeded, the oldest briefing is dropped, preferring an unstarred one. A starred briefing is only dropped when everything that could be dropped is starred.
+  - When either cap is exceeded, the oldest unstarred briefing is dropped. **Starred briefings are never dropped** (amended after review, 2026-10-19). When only starred briefings could make room, the new briefing is not archived. It stays open in the current session, and a toast explains why.
   - The page says "Up to 4 briefings per topic and 24 in total are kept in this browser."
 - **Empty state:** the mountain painting band (cropped, smaller) with "No threads yet" and a "Start a brief" button.
 

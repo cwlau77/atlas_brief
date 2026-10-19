@@ -119,5 +119,36 @@ describe('AppStateProvider', () => {
     expect(findBriefing('r1', null, latestApi!.saved)).toBeNull()
     expect(findBriefing('r5', null, latestApi!.saved)?.id).toBe('r5')
   })
-})
 
+  it('tells the user when a briefing could not be archived because the topic is full of starred ones', () => {
+    act(() => {
+      for (let d = 1; d <= 4; d++) {
+        latestApi!.fileBriefing(makeBriefing({ id: `r${d}`, area: 'Red Sea shipping', generatedAt: new Date(Date.UTC(2026, 9, d)).toISOString() }))
+        latestApi!.toggleStar(`r${d}`)
+      }
+    })
+    act(() => latestApi!.fileBriefing(makeBriefing({ id: 'r5', area: 'Red Sea shipping' })))
+    expect(latestApi!.saved.map((s) => s.id)).not.toContain('r5')
+    expect(latestApi!.toasts.some((t) => /not saved to the archive/i.test(t.message))).toBe(true)
+  })
+
+  it('clearArchive reports failure with a single error toast when storage is broken', () => {
+    act(() => {
+      latestApi!.fileBriefing(makeBriefing({ id: 'f', area: 'topic-f' }))
+      latestApi!.toggleStar('f')
+    })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('SecurityError')
+    })
+    let ok = true
+    act(() => {
+      ok = latestApi!.clearArchive()
+    })
+    expect(ok).toBe(false)
+    expect(latestApi!.saved).toEqual([])
+    expect(latestApi!.toasts.filter((t) => t.tone === 'error')).toHaveLength(1)
+  })
+})

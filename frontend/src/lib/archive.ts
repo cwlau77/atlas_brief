@@ -18,22 +18,23 @@ function oldestFirst(list: SavedBriefing[], all: SavedBriefing[]): SavedBriefing
   return [...list].sort((a, b) => age(a) - age(b) || all.indexOf(b) - all.indexOf(a))
 }
 
-/** The oldest unstarred candidate, or the oldest overall when every candidate is starred. */
-function victim(candidates: SavedBriefing[], all: SavedBriefing[], starred: string[]): SavedBriefing | undefined {
-  const ordered = oldestFirst(candidates, all)
-  return ordered.find((b) => !starred.includes(b.id)) ?? ordered[0]
-}
-
-/** Files `briefing` newest first, then enforces the per-topic cap and the total cap. */
+/**
+ * Files `briefing` newest first, then enforces the per-topic cap and the total cap by dropping
+ * the oldest unstarred briefing. Starred briefings are never dropped: when only starred ones
+ * could make room, the new briefing is not archived and `saved` comes back unchanged (as a new array).
+ */
 export function fileInto(saved: SavedBriefing[], briefing: SavedBriefing, starred: string[]): SavedBriefing[] {
   let next = [briefing, ...saved.filter((b) => b.id !== briefing.id)]
   const key = topicKey(briefing.area)
-  const drop = (pool: (b: SavedBriefing) => boolean) => {
-    const v = victim(next.filter((b) => b !== briefing && pool(b)), next, starred)
-    if (v) next = next.filter((b) => b !== v)
+  const sameTopic = (b: SavedBriefing) => topicKey(b.area) === key
+  const makeRoom = (pool: (b: SavedBriefing) => boolean): boolean => {
+    const victim = oldestFirst(next.filter((b) => b !== briefing && pool(b) && !starred.includes(b.id)), next)[0]
+    if (!victim) return false
+    next = next.filter((b) => b !== victim)
+    return true
   }
-  while (next.filter((b) => topicKey(b.area) === key).length > PER_TOPIC_LIMIT) drop((b) => topicKey(b.area) === key)
-  while (next.length > ARCHIVE_LIMIT) drop(() => true)
+  while (next.filter(sameTopic).length > PER_TOPIC_LIMIT) if (!makeRoom(sameTopic)) return [...saved]
+  while (next.length > ARCHIVE_LIMIT) if (!makeRoom(() => true)) return [...saved]
   return next
 }
 

@@ -57,3 +57,13 @@ export function exportBlob(): Blob {
   }
   return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
 }
+
+/** Removes keys; false when storage refuses (disabled or blocked). */
+export function removeKeys(keys: string[]): boolean {
+  try {
+    for (const key of keys) window.localStorage.removeItem(key)
+    return true
+  } catch {
+    return false
+  }
+}

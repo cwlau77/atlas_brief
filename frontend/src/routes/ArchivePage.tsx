@@ -69,6 +69,19 @@ export function ArchivePage() {
   const beadLabel = (b: SavedBriefing) =>
     `${b.area}, ${dayMonth(b.generatedAt, tz)}, ${plural(b.stats.articles, 'article')}${hasHighAlert(b) ? ', high alert' : ''}`
   const beadSize = (b: SavedBriefing) => 10 + 2 * Math.min(5, Math.round(b.stats.articles / 5))
+  // A render function, not a nested component, so React keeps the buttons (and their focus) across renders.
+  const beadActions = (b: SavedBriefing) => {
+    const isStarred = starred.includes(b.id)
+    return (
+      <div className="bead-actions">
+        <button type="button" className={`star-btn ${isStarred ? 'on' : ''}`} onClick={() => toggleStar(b.id)} aria-label={isStarred ? `Unstar ${beadLabel(b)}` : `Star ${beadLabel(b)}`} aria-pressed={isStarred} data-cursor="link">
+          <StarIcon size={15} filled={isStarred} />
+        </button>
+        <button type="button" className="btn btn-quiet" onClick={() => navigate(`/brief/${b.id}?print=1`)} aria-label={`Print ${beadLabel(b)}`} data-cursor="link"><PrintIcon size={14} /></button>
+        <button type="button" className="btn btn-quiet" onClick={() => setPendingDelete(b)} aria-label={`Delete ${beadLabel(b)}`} data-cursor="link"><TrashIcon size={14} /></button>
+      </div>
+    )
+  }
 
   return (
     <div className="page wrap archive">
@@ -121,7 +134,6 @@ export function ArchivePage() {
                     </div>
                     <ol className="thread-string">
                       {t.briefings.map((b) => {
-                        const isStarred = starred.includes(b.id)
                         const style = { '--bead': `${beadSize(b)}px` } as CSSProperties
                         const cls = `bead ${hasHighAlert(b) ? 'bead-alert' : ''} ${b === latest ? 'latest' : ''}`
                         return (
@@ -143,13 +155,7 @@ export function ArchivePage() {
                             {!comparing && (
                               <div className="bead-pop">
                                 <p className="label">{formatDateTime(b.generatedAt, tz)}</p>
-                                <div className="bead-actions">
-                                  <button type="button" className={`star-btn ${isStarred ? 'on' : ''}`} onClick={() => toggleStar(b.id)} aria-label={isStarred ? `Unstar ${beadLabel(b)}` : `Star ${beadLabel(b)}`} aria-pressed={isStarred} data-cursor="link">
-                                    <StarIcon size={15} filled={isStarred} />
-                                  </button>
-                                  <button type="button" className="btn btn-quiet" onClick={() => navigate(`/brief/${b.id}?print=1`)} aria-label={`Print ${beadLabel(b)}`} data-cursor="link"><PrintIcon size={14} /></button>
-                                  <button type="button" className="btn btn-quiet" onClick={() => setPendingDelete(b)} aria-label={`Delete ${beadLabel(b)}`} data-cursor="link"><TrashIcon size={14} /></button>
-                                </div>
+                                {beadActions(b)}
                               </div>
                             )}
                           </li>
@@ -157,6 +163,18 @@ export function ArchivePage() {
                       })}
                     </ol>
                     <p className="thread-count label">{plural(latest.stats.articles, 'article')}</p>
+                    {/* Touch screens can't hover a bead, so the same actions live in a list here (CSS shows it only without hover). */}
+                    <details className="thread-manage">
+                      <summary className="label">Manage briefings</summary>
+                      <ul>
+                        {t.briefings.map((b) => (
+                          <li key={b.id}>
+                            <Link to={`/brief/${b.id}`} data-cursor="link">{formatDateTime(b.generatedAt, tz)}</Link>
+                            {beadActions(b)}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
                   </article>
                 )
               })}
