@@ -62,7 +62,7 @@ input, select, textarea { font: inherit; color: inherit; }
   border-radius: 4px;
 }
 
-::selection { background: rgba(181, 83, 46, 0.22); color: var(--ink); }
+::selection { background: rgba(61, 90, 69, 0.2); color: var(--ink); }
 
 .wrap {
   width: 100%;

@@ -1,11 +1,12 @@
 # Atlas — frontend
 
 Vite + React + TypeScript SPA. Design system: **Oat**, a warm paper surface
-(oat, oat-deep, paper) with ink text and a terracotta accent for high-severity
-items, moss and sand for the globe and secondary marks. Type is Hanken
-Grotesk for UI text, Fraunces (italic) for display and pull quotes, and IBM
-Plex Mono for data and labels, all loaded from Google Fonts. Light-only;
-print styles force ink-on-paper.
+(oat, oat-deep, paper) with ink text and moss as the primary colour (logo,
+primary buttons, links, timeline, data), with terracotta reserved for
+signals — globe hotspots, high-priority alerts, focus rings and the logo
+dot. Type is Jost for headings, Hanken Grotesk for body text, and IBM Plex
+Mono for labels and data, all loaded from Google Fonts. Light-only; print
+styles force ink-on-paper.
 
 ## Dev
 
