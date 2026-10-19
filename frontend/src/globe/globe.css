@@ -18,7 +18,7 @@
   transition: opacity var(--dur-mid);
 }
 .globe-hotspot[data-visible="false"] { opacity: 0; pointer-events: none; }
-.globe-hotspot:focus-visible { outline: 2px solid var(--terra); outline-offset: 2px; }
+.globe-hotspot:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 .globe-hotspot-label {
   position: absolute;
   left: 26px;
@@ -31,7 +31,7 @@
   color: var(--ink);
   pointer-events: none;
 }
-.globe-hotspot-label b { color: var(--terra-ink); font-weight: 500; }
+.globe-hotspot-label b { color: var(--signal-ink); font-weight: 500; }
 .globe-hotspot.labeled .globe-hotspot-label,
 .globe-hotspot:hover .globe-hotspot-label,
 .globe-hotspot:focus-visible .globe-hotspot-label,
@@ -50,7 +50,7 @@
   transition: opacity 0.2s;
 }
 .globe-panel[data-visible="false"] { opacity: 0; pointer-events: none; }
-.globe-panel-head { display: flex; justify-content: space-between; gap: 12px; color: var(--terra-ink); margin-bottom: 8px; }
+.globe-panel-head { display: flex; justify-content: space-between; gap: 12px; color: var(--signal-ink); margin-bottom: 8px; }
 .globe-panel ul { list-style: none; display: grid; gap: 2px; }
 .globe-panel li button {
   display: grid;

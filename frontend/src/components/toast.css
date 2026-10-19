@@ -21,7 +21,7 @@
 }
 .toast span { flex: 1; }
 .toast-success { box-shadow: inset 3px 0 0 var(--sage), 0 20px 40px -24px rgba(28, 35, 31, 0.6); }
-.toast-error { box-shadow: inset 3px 0 0 var(--terra), 0 20px 40px -24px rgba(28, 35, 31, 0.6); }
+.toast-error { box-shadow: inset 3px 0 0 var(--signal), 0 20px 40px -24px rgba(28, 35, 31, 0.6); }
 .toast-close { border: 0; background: transparent; color: var(--paper); opacity: 0.7; font-size: 1.2rem; line-height: 1; padding: 2px 6px; border-radius: 6px; }
 .toast-close:hover { opacity: 1; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }

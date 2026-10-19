@@ -1,7 +1,8 @@
 # Atlas brand identity: design spec
 
 **Date:** 2026-10-18
-**Status:** Approved in brainstorming, pending spec review
+**Status:** Implemented on branch `brand/atlas-identity`.
+**Amended 2026-10-18:** royal blue (`#3358C7`) replaces terracotta as the signal colour, including the logo fix; tokens renamed `--terra*` → `--signal*`.
 **Builds on:** the "Oat" redesign (`2026-10-16-oat-redesign-design.md`); its palette, layout and features stay.
 **Exploration board:** https://claude.ai/artifact/BBsEVi4WNEiGxYiBTakf2A (five rounds; G5 mark and W1 wordmark chosen)
 
@@ -14,8 +15,8 @@ Atlas needs a real identity that the interface grows from, so the product reads 
 **User decisions (stated):**
 - Rename "Atlas Brief" to **Atlas**.
 - Brand feel: a precision instrument with an atmospheric world around it (grain, painterly gradients).
-- Main colour pairing: **oat with moss green**. Terracotta is an accent, not a co-lead.
-- Logo: the **folded map** mark, original geometry, shaded in **greens only** (multi-hue looked like a flag), with one **terracotta point** at the peak (option G5).
+- Main colour pairing: **oat with moss green**. Royal blue is the accent (originally terracotta), not a co-lead.
+- Logo: the **folded map** mark, original geometry, shaded in **greens only** (multi-hue looked like a flag), with one **royal blue point** at the peak (originally terracotta) (option G5).
 - Wordmark: lowercase **"atlas" in Jost** (option W1).
 - Type: **Jost** headlines, **Hanken Grotesk** body, **IBM Plex Mono** data. No serif accent.
 - Higgsfield credits go to a **3D logo render** and **atmosphere backdrops**. Icons and empty-state art are drawn in SVG.
@@ -25,7 +26,7 @@ Atlas needs a real identity that the interface grows from, so the product reads 
 - No "Atlas Brief" string remains in the frontend, README files or page metadata (deploy service names excepted, see section 2).
 - The mark, lockup and favicon set exist as committed files and are used by the app.
 - Every heading renders in Jost and every body paragraph in Hanken Grotesk; Fraunces is no longer requested.
-- Terracotta appears only in the roles listed in section 4.
+- The signal colour (royal blue) appears only in the roles listed in section 4.
 - The build, lint and existing tests pass.
 
 ## 2. Name and voice
@@ -44,7 +45,7 @@ Folded map: three panels on a 100×100 grid. Geometry is fixed:
 | Left fold | `M8 84 L36 20 L36 76Z` | `#6F8A6F` | `#F3EEE3` |
 | Centre panel | `M36 20 L64 32 L64 88 L36 76Z` | `#3D5A45` | `#C9D2C0` |
 | Right fold | `M64 32 L92 84 L64 88Z` | `#2A3F31` | `#9AAA92` |
-| Fix (peak dot) | `circle cx=36 cy=13 r=5` | `#B5532E` | `#E07A52` |
+| Fix (peak dot) | `circle cx=36 cy=13 r=5` | `#3358C7` | `#8FA9F2` |
 
 ### Lockup (W1)
 Mark plus lowercase "atlas" in Jost 500. The mark's height is 0.92 × the font size, and the gap between mark and word is 0.28em. The wordmark colour is moss `#3D5A45` on oat and `#F3EEE3` on moss.
@@ -60,7 +61,7 @@ Mark plus lowercase "atlas" in Jost 500. The mark's height is 0.92 × the font s
 In the app, the nav uses an inline `<AtlasMark>` React component (same geometry, props for `reversed` and `title`) next to the live Jost text "atlas", so it stays crisp and themable.
 
 ### Rules
-- The mark is only ever drawn in the green family above; the dot is the only terracotta in the logo.
+- The mark is only ever drawn in the green family above; the dot is the only blue in the logo.
 - Minimum size 16 px for the mark, 80 px wide for the lockup.
 - Clear space around the mark equals the dot's diameter × 2.
 
@@ -76,10 +77,10 @@ Existing tokens in `frontend/src/styles/tokens.css` stay; their jobs tighten, an
 | `--moss-light` (new) | `#6F8A6F` | logo light fold, hover fills, secondary data |
 | `--moss-deep` (new) | `#2A3F31` | logo shadow fold, pressed primary buttons |
 | `--sage`, `--sand` | `#9AAA92`, `#C7B89C` | supporting data colours |
-| `--terra` | `#B5532E` | **signal only**: globe hotspots, priority alerts (high), the logo dot, focus rings and the active nav/tab indicator |
+| `--signal` (was `--terra`) | `#3358C7` royal blue | **signal only**: globe hotspots, priority alerts (high), the logo dot, focus rings and the active nav/tab indicator |
 | `--ink`, `--ink-2`, `--ink-3` | as today | text |
 
-Change from today: the primary button (`.btn-primary`) moves from terracotta to moss, and the cursor dot moves from terracotta to moss. Terracotta is kept for things that need attention, so it keeps its meaning.
+Change from today: the primary button (`.btn-primary`) moves from terracotta to moss, and the cursor dot moves from terracotta to moss. The signal colour is kept for things that need attention, so it keeps its meaning.
 
 ## 5. Typography
 

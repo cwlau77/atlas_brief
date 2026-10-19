@@ -40,7 +40,7 @@
   gap: 12px;
   padding: 12px 14px;
   border-radius: var(--radius-sm);
-  background: var(--terra-wash);
+  background: var(--signal-wash);
   color: var(--ink);
 }
 .ask-error p { flex: 1 1 260px; }

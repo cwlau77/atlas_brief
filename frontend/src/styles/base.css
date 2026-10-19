@@ -57,7 +57,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 input, select, textarea { font: inherit; color: inherit; }
 
 :focus-visible {
-  outline: 2px solid var(--terra);
+  outline: 2px solid var(--signal);
   outline-offset: 3px;
   border-radius: 4px;
 }

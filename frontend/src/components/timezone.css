@@ -11,4 +11,4 @@
 }
 .tz-row input:focus-visible { outline: 2px solid var(--moss); outline-offset: 1px; }
 .tz-status { color: var(--ink-3); font-size: 0.92rem; }
-.tz-error { color: var(--terra-ink); }
+.tz-error { color: var(--signal-ink); }

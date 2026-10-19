@@ -22,8 +22,8 @@ JOST_URL = (
 )
 OUT = pathlib.Path(__file__).resolve().parents[2] / "public" / "brand"
 MARK = {
-    False: ("#6F8A6F", "#3D5A45", "#2A3F31", "#B5532E", "#3D5A45"),
-    True: ("#F3EEE3", "#C9D2C0", "#9AAA92", "#E07A52", "#F3EEE3"),
+    False: ("#6F8A6F", "#3D5A45", "#2A3F31", "#3358C7", "#3D5A45"),
+    True: ("#F3EEE3", "#C9D2C0", "#9AAA92", "#8FA9F2", "#F3EEE3"),
 }
 FONT_SIZE = 100  # lockup units: mark height 0.92em = 92, gap 0.28em = 28
 

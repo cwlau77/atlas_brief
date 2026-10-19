@@ -18,19 +18,19 @@ describe('AtlasMark', () => {
 
   const fill = (part: string) => container.querySelector(`[data-part="${part}"]`)?.getAttribute('fill')
 
-  it('draws three green folds and a terracotta fix', () => {
+  it('draws three green folds and a royal blue fix', () => {
     act(() => root.render(<AtlasMark />))
     expect(fill('left')).toBe('#6F8A6F')
     expect(fill('centre')).toBe('#3D5A45')
     expect(fill('right')).toBe('#2A3F31')
-    expect(fill('fix')).toBe('#B5532E')
+    expect(fill('fix')).toBe('#3358C7')
     expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
   })
 
   it('uses the reversed palette on dark grounds', () => {
     act(() => root.render(<AtlasMark reversed />))
     expect(fill('left')).toBe(ATLAS_MARK_PALETTES.reversed.left)
-    expect(fill('fix')).toBe('#E07A52')
+    expect(fill('fix')).toBe('#8FA9F2')
   })
 
   it('is announced as an image when given a title', () => {

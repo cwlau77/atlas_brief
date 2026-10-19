@@ -78,7 +78,7 @@ const HOT_FRAG = /* glsl */ `
     float ring = smoothstep(0.03, 0.0, abs(d - ringR)) * (1.0 - vPulse);
     float a = (core + ring * 0.8) * vFace;
     if (a < 0.01) discard;
-    gl_FragColor = vec4(0.71, 0.325, 0.18, a);
+    gl_FragColor = vec4(0.2, 0.345, 0.78, a);
   }`
 
 interface Shared {
@@ -272,7 +272,7 @@ export class GlobeEngine {
         uSize: { value: size },
         uAlpha: { value: alpha },
         uColor: { value: rawColor(color) },
-        uHot: { value: rawColor(0xB5532E) },
+        uHot: { value: rawColor(0x3358C7) },
       },
     })
     this.disposables.push(geo, mat)

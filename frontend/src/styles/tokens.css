@@ -16,9 +16,10 @@
   --moss-wash: rgba(61, 90, 69, 0.10);
   --sage: #9AAA92;
   --sand: #C7B89C;
-  --terra: #B5532E;
-  --terra-ink: #93421F;
-  --terra-wash: rgba(181, 83, 46, 0.10);
+  /* Royal blue: signal colour only (hotspots, high alerts, focus, active tab, errors, the logo fix). */
+  --signal: #3358C7;
+  --signal-ink: #24408F;
+  --signal-wash: rgba(51, 88, 199, 0.10);
   --ochre: #9C7026;
 
   --font-sans: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif;

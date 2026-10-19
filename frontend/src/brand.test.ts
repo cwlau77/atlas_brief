@@ -25,6 +25,6 @@ describe('favicon', () => {
   it('switches to the reversed palette on dark tab strips', () => {
     expect(fav).toContain('@media (prefers-color-scheme: dark)')
     expect(fav).toContain('#F3EEE3')
-    expect(fav).toContain('#E07A52')
+    expect(fav).toContain('#8FA9F2')
   })
 })
