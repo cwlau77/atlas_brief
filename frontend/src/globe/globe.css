@@ -90,3 +90,14 @@
   text-decoration-color: var(--sand);
   text-underline-offset: 3px;
 }
+
+/* The point the camera is zoomed to stays marked while its carousel is open. */
+.globe-hotspot.zoomed { box-shadow: 0 0 0 2px var(--signal); }
+.globe-hotspot.zoomed .globe-hotspot-label { display: flex; }
+
+/* Briefing globes fade at the canvas edge so the zoomed view has no hard square crop.
+   The fade starts outside the whole globe's silhouette, so the unzoomed view is untouched. */
+.globe-briefing .globe-canvas {
+  -webkit-mask-image: radial-gradient(closest-side, #000 80%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 80%, transparent 100%);
+}

@@ -11,8 +11,13 @@ export interface FrameInfo { hotspots: HotspotScreen[]; readout: string | null }
 export interface EngineOptions { reducedMotion: boolean; playIntro: boolean; baseSpin: number }
 
 const CAMERA_Z = 5
+const ZOOM_Z = 2.2
 const BASE_PITCH = 0.32
 const PITCH_LIMIT = 0.6
+// Zoomed in, the camera may tilt further so high-latitude places can be centred.
+const ZOOM_PITCH_LIMIT = 1.2
+// A click within this chord distance of a land dot counts as land (about 1.7°).
+const LAND_PICK = 0.03
 const IDLE_RESUME_MS = 4000
 const INTRO_MS = 1900
 const OCEAN_POINTS = 5200
@@ -125,6 +130,10 @@ export class GlobeEngine {
   private readonly sphere = new THREE.Sphere(new THREE.Vector3(), 1)
   private readonly hit = new THREE.Vector3()
   private hotVecs: THREE.Vector3[] = []
+  private readonly land: Float32Array
+  private camZ = CAMERA_Z
+  private camTarget = CAMERA_Z
+  private zoomed = false
   private yaw = -0.6
   private pitch = BASE_PITCH
   private spinVel = 0
@@ -174,7 +183,8 @@ export class GlobeEngine {
     this.disposables.push(occluderGeo, occluderMat)
 
     this.globe.add(this.cloud(randomSphere(OCEAN_POINTS), 0xB4CCBE, 1.5, 0.5))
-    this.globe.add(this.cloud(decodeLandPoints(LAND_POINTS_B64), 0x5E8A79, 2.5, 0.92))
+    this.land = decodeLandPoints(LAND_POINTS_B64)
+    this.globe.add(this.cloud(this.land, 0x5E8A79, 2.5, 0.92))
 
     this.hotMat = new THREE.ShaderMaterial({
       transparent: true,
@@ -214,10 +224,52 @@ export class GlobeEngine {
     this.hotGeo.setAttribute('aSeed', new THREE.Float32BufferAttribute(list.map((_, i) => i * 1.7), 1))
   }
 
+  get isZoomed(): boolean { return this.zoomed }
+
+  /** Face (lat, lng) and ease the camera in to a regional view; auto-spin holds until zoomOut. */
+  zoomTo(lat: number, lng: number): void {
+    this.zoomed = true
+    this.camTarget = ZOOM_Z
+    if (this.opts.reducedMotion) this.camZ = ZOOM_Z
+    this.focusOn(lat, lng)
+  }
+
+  /** Ease back out to the whole globe; instant under reduced motion. */
+  zoomOut(): void {
+    this.zoomed = false
+    this.camTarget = CAMERA_Z
+    const pitch = clamp(this.pitch, -PITCH_LIMIT, PITCH_LIMIT)
+    if (this.opts.reducedMotion) {
+      this.camZ = CAMERA_Z
+      this.pitch = pitch
+      this.target = null
+    } else {
+      this.target = { yaw: this.yaw, pitch }
+    }
+    this.lastInteraction = performance.now()
+  }
+
+  /** True when a click at this canvas position lands on ocean or empty space, not on land. */
+  isEmptyAt(ndc: { x: number; y: number }): boolean {
+    this.ray.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), this.camera)
+    if (!this.ray.ray.intersectSphere(this.sphere, this.hit)) return true
+    const p = this.globe.worldToLocal(this.hit.clone()).normalize()
+    const limit = LAND_PICK * LAND_PICK
+    const l = this.land
+    for (let i = 0; i < l.length; i += 3) {
+      const dx = l[i] - p.x, dy = l[i + 1] - p.y, dz = l[i + 2] - p.z
+      if (dx * dx + dy * dy + dz * dz < limit) return false
+    }
+    return true
+  }
+
+  // The looser limit holds until the camera is back out, so zooming out eases the tilt back instead of snapping.
+  private get pitchLimit(): number { return this.zoomed || this.camZ < CAMERA_Z ? ZOOM_PITCH_LIMIT : PITCH_LIMIT }
+
   /** Ease the view so (lat, lng) faces the camera; snaps instantly under reduced motion. */
   focusOn(lat: number, lng: number): void {
     const yaw = -lng * DEG
-    const pitch = clamp(lat * DEG, -PITCH_LIMIT, PITCH_LIMIT)
+    const pitch = clamp(lat * DEG, -this.pitchLimit, this.pitchLimit)
     if (this.opts.reducedMotion) {
       this.target = null
       this.yaw = yaw
@@ -229,9 +281,11 @@ export class GlobeEngine {
   }
 
   rotateBy(dYaw: number, dPitch: number): void {
+    // Closer in, the same drag should turn the globe less.
+    const k = this.dragScale
     this.target = null
-    this.yaw += dYaw
-    this.pitch = clamp(this.pitch + dPitch, -PITCH_LIMIT, PITCH_LIMIT)
+    this.yaw += dYaw * k
+    this.pitch = clamp(this.pitch + dPitch * k, -this.pitchLimit, this.pitchLimit)
     this.spinVel = 0
     this.vyaw = 0
     this.vpitch = 0
@@ -239,10 +293,12 @@ export class GlobeEngine {
   }
 
   release(vYaw: number, vPitch: number): void {
-    this.vyaw = this.opts.reducedMotion ? 0 : vYaw
-    this.vpitch = this.opts.reducedMotion ? 0 : vPitch
+    this.vyaw = this.opts.reducedMotion ? 0 : vYaw * this.dragScale
+    this.vpitch = this.opts.reducedMotion ? 0 : vPitch * this.dragScale
     this.lastInteraction = performance.now()
   }
+
+  private get dragScale(): number { return (this.camZ - 1) / (CAMERA_Z - 1) }
 
   setHold(on: boolean): void { this.hold = on }
   setScanning(on: boolean): void { this.scanning = on }
@@ -296,7 +352,15 @@ export class GlobeEngine {
     const show = this.hotMat.uniforms.uShow as THREE.IUniform<number>
     show.value += ((u.uIntro.value > 0.85 ? 1 : 0) - show.value) * Math.min(1, dt * 5)
 
-    const idle = !this.hold && !this.overSphere && now - this.lastInteraction > IDLE_RESUME_MS
+    if (this.camZ !== this.camTarget) {
+      this.camZ += (this.camTarget - this.camZ) * Math.min(1, dt * 3.5)
+      if (Math.abs(this.camTarget - this.camZ) < 0.002) this.camZ = this.camTarget
+    }
+    this.camera.position.z = this.camZ
+    // The cursor ripple is sized for the whole globe; zoomed in it would swamp the view.
+    u.uLiquid.value = this.opts.reducedMotion ? 0 : this.dragScale * this.dragScale
+
+    const idle = !this.hold && !this.zoomed && !this.overSphere && now - this.lastInteraction > IDLE_RESUME_MS
     if (this.target) {
       const k = Math.min(1, dt * 3)
       const dy = wrapAngle(this.target.yaw - this.yaw)
@@ -313,7 +377,7 @@ export class GlobeEngine {
       this.spinVel += (want - this.spinVel) * Math.min(1, dt * 2)
       this.yaw += this.spinVel * dt
     }
-    this.pitch = clamp(this.pitch, -PITCH_LIMIT, PITCH_LIMIT)
+    this.pitch = clamp(this.pitch, -this.pitchLimit, this.pitchLimit)
     this.globe.rotation.set(this.pitch, this.yaw, 0)
     this.globe.updateMatrixWorld()
 
@@ -334,8 +398,10 @@ export class GlobeEngine {
     const camDir = this.camera.position.clone().normalize()
     const hotspots = this.hotVecs.map((v) => {
       const w = v.clone().applyMatrix4(this.globe.matrixWorld)
-      const visible = w.clone().normalize().dot(camDir) > 0.2 && show.value > 0.5
+      const facing = w.clone().normalize().dot(camDir) > 0.2 && show.value > 0.5
       w.project(this.camera)
+      // Zoomed in, front-facing points can still fall outside the canvas.
+      const visible = facing && Math.abs(w.x) <= 1 && Math.abs(w.y) <= 1
       return { x: ((w.x + 1) / 2) * this.width, y: ((1 - w.y) / 2) * this.height, visible }
     })
 

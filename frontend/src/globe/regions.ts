@@ -92,6 +92,11 @@ export function devAnchor(b: Pick<SavedBriefing, 'keyDevelopments'>, devIndex: n
   return null
 }
 
+/** Unique per point: a city and a region can share a name (Gaza, Singapore). */
+export function pointKey(p: Pick<RegionPoint, 'kind' | 'name'>): string {
+  return `${p.kind}:${p.name}`
+}
+
 export function topRegion(points: RegionPoint[]): RegionPoint | null {
   return points[0] ?? null
 }

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { setGlobeReadout } from '../components/cursorBus'
 import { formatTime } from '../lib/time'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { attachDrag } from './controls'
 import { GlobeEngine, type GlobeHotspot } from './engine'
-import { topRegion, type RegionPoint } from './regions'
+import { pointKey, topRegion, type RegionPoint } from './regions'
 import { StaticGlobe } from './StaticGlobe'
 import './globe.css'
 
@@ -27,10 +27,18 @@ export interface GlobeViewProps {
   playIntro?: boolean
   scanning?: boolean
   onSelectStory?: (anchorId: string) => void
+  /** Briefing mode: clicking a point (or Back/Esc/ocean) reports the point to open, or null to close. */
+  onFocusPoint?: (point: RegionPoint | null) => void
+  /** Briefing mode: the pointKey of the point the camera is zoomed to; null zooms back out. */
+  zoomedTo?: string | null
 }
+
+// A press that moves further than this is a drag, not a click on the ocean.
+const CLICK_SLOP_PX = 5
 
 export default function GlobeView({
   mode, label, regions = NO_REGIONS, timeZone = 'auto', playIntro = false, scanning = false, onSelectStory,
+  onFocusPoint, zoomedTo = null,
 }: GlobeViewProps) {
   const reduced = usePrefersReducedMotion()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -42,6 +50,7 @@ export default function GlobeView({
   const live = useRef({ active: null as number | null, pinned: false })
   const closeTimer = useRef(0)
   const playIntroRef = useRef(playIntro)
+  const pressAt = useRef<{ x: number; y: number } | null>(null)
   const [engineVersion, setEngineVersion] = useState(0)
   const [failed, setFailed] = useState(false)
   const [active, setActive] = useState<number | null>(null)
@@ -140,6 +149,23 @@ export default function GlobeView({
     setFocusedIndex(null)
   }, [spotsKey, engineVersion, mode])
 
+  // Zoom follows zoomedTo. Runs after the hotspot push above, so a zoom wins over its default focus.
+  const zoomable = mode === 'briefing' && !!onFocusPoint
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine || !zoomable) return
+    const point = latest.current.regions.find((r) => pointKey(r) === zoomedTo)
+    if (point) engine.zoomTo(point.lat, point.lng)
+    else if (engine.isZoomed) engine.zoomOut()
+  }, [zoomedTo, zoomable, spotsKey, engineVersion])
+
+  useEffect(() => {
+    if (!zoomable || zoomedTo === null) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onFocusPoint?.(null) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [zoomable, zoomedTo, onFocusPoint])
+
   useEffect(() => { engineRef.current?.setScanning(scanning) }, [scanning, engineVersion])
   // Hold auto-spin while a hotspot is pinned open or a hotspot/the panel has keyboard focus.
   useEffect(() => {
@@ -171,6 +197,23 @@ export default function GlobeView({
     closeAll()
     onSelectStory?.(anchorId)
   }
+  const focusPoint = (point: RegionPoint) => {
+    closeAll()
+    onFocusPoint?.(point)
+  }
+  // On the wrapper, not the canvas: attachDrag captures the pointer there, so that is where click lands.
+  const onGlobeClick = (e: MouseEvent<HTMLDivElement>) => {
+    const start = pressAt.current
+    pressAt.current = null
+    const engine = engineRef.current
+    const canvas = canvasRef.current
+    if (!zoomable || zoomedTo === null || !engine || !canvas || !start) return
+    if ((e.target as HTMLElement).closest('button, a, .globe-panel')) return
+    if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > CLICK_SLOP_PX) return
+    const r = canvas.getBoundingClientRect()
+    const ndc = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }
+    if (engine.isEmptyAt(ndc)) onFocusPoint?.(null)
+  }
 
   useEffect(() => {
     if (!pinned) return
@@ -191,35 +234,39 @@ export default function GlobeView({
   const current = active !== null ? regions[active] : undefined
 
   return (
-    <div className={`globe-view globe-${mode}`} ref={wrapRef}>
+    <div
+      className={`globe-view globe-${mode}`} ref={wrapRef}
+      onPointerDown={(e) => { pressAt.current = { x: e.clientX, y: e.clientY } }}
+      onClick={onGlobeClick}
+    >
       <canvas ref={canvasRef} className="globe-canvas" role="img" aria-label={label} />
       {mode === 'briefing' && (
         <>
           <div className="globe-hotspots">
             {regions.map((r, i) => (
               <button
-                key={r.name}
+                key={pointKey(r)}
                 ref={(el) => { hotRefs.current[i] = el }}
                 type="button"
-                className={`globe-hotspot ${i < LABELED_COUNT ? 'labeled' : ''}`}
+                className={`globe-hotspot ${i < LABELED_COUNT ? 'labeled' : ''} ${pointKey(r) === zoomedTo ? 'zoomed' : ''}`}
                 data-visible="false"
                 data-cursor="link"
                 aria-label={`${r.name}, ${r.count} mention${r.count === 1 ? '' : 's'}. Show stories.`}
                 aria-expanded={active === i}
                 aria-controls="globe-panel"
-                onPointerEnter={() => { if (!pinned) open(i) }}
+                onPointerEnter={() => { if (!pinned && zoomedTo === null) open(i) }}
                 onPointerLeave={() => { if (!pinned) scheduleClose() }}
                 onFocus={() => {
                   setFocusedIndex(i)
                   engineRef.current?.focusOn(r.lat, r.lng)
-                  if (!pinned) open(i)
+                  if (!pinned && zoomedTo === null) open(i)
                 }}
                 onBlur={(e) => {
                   if (wrapRef.current?.contains(e.relatedTarget as Node)) return
                   setFocusedIndex(null)
                   if (!pinned) scheduleClose()
                 }}
-                onClick={() => togglePin(i)}
+                onClick={() => (zoomable ? focusPoint(r) : togglePin(i))}
               >
                 <span className="globe-hotspot-label label">{r.name}<b>{r.count}</b></span>
               </button>
@@ -273,8 +320,11 @@ export default function GlobeView({
             ) : (
               <ul>
                 {regions.map((r) => (
-                  <li key={r.name}>
+                  <li key={pointKey(r)}>
                     {r.name}, {r.count} mention{r.count === 1 ? '' : 's'}
+                    {zoomable && r.stories.length > 0 && (
+                      <> <button type="button" tabIndex={-1} onClick={() => focusPoint(r)}>Show stories in {r.name}</button></>
+                    )}
                     <ul>
                       {r.stories.map((s) => (
                         <li key={s.anchorId}><button type="button" tabIndex={-1} onClick={() => select(s.anchorId)}>{s.title}</button></li>

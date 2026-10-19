@@ -1,11 +1,12 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { AlertCallout } from '../components/briefing/AlertCallout'
 import { ReadingList } from '../components/briefing/ReadingList'
+import { StoryCarousel } from '../components/briefing/StoryCarousel'
 import { Timeline } from '../components/briefing/Timeline'
 import { TopStories } from '../components/briefing/TopStories'
 import '../components/briefing/story.css'
 import { Globe } from '../globe/Globe'
-import { buildRegionPoints } from '../globe/regions'
+import { buildRegionPoints, pointKey, type RegionPoint } from '../globe/regions'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { usePrintOnLoad } from '../lib/usePrintOnLoad'
 import { useAppState } from '../state/hooks'
@@ -26,6 +27,15 @@ export function StoryTab() {
     el?.focus({ preventScroll: true })
   }, [reduced])
   const count = briefing.keyDevelopments.length
+  // The globe point whose carousel is open; a key that no longer matches (new briefing) reads as closed.
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
+  const focused = regions.find((r) => pointKey(r) === focusedKey) ?? null
+  const onFocusPoint = useCallback((point: RegionPoint | null) => setFocusedKey(point ? pointKey(point) : null), [])
+  const closeCarousel = useCallback(() => setFocusedKey(null), [])
+  const focusedDevs = useMemo(
+    () => (focused ? focused.stories.map((s) => Number(s.anchorId.replace('dev-', ''))) : []),
+    [focused],
+  )
 
   return (
     <div className="story">
@@ -39,8 +49,21 @@ export function StoryTab() {
             regions={regions}
             timeZone={settings.timeZone}
             onSelectStory={scrollToStory}
-            label={`Globe marking ${regions.length} region${regions.length === 1 ? '' : 's'} from this briefing. Hover or focus a point to see its stories.`}
+            onFocusPoint={onFocusPoint}
+            zoomedTo={focused ? focusedKey : null}
+            label={`Globe marking ${regions.length} place${regions.length === 1 ? '' : 's'} from this briefing. Select a point to zoom in and browse its stories.`}
           />
+          {focused && (
+            <StoryCarousel
+              key={focusedKey}
+              title={focused.name}
+              devIndexes={focusedDevs}
+              briefing={briefing}
+              timeZone={settings.timeZone}
+              onOpen={scrollToStory}
+              onClose={closeCarousel}
+            />
+          )}
         </div>
       </div>
       <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} />
