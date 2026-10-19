@@ -33,7 +33,7 @@ Nanjing,Nanjing,Namkin|Nankin|Nankijn|Nanking|Nanquim,CN,China,32.0617,118.7778,
 Shenyang,Shenyang,Mukden|Moukden|Senjana|Senjang|Senyanq,CN,China,41.7922,123.4328,9070093
 Foshan,Foshan,Fosan|Fachan|Fo-san|Fosjan|Namhoi,CN,China,23.0268,113.1315,9042509
 London,London,Lonn|Londe|Londn|Lakana|Landan,GB,United Kingdom,51.5085,-0.1257,8961989
-New York City,New York City,Aebura|Kanono|Njujork|Nujorka|Ga-no-no,US,United States,40.7143,-74.0060,8804190
+New York City,New York City,New York|Aebura|Kanono|Njujork|Nujorka,US,United States,40.7143,-74.0060,8804190
 Jakarta,Jakarta,Sakata|Batavia|Cakarta|Gakarto|Iacarta,ID,Indonesia,-6.2146,106.8451,8540121
 Bengaluru,Bengaluru,Bangalore|Bangalor|Bangalur|Bangaluri|Bengalour,IN,India,12.9719,77.5937,8495492
 Jinan,Jinan,Csinan|Dzinan|Ginano|Szinan|Te Nam,CN,China,36.6683,116.9972,8352574
@@ -835,7 +835,7 @@ Bauchi,Bauchi,Baucis|Bauczi|Baushi|Yakoba|Yakubu,NG,Nigeria,10.3103,9.8439,69370
 Shizuoka,Shizuoka,Siduoka|Sidzuok|Sizuoka|Sidzuoka|Shidzuoka,JP,Japan,34.9833,138.3833,693389
 Tunis,Tunis,Tinis|Tunes|Tunez|Tuniz|Tunus,TN,Tunisia,36.8190,10.1658,693210
 Zhangjiakou,Zhangjiakou,Kalgan|Ganjakou|Khaalgan|Wan-ch'uan|Changkiakow,CN,China,40.7834,114.8714,692602
-Washington,Washington,Ouasinkton|Vashington|Vasingtono|Waszyngton|Vasingtonas,US,United States,38.8951,-77.0364,689545
+Washington,Washington,Washington DC|Washington D.C.|Ouasinkton|Vashington|Vasingtono,US,United States,38.8951,-77.0364,689545
 Nashville,Nashville,Nasvil|Nesvil|Nashvil|Nashwil|Nasvila,US,United States,36.1659,-86.7844,689447
 Fuxin,Fuxin,Fusin|Fu-sin|Fusin'|Fu-hsin|Fusinas,CN,China,42.0156,121.6589,689050
 Ta’if,Ta'if,Taef|Taif|Toif|Taifa|Tayif,SA,Saudi Arabia,21.2703,40.4158,688693

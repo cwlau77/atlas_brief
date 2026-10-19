@@ -2,6 +2,7 @@ import numpy as np
 
 from backend.config import settings
 from backend.models import Article
+from backend.processing.urls import with_image_of
 
 
 def deduplicate(articles: list[Article], embeddings: np.ndarray) -> tuple[list[Article], np.ndarray]:
@@ -31,7 +32,7 @@ def deduplicate(articles: list[Article], embeddings: np.ndarray) -> tuple[list[A
             if float(sims[best]) >= threshold:
                 # A dropped near-duplicate may carry the only image; hand it to the survivor.
                 if kept_articles[best].image_url is None and articles[i].image_url:
-                    kept_articles[best] = kept_articles[best].model_copy(update={"image_url": articles[i].image_url})
+                    kept_articles[best] = with_image_of(kept_articles[best], articles[i])
                 continue
 
         kept_indices.append(i)

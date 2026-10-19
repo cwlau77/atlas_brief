@@ -17,6 +17,8 @@ class Article(BaseModel):
     country: Optional[str] = None
     raw_source_type: SourceType
     image_url: Optional[str] = None
+    # The outlet the image came from; differs from `source` when dedupe handed over a dropped copy's image.
+    image_outlet: Optional[str] = None
 
 
 class BriefingRequest(BaseModel):
@@ -28,6 +30,7 @@ class SourceCitation(BaseModel):
     url: str
     published_at: Optional[datetime] = None
     image_url: Optional[str] = None
+    image_outlet: Optional[str] = None
 
 
 class Place(BaseModel):

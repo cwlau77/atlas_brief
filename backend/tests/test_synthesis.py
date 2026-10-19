@@ -141,8 +141,10 @@ def test_citations_carry_the_article_image(make_article):
     a1 = make_article(title="One", url="https://ex.com/1")
     a2 = make_article(title="Two", url="https://ex.com/2", image_url="https://i.ex/2.jpg")
     data = {"key_developments": [{"headline": "H", "summary": "S", "regions": ["Egypt"], "sources": [2, 1]}]}
+    a2 = a2.model_copy(update={"image_outlet": "AP"})
     dev = briefing_from_data(data, "focus", [a1, a2]).key_developments[0]
     assert dev.sources[0].image_url == "https://i.ex/2.jpg"
+    assert dev.sources[0].image_outlet == "AP"
     assert dev.sources[1].image_url is None
     fallback = _fallback_briefing("focus", [a2])
     assert fallback.key_developments[0].sources[0].image_url == "https://i.ex/2.jpg"

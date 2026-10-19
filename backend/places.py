@@ -19,7 +19,13 @@ CITIES_CSV = Path(__file__).resolve().parent / "data" / "cities.csv"
 SEA_OR_SUPRANATIONAL = {
     "red sea", "gulf states", "middle east", "europe", "european union", "africa", "asia",
     "persian gulf", "mediterranean", "south china sea", "black sea", "arctic", "global",
+    "horn of africa", "sahel", "north africa", "west africa", "east africa", "southern africa",
+    "southeast asia", "south asia", "east asia", "central asia", "indo-pacific", "pacific",
+    "atlantic", "latin america", "south america", "central america", "caribbean", "balkans",
+    "baltic", "nordics", "scandinavia", "levant", "caucasus", "antarctica",
 }
+# Any region naming a body of water also exempts the check ("Strait of Hormuz", "Gulf of Aden").
+_WATER_WORDS = {"sea", "strait", "straits", "gulf", "ocean", "bay", "canal", "channel"}
 
 # Region and country spellings the model uses that differ from GeoNames' country names.
 _COUNTRY_ALIASES = {
@@ -29,8 +35,11 @@ _COUNTRY_ALIASES = {
     "palestine": "PS", "gaza": "PS", "gaza strip": "PS", "west bank": "PS", "palestinian territories": "PS",
     "czech republic": "CZ", "turkiye": "TR", "burma": "MM", "uae": "AE", "ivory coast": "CI",
     "cote d'ivoire": "CI", "drc": "CD", "dr congo": "CD", "democratic republic of the congo": "CD",
-    "russian federation": "RU",
+    "russian federation": "RU", "d.c.": "US", "dc": "US", "washington d.c.": "US",
+    "democratic republic of congo": "CD", "congo-kinshasa": "CD", "congo-brazzaville": "CG",
 }
+# A region naming the first country also covers these (a "China" story placed in Hong Kong).
+_ALSO_COVERS = {"CN": {"HK", "MO"}}
 
 
 class _City(NamedTuple):
@@ -76,13 +85,19 @@ def _country_codes(term: str) -> set[str]:
     codes = {code for code in (_COUNTRY_ALIASES.get(key), _COUNTRY_CODES.get(key)) if code}
     if len(key) == 2 and key.upper() in _COUNTRY_CODES.values():
         codes.add(key.upper())
-    return codes
+    return codes.union(*(_ALSO_COVERS.get(c, set()) for c in codes))
+
+
+def _exempt(region: str) -> bool:
+    return region in SEA_OR_SUPRANATIONAL or bool(_WATER_WORDS & set(region.replace("-", " ").split()))
 
 
 def resolve_city(city: str | None, regions: list[str]) -> Place | None:
     """The best-matching city for "City" or "City, Country", or None.
 
-    Exact names beat alternate names, then the highest population wins.
+    Candidates are narrowed by the named country (an unrecognised trailing part,
+    such as a US state, is left to the regions) and then by the development's
+    regions; exact names beat alternate names, then the highest population wins.
     """
     if not isinstance(city, str):
         return None
@@ -90,16 +105,15 @@ def resolve_city(city: str | None, regions: list[str]) -> Place | None:
     if not parts:
         return None
     candidates = _BY_NAME.get(_fold(parts[0]), [])
-    if len(parts) > 1:
-        wanted = _country_codes(parts[-1])
+    wanted = _country_codes(parts[-1]) if len(parts) > 1 else set()
+    if wanted:
         candidates = [(tier, c) for tier, c in candidates if c.country_code in wanted]
+
+    folded_regions = {_fold(r) for r in regions if isinstance(r, str)}
+    if not any(_exempt(r) for r in folded_regions):
+        allowed = set().union(*(_country_codes(r) for r in folded_regions))
+        candidates = [(tier, c) for tier, c in candidates if c.country_code in allowed]
     if not candidates:
         return None
     _, best = min(candidates, key=lambda tc: (tc[0], -tc[1].population))
-
-    folded_regions = {_fold(r) for r in regions if isinstance(r, str)}
-    if not folded_regions & SEA_OR_SUPRANATIONAL:
-        allowed = set().union(*(_country_codes(r) for r in folded_regions)) if folded_regions else set()
-        if best.country_code not in allowed:
-            return None
     return Place(name=best.name, country=best.country_name, lat=best.lat, lng=best.lng)

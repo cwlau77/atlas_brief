@@ -54,6 +54,13 @@ describe('StoryCard', () => {
     expect(onOpen).toHaveBeenCalledWith('dev-1')
   })
 
+  it('credits the outlet the photo came from when it differs from the citation', () => {
+    const dev = { ...briefing.keyDevelopments[0] }
+    dev.sources = [{ ...dev.sources[0], image_outlet: 'AP' }, ...dev.sources.slice(1)]
+    act(() => root.render(<StoryCard dev={dev} index={0} timeZone="UTC" onOpen={() => {}} />))
+    expect(container.querySelector('.story-card-credit')?.textContent).toBe('Photo · AP')
+  })
+
   it('swaps a failed image for the region map without changing the media box', () => {
     render(0)
     const media = container.querySelector('.story-card-media')!

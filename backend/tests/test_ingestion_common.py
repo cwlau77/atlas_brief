@@ -113,3 +113,4 @@ def test_make_article_keeps_only_https_images(value, expected):
     from backend.ingestion.common import make_article
     article = make_article("rss", title="T", url="https://ex.com/1", outlet="Ex", image_url=value)
     assert article.image_url == expected
+    assert article.image_outlet == ("Ex" if expected else None)

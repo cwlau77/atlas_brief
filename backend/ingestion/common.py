@@ -84,6 +84,7 @@ def make_article(source_type: SourceType, *, title: Any, url: Any, outlet: str, 
     url = url.strip() if isinstance(url, str) else ""
     if not title or not url:
         return None
+    image = _https_or_none(image_url)
     return Article(
         title=title,
         snippet=clean_text(snippet) or title,
@@ -92,7 +93,8 @@ def make_article(source_type: SourceType, *, title: Any, url: Any, outlet: str, 
         published_at=parse_datetime(published_at),
         country=country,
         raw_source_type=source_type,
-        image_url=_https_or_none(image_url),
+        image_url=image,
+        image_outlet=outlet if image else None,
     )
 
 

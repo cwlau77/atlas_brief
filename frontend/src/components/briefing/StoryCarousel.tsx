@@ -40,6 +40,18 @@ export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, o
     itemRefs.current[next]?.scrollIntoView({ inline: 'center', block: 'nearest', behavior })
   }, [n, reduced])
 
+  // Closing (Back, Esc, an ocean click) unmounts the carousel with focus inside it; hand focus back to the opener.
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const section = sectionRef.current
+    return () => {
+      const active = document.activeElement
+      if (opener?.isConnected && (!active || active === document.body || section?.contains(active))) {
+        opener.focus({ preventScroll: true })
+      }
+    }
+  }, [])
+
   // Open on the newest card, bring the carousel into view, and take focus so the arrow keys work straight away.
   useEffect(() => {
     centre(0, 'auto')

@@ -32,6 +32,7 @@ _ENGLISHY = re.compile(r"^[A-Z][A-Za-z '\-.]{2,39}$")
 # English exonyms and former names that news copy still uses; GeoNames lists them
 # among hundreds of alternates with no language tag, so they are pinned here.
 EXONYMS = {
+    "New York City": ["New York"], "Washington": ["Washington DC", "Washington D.C."],
     "Kyiv": ["Kiev"], "Mumbai": ["Bombay"], "Kolkata": ["Calcutta"], "Chennai": ["Madras"],
     "Bengaluru": ["Bangalore"], "Ho Chi Minh City": ["Saigon"], "Yangon": ["Rangoon"],
     "Beijing": ["Peking"], "Guangzhou": ["Canton"], "Kharkiv": ["Kharkov"], "Odesa": ["Odessa"],

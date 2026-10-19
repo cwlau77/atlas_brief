@@ -70,9 +70,14 @@ describe('routeDashArray', () => {
     expect(routeDashArray(100, false)).toBe('100 100')
   })
   it('repeats the dash pattern over the segment, then one long gap to hide it while undrawn', () => {
-    const parts = routeDashArray(20, true).split(' ').map(Number)
-    expect(parts.slice(0, 6)).toEqual([5, 4, 5, 4, 5, 4])
-    expect(parts.at(-1)).toBe(20)
-    expect(parts.slice(0, -1).reduce((a, n) => a + n, 0)).toBeGreaterThanOrEqual(20)
+    for (const len of [20, 23, 101]) {
+      const parts = routeDashArray(len, true).split(' ').map(Number)
+      // An odd list repeats, turning the closing gap into a dash: the count must be even.
+      expect(parts.length % 2).toBe(0)
+      expect(parts.slice(0, 4)).toEqual([5, 4, 5, 4])
+      // The dashes cover exactly the segment; then a gap as long as the segment hides it at offset = len.
+      expect(parts.slice(0, -1).reduce((a, n) => a + n, 0)).toBe(len)
+      expect(parts.at(-1)).toBe(len)
+    }
   })
 })

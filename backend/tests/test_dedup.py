@@ -33,9 +33,11 @@ def test_deduplicate_keeps_an_image_from_a_dropped_near_duplicate(make_article):
     import numpy as np
     articles = [
         make_article(title="Ceasefire talks resume", url="https://a.com/1"),
-        make_article(title="Ceasefire talks resume again", url="https://b.com/2", image_url="https://i.ex/2.jpg"),
+        make_article(title="Ceasefire talks resume again", url="https://b.com/2", image_url="https://i.ex/2.jpg",
+                     source="AP"),
     ]
     emb = np.array([[1.0, 0.0], [1.0, 0.0]], dtype=np.float32)
     kept, _ = deduplicate(articles, emb)
     assert [a.url for a in kept] == ["https://a.com/1"]
     assert kept[0].image_url == "https://i.ex/2.jpg"
+    assert kept[0].image_outlet == "AP" and kept[0].source == "TestWire"

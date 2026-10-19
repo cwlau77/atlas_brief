@@ -50,3 +50,5 @@ def test_dedupe_exact_keeps_an_image_from_a_dropped_duplicate(make_article):
     out = dedupe_exact([kept, dropped])
     assert [a.title for a in out] == ["First copy"]
     assert out[0].image_url == "https://i.ex/a.jpg"
+    # The photo is credited to the outlet it came from, not the survivor's.
+    assert out[0].image_outlet == dropped.source

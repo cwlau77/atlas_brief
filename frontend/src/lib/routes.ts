@@ -69,6 +69,15 @@ export function buildRoutes(
 export function routeDashArray(len: number, dashed: boolean): string {
   const n = Math.round(len)
   if (!dashed) return `${n} ${n}`
-  const pairs = Math.max(1, Math.ceil(n / (DASH + GAP)))
-  return `${Array.from({ length: pairs }, () => `${DASH} ${GAP}`).join(' ')} ${n}`
+  // Dash/gap values covering exactly n, then the hiding gap. The list must have an
+  // even count: SVG repeats an odd list, which would turn that gap into a dash.
+  const parts: number[] = []
+  for (let rest = n; rest > 0;) {
+    const step = parts.length % 2 === 0 ? DASH : GAP
+    parts.push(Math.min(step, rest))
+    rest -= step
+  }
+  if (parts.length % 2 === 0) parts.push(0)
+  parts.push(n)
+  return parts.join(' ')
 }

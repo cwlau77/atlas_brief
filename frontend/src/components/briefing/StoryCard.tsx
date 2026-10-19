@@ -17,7 +17,8 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
 }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const image = dev.leadImage && dev.leadImage !== failedSrc ? dev.leadImage : null
-  const credit = image ? dev.sources.find((s) => s.image_url === image)?.outlet : undefined
+  const imageSource = image ? dev.sources.find((s) => s.image_url === image) : undefined
+  const credit = imageSource ? imageSource.image_outlet || imageSource.outlet : undefined
   const where = dev.place?.name ?? dev.regions[0] ?? ''
   const anchor = devAnchor({ keyDevelopments: [dev] }, 0)
   return (

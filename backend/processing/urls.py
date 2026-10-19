@@ -42,6 +42,14 @@ def normalize_title(title: str) -> str:
     return " ".join(_NON_WORD.sub(" ", title.lower()).split())
 
 
+def with_image_of(survivor: Article, dropped: Article) -> Article:
+    """The survivor carrying the dropped copy's image, still credited to the outlet it came from."""
+    return survivor.model_copy(update={
+        "image_url": dropped.image_url,
+        "image_outlet": dropped.image_outlet or dropped.source,
+    })
+
+
 def dedupe_exact(articles: list[Article]) -> list[Article]:
     """Keep the earliest-published copy of each URL/title; undated copies lose to dated ones."""
     order = sorted(range(len(articles)), key=lambda i: (articles[i].published_at or _FAR_FUTURE, i))
@@ -59,7 +67,7 @@ def dedupe_exact(articles: list[Article]) -> list[Article]:
         if owner is not None:
             # A dropped copy may carry the only image; hand it to the survivor.
             if kept[owner].image_url is None and article.image_url:
-                kept[owner] = kept[owner].model_copy(update={"image_url": article.image_url})
+                kept[owner] = with_image_of(kept[owner], article)
             continue
         kept[i] = article
         seen_urls[url_key] = i

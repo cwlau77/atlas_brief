@@ -7,6 +7,8 @@ export interface SourceCitation {
   url: string
   published_at: string | null
   image_url?: string | null
+  /** Who the image came from, when it differs from `outlet` (dedupe can hand an image to another copy). */
+  image_outlet?: string | null
 }
 
 export interface ApiPlace {

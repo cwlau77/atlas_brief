@@ -102,4 +102,15 @@ describe('StoryCarousel', () => {
     expect(container.querySelector('.carousel-empty')?.textContent).toContain('without a linked story')
     expect((button('Next story') as HTMLButtonElement).disabled).toBe(true)
   })
+
+  it('hands focus back to whatever opened it when it closes', () => {
+    const opener = document.createElement('button')
+    document.body.appendChild(opener)
+    opener.focus()
+    render()
+    expect(document.activeElement).toBe(section())
+    act(() => root.render(<></>))
+    expect(document.activeElement).toBe(opener)
+    opener.remove()
+  })
 })

@@ -41,6 +41,32 @@ def test_country_names_match_common_region_spellings():
     assert resolve_city("Seattle, USA", ["US"]).country == "United States"
 
 
-@pytest.mark.parametrize("city", ["Atlantis", "", None, "Aden, Narnia"])
+@pytest.mark.parametrize("city", ["Atlantis", "", None])
 def test_unknown_city_is_none(city):
     assert resolve_city(city, ["Greece", "Yemen"]) is None
+
+
+def test_unrecognised_trailing_part_leaves_the_regions_to_decide():
+    # "City, State" datelines: the state is not a country, so the regions constrain the match.
+    assert resolve_city("Aden, Narnia", ["Greece"]) is None
+    assert resolve_city("Aden, Narnia", ["Yemen"]).name == "Aden"
+
+
+@pytest.mark.parametrize("city,regions,name", [
+    ("New York, USA", ["United States"], "New York City"),
+    ("New York, United States", ["United States"], "New York City"),
+    ("Washington, D.C.", ["United States"], "Washington"),
+    ("Washington DC, USA", ["US"], "Washington"),
+    ("San Francisco, California", ["United States"], "San Francisco"),
+    ("Kinshasa, Democratic Republic of the Congo", ["Democratic Republic of Congo"], "Kinshasa"),
+    ("Hong Kong, China", ["China"], "Hong Kong"),
+    ("Bandar Abbas, Iran", ["Strait of Hormuz"], "Bandar Abbas"),
+])
+def test_common_datelines_resolve(city, regions, name):
+    place = resolve_city(city, regions)
+    assert place is not None and place.name == name
+
+
+def test_regions_pick_among_same_named_cities():
+    assert resolve_city("Alexandria", ["United States"]).country == "United States"
+    assert resolve_city("Alexandria", ["Egypt"]).country == "Egypt"
