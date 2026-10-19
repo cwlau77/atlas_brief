@@ -136,7 +136,8 @@ def _parse_citations(raw: list, articles: list[Article]) -> list[SourceCitation]
         if article is not None:
             if item not in seen:
                 seen.add(item)
-                out.append(SourceCitation(outlet=article.source, url=article.url, published_at=article.published_at))
+                out.append(SourceCitation(outlet=article.source, url=article.url,
+                                          published_at=article.published_at, image_url=article.image_url))
             continue
         if not isinstance(item, dict):
             continue
@@ -175,7 +176,8 @@ def _parse_readings(raw: list, articles: list[Article]) -> list[RecommendedReadi
 
 def _fallback_citations(articles: list[Article], limit: int = 3) -> list[SourceCitation]:
     return [
-        SourceCitation(outlet=article.source, url=article.url, published_at=article.published_at)
+        SourceCitation(outlet=article.source, url=article.url, published_at=article.published_at,
+                       image_url=article.image_url)
         for article in articles[:limit]
     ]
 

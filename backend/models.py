@@ -16,6 +16,7 @@ class Article(BaseModel):
     published_at: Optional[datetime] = None
     country: Optional[str] = None
     raw_source_type: SourceType
+    image_url: Optional[str] = None
 
 
 class BriefingRequest(BaseModel):
@@ -26,6 +27,7 @@ class SourceCitation(BaseModel):
     outlet: str
     url: str
     published_at: Optional[datetime] = None
+    image_url: Optional[str] = None
 
 
 class KeyDevelopment(BaseModel):

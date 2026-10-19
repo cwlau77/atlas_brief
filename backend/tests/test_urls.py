@@ -40,3 +40,13 @@ def test_dedupe_exact_handles_missing_dates(make_article):
     b = make_article(title="Same long headline about data", url="https://y.com/2")
     kept = dedupe_exact([a, b])
     assert kept == [b]  # dated copy wins over an undated one
+
+
+def test_dedupe_exact_keeps_an_image_from_a_dropped_duplicate(make_article):
+    now = datetime.now(timezone.utc)
+    kept = make_article(title="First copy", url="https://ex.com/a", published_at=now - timedelta(hours=1))
+    dropped = make_article(title="Second copy", url="https://www.ex.com/a/", published_at=now,
+                           image_url="https://i.ex/a.jpg")
+    out = dedupe_exact([kept, dropped])
+    assert [a.title for a in out] == ["First copy"]
+    assert out[0].image_url == "https://i.ex/a.jpg"

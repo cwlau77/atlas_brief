@@ -72,11 +72,13 @@ def dict_items(value: Any) -> list[dict]:
 
 
 def make_article(source_type: SourceType, *, title: Any, url: Any, outlet: str, snippet: Any = None,
-                 published_at: Any = None, country: str | None = None) -> Article | None:
+                 published_at: Any = None, country: str | None = None,
+                 image_url: Any = None) -> Article | None:
     """Build an Article from raw upstream fields, or None when the title or URL is missing.
 
     Every source goes through here, so titles and snippets are cleaned the same
     way everywhere and a missing snippet always falls back to the title.
+    Images are kept only as https URLs; anything else is dropped.
     """
     title = clean_text(title)
     url = url.strip() if isinstance(url, str) else ""
@@ -90,7 +92,13 @@ def make_article(source_type: SourceType, *, title: Any, url: Any, outlet: str, 
         published_at=parse_datetime(published_at),
         country=country,
         raw_source_type=source_type,
+        image_url=_https_or_none(image_url),
     )
+
+
+def _https_or_none(value: Any) -> str | None:
+    value = value.strip() if isinstance(value, str) else ""
+    return value if value.startswith("https://") else None
 
 
 def outlet_from_url(url: str) -> str:

@@ -99,3 +99,17 @@ def test_quota_guard_unlimited_source_and_multi_take(monkeypatch):
     assert all(guard.take("gdelt") for _ in range(100))
     assert guard.take("guardian", n=2) is True
     assert guard.take("guardian", n=2) is False
+
+
+@pytest.mark.parametrize("value,expected", [
+    ("https://i.ex/a.jpg", "https://i.ex/a.jpg"),
+    ("  https://i.ex/a.jpg ", "https://i.ex/a.jpg"),
+    ("http://i.ex/a.jpg", None),
+    ("", None),
+    (None, None),
+    (42, None),
+])
+def test_make_article_keeps_only_https_images(value, expected):
+    from backend.ingestion.common import make_article
+    article = make_article("rss", title="T", url="https://ex.com/1", outlet="Ex", image_url=value)
+    assert article.image_url == expected

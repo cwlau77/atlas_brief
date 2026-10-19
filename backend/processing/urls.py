@@ -45,18 +45,24 @@ def normalize_title(title: str) -> str:
 def dedupe_exact(articles: list[Article]) -> list[Article]:
     """Keep the earliest-published copy of each URL/title; undated copies lose to dated ones."""
     order = sorted(range(len(articles)), key=lambda i: (articles[i].published_at or _FAR_FUTURE, i))
-    seen_urls: set[str] = set()
-    seen_titles: set[str] = set()
-    keep: set[int] = set()
+    seen_urls: dict[str, int] = {}
+    seen_titles: dict[str, int] = {}
+    kept: dict[int, Article] = {}
     for i in order:
         article = articles[i]
         url_key = normalize_url(article.url)
         title_key = normalize_title(article.title)
         title_counts = len(title_key.split()) >= _MIN_TITLE_WORDS
-        if url_key in seen_urls or (title_counts and title_key in seen_titles):
+        owner = seen_urls.get(url_key)
+        if owner is None and title_counts:
+            owner = seen_titles.get(title_key)
+        if owner is not None:
+            # A dropped copy may carry the only image; hand it to the survivor.
+            if kept[owner].image_url is None and article.image_url:
+                kept[owner] = kept[owner].model_copy(update={"image_url": article.image_url})
             continue
-        keep.add(i)
-        seen_urls.add(url_key)
+        kept[i] = article
+        seen_urls[url_key] = i
         if title_counts:
-            seen_titles.add(title_key)
-    return [a for i, a in enumerate(articles) if i in keep]
+            seen_titles[title_key] = i
+    return [kept[i] for i in range(len(articles)) if i in kept]

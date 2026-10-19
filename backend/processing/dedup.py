@@ -21,17 +21,22 @@ def deduplicate(articles: list[Article], embeddings: np.ndarray) -> tuple[list[A
 
     kept_indices: list[int] = []
     kept_vecs: list[np.ndarray] = []
+    kept_articles: list[Article] = []
 
     for i in range(len(articles)):
         if kept_vecs:
             stack = np.stack(kept_vecs)
             sims = stack @ normed[i]
-            if float(sims.max()) >= threshold:
+            best = int(sims.argmax())
+            if float(sims[best]) >= threshold:
+                # A dropped near-duplicate may carry the only image; hand it to the survivor.
+                if kept_articles[best].image_url is None and articles[i].image_url:
+                    kept_articles[best] = kept_articles[best].model_copy(update={"image_url": articles[i].image_url})
                 continue
 
         kept_indices.append(i)
         kept_vecs.append(normed[i])
+        kept_articles.append(articles[i])
 
-    kept_articles = [articles[i] for i in kept_indices]
     kept_embeddings = embeddings[kept_indices] if kept_indices else np.zeros((0, embeddings.shape[1]), dtype=np.float32)
     return kept_articles, kept_embeddings

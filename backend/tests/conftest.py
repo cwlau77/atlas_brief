@@ -8,7 +8,7 @@ from backend.models import Article
 @pytest.fixture
 def make_article():
     def _make(title="Sample headline", snippet="Sample snippet", url=None,
-              source="TestWire", raw_source_type="rss", published_at=None):
+              source="TestWire", raw_source_type="rss", published_at=None, image_url=None):
         return Article(
             title=title,
             snippet=snippet,
@@ -17,5 +17,6 @@ def make_article():
             published_at=published_at or datetime.now(timezone.utc),
             country=None,
             raw_source_type=raw_source_type,
+            image_url=image_url,
         )
     return _make

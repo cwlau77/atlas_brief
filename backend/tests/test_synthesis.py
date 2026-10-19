@@ -135,3 +135,14 @@ def test_schema_asks_for_article_numbers_not_urls(make_article):
     assert "article number" in SCHEMA_INSTRUCTIONS.lower()
     p = _build_user_prompt("trade", [make_article(url="https://news.google.com/rss/articles/LONG")])
     assert "news.google.com" not in p
+
+
+def test_citations_carry_the_article_image(make_article):
+    a1 = make_article(title="One", url="https://ex.com/1")
+    a2 = make_article(title="Two", url="https://ex.com/2", image_url="https://i.ex/2.jpg")
+    data = {"key_developments": [{"headline": "H", "summary": "S", "regions": ["Egypt"], "sources": [2, 1]}]}
+    dev = briefing_from_data(data, "focus", [a1, a2]).key_developments[0]
+    assert dev.sources[0].image_url == "https://i.ex/2.jpg"
+    assert dev.sources[1].image_url is None
+    fallback = _fallback_briefing("focus", [a2])
+    assert fallback.key_developments[0].sources[0].image_url == "https://i.ex/2.jpg"
