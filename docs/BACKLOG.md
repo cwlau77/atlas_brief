@@ -16,6 +16,9 @@ A "New brief" button in the nav on every page (UI spec 2).
 ### UI spec 3: story timeline tuning, globe arcs, click-to-zoom, story carousel, article images
 The third part of the UI vision (see `docs/superpowers/specs/2026-10-18-atlas-brand-identity-design.md` and `2026-10-19-ui-layout-polish-design.md`). Not yet designed. The globe item below is part of it.
 
+### Home: trending topics instead of fixed sample chips
+Under the hero's ask box, replace the four fixed topic chips (`SUGGESTIONS` in `HomePage.tsx`) with a "Trending now" dropdown or strip of hot stories and areas, refreshed from live sources. Needs a design pass: where trending comes from (GDELT, Google News top stories or recent Atlas briefings), how often it refreshes, and a fallback when the backend is asleep. Owner request, 2026-10-19.
+
 ### Globe: connecting arcs and named places
 Two gaps compared with the redesign mockup:
 - **Arcs.** Draw lines between related points on the briefing globe. Candidate relation: two regions share a development, tension or contradiction (`linkBriefing` already computes these links for the timeline).
