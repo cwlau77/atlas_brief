@@ -29,7 +29,12 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     articles = [
         make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"), snippet=item.get("description"),
                      outlet=(item.get("profile") or {}).get("name") or outlet_from_url(item.get("url") or "") or "Brave",
-                     published_at=item.get("page_age"))
+                     published_at=item.get("page_age"), image_url=_thumbnail(item))
         for item in items
     ]
     return [a for a in articles if a]
+
+
+def _thumbnail(item: dict) -> str | None:
+    thumb = item.get("thumbnail")
+    return thumb.get("src") if isinstance(thumb, dict) else None

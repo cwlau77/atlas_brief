@@ -36,7 +36,8 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
     items = dict_items(payload.get("articles") if isinstance(payload, dict) else None)
     articles = [
         make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"), snippet=item.get("description"),
-                     outlet=(item.get("source") or {}).get("name") or "GNews", published_at=item.get("publishedAt"))
+                     outlet=(item.get("source") or {}).get("name") or "GNews", published_at=item.get("publishedAt"),
+                     image_url=item.get("image"))
         for item in items
     ]
     return [a for a in articles if a]

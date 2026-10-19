@@ -13,13 +13,13 @@ PLAN = SearchPlan(phrase="data centers privacy", queries=['"data centers" privac
 
 GUARDIAN = {"response": {"status": "ok", "results": [
     {"webTitle": "Data centre boom raises privacy fears", "webUrl": "https://www.theguardian.com/a",
-     "webPublicationDate": "2026-10-16T09:00:00Z", "fields": {"trailText": "<p>Local opposition grows</p>"}}]}}
+     "webPublicationDate": "2026-10-16T09:00:00Z", "fields": {"trailText": "<p>Local opposition grows</p>", "thumbnail": "https://img.ex/1.jpg"}}]}}
 GNEWS = {"articles": [
     {"title": "Data centers face privacy scrutiny", "description": "Regulators act.",
-     "url": "https://ex.com/g", "publishedAt": "2026-10-16T10:00:00Z", "source": {"name": "ExWire"}}]}
+     "url": "https://ex.com/g", "publishedAt": "2026-10-16T10:00:00Z", "source": {"name": "ExWire"}, "image": "https://img.ex/1.jpg"}]}
 NEWSDATA = {"status": "success", "results": [
     {"title": "Privacy rules for data centers", "description": "New bill.", "link": "https://ex.com/n",
-     "pubDate": "2026-10-16 11:00:00", "source_name": "Example News"}]}
+     "pubDate": "2026-10-16 11:00:00", "source_name": "Example News", "image_url": "https://img.ex/1.jpg"}]}
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ async def test_guardian_maps_results_and_sends_two_queries(keys):
     assert a.published_at.tzinfo is not None
     params = route.calls[0].request.url.params
     assert params["q"] == '"data centers" AND privacy'
-    assert params["order-by"] == "newest" and params["show-fields"] == "trailText"
+    assert params["order-by"] == "newest" and params["show-fields"] == "trailText,thumbnail"
 
 
 @pytest.mark.asyncio
@@ -108,3 +108,28 @@ async def test_api_key_not_logged_by_httpx_at_info_level(monkeypatch, caplog):
     async with httpx.AsyncClient() as client:
         await gnews_source.fetch(PLAN, client)
     assert "SECRET123" not in caplog.text
+
+
+def _without(payload, path, key):
+    import copy
+    out = copy.deepcopy(payload)
+    item = out
+    for step in path:
+        item = item[step]
+    item.pop(key)
+    return out
+
+
+@pytest.mark.asyncio
+@respx.mock
+@pytest.mark.parametrize("module,url_attr,payload,path,key", [
+    (guardian_source, "GUARDIAN_SEARCH", GUARDIAN, ("response", "results", 0, "fields"), "thumbnail"),
+    (gnews_source, "GNEWS_SEARCH", GNEWS, ("articles", 0), "image"),
+    (newsdata_source, "NEWSDATA_LATEST", NEWSDATA, ("results", 0), "image_url"),
+])
+async def test_general_sources_map_image_or_none(module, url_attr, payload, path, key, keys):
+    route = respx.get(getattr(module, url_attr)).mock(return_value=httpx.Response(200, json=payload))
+    async with httpx.AsyncClient() as client:
+        assert (await module.fetch(PLAN, client))[0].image_url == "https://img.ex/1.jpg"
+        route.mock(return_value=httpx.Response(200, json=_without(payload, path, key)))
+        assert (await module.fetch(PLAN, client))[0].image_url is None

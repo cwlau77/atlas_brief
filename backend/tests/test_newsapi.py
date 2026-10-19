@@ -10,7 +10,7 @@ from backend.search_plan import SearchPlan
 PAYLOAD = {"totalResults": 1, "articles": [
     {"title": "Tariff talks stall", "description": "Negotiations pause.",
      "url": "https://ex.com/t", "source": {"name": "ExWire"},
-     "publishedAt": "2026-07-06T09:00:00Z"}]}
+     "publishedAt": "2026-07-06T09:00:00Z", "urlToImage": "https://img.ex/1.jpg"}]}
 
 PLAN = SearchPlan(phrase="data centers privacy", queries=['"data centers" privacy', "hyperscale"])
 
@@ -36,3 +36,14 @@ async def test_missing_key_disables_source(monkeypatch):
     assert newsapi_source.enabled() is False
     async with httpx.AsyncClient() as client:
         assert await fetch(PLAN, client) == []
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_newsapi_image_is_url_to_image_or_none(monkeypatch):
+    monkeypatch.setattr(settings, "newsapi_key", "sekrit")
+    no_image = {"articles": [{k: v for k, v in PAYLOAD["articles"][0].items() if k != "urlToImage"}]}
+    respx.get(NEWSAPI_EVERYTHING).mock(side_effect=[httpx.Response(200, json=PAYLOAD), httpx.Response(200, json=no_image)])
+    async with httpx.AsyncClient() as client:
+        assert (await fetch(PLAN, client))[0].image_url == "https://img.ex/1.jpg"
+        assert (await fetch(PLAN, client))[0].image_url is None

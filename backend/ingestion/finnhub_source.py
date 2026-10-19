@@ -23,7 +23,8 @@ def enabled() -> bool:
 def _to_articles(items: object) -> list[Article]:
     articles = [
         make_article(SOURCE_NAME, title=item.get("headline"), url=item.get("url"), snippet=item.get("summary"),
-                     outlet=item.get("source") or "Finnhub", published_at=item.get("datetime"))
+                     outlet=item.get("source") or "Finnhub", published_at=item.get("datetime"),
+                     image_url=item.get("image"))
         for item in dict_items(items)
     ]
     return [a for a in articles if a]

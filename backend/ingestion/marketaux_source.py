@@ -40,7 +40,7 @@ async def fetch(plan: SearchPlan, client: httpx.AsyncClient) -> list[Article]:
         make_article(SOURCE_NAME, title=item.get("title"), url=item.get("url"),
                      snippet=item.get("description") or item.get("snippet"),
                      outlet=item.get("source") or outlet_from_url(item.get("url") or "") or "Marketaux",
-                     published_at=item.get("published_at"))
+                     published_at=item.get("published_at"), image_url=item.get("image_url"))
         for item in items
     ]
     return [a for a in articles if a]

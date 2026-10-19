@@ -13,11 +13,12 @@ PLAN = SearchPlan(phrase="data centers privacy", queries=['"data centers" privac
 
 BRAVE = {"results": [{"title": "Data center privacy fight", "url": "https://www.example.com/b",
                       "description": "<strong>Data</strong> center story", "page_age": "2026-10-16T08:00:00",
-                      "profile": {"name": "Example"}, "meta_url": {"hostname": "www.example.com"}}]}
+                      "profile": {"name": "Example"}, "meta_url": {"hostname": "www.example.com"},
+                      "thumbnail": {"src": "https://img.ex/1.jpg"}}]}
 TAVILY = {"results": [{"title": "Privacy and data centers", "url": "https://news.example.org/t",
                        "content": "Story text", "published_date": "Fri, 16 Oct 2026 12:00:00 GMT"}]}
 EXA = {"results": [{"title": "Hyperscale privacy concerns", "url": "https://exa.example.net/e",
-                    "publishedDate": "2026-10-15T07:00:00.000Z"}]}
+                    "publishedDate": "2026-10-15T07:00:00.000Z", "image": "https://img.ex/1.jpg"}]}
 
 
 @pytest.fixture
@@ -86,3 +87,17 @@ async def test_errors_and_missing_keys(keys, monkeypatch):
 
 def test_registered():
     assert {"brave", "tavily", "exa"} <= {s.name for s in SOURCES}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_search_sources_map_image_or_none(keys):
+    bare_brave = {"results": [{k: v for k, v in BRAVE["results"][0].items() if k != "thumbnail"}]}
+    bare_exa = {"results": [{k: v for k, v in EXA["results"][0].items() if k != "image"}]}
+    respx.get(brave_source.BRAVE_NEWS).mock(side_effect=[httpx.Response(200, json=BRAVE), httpx.Response(200, json=bare_brave)])
+    respx.post(exa_source.EXA_SEARCH).mock(side_effect=[httpx.Response(200, json=EXA), httpx.Response(200, json=bare_exa)])
+    async with httpx.AsyncClient() as client:
+        assert (await brave_source.fetch(PLAN, client))[0].image_url == "https://img.ex/1.jpg"
+        assert (await brave_source.fetch(PLAN, client))[0].image_url is None
+        assert (await exa_source.fetch(PLAN, client))[0].image_url == "https://img.ex/1.jpg"
+        assert (await exa_source.fetch(PLAN, client))[0].image_url is None

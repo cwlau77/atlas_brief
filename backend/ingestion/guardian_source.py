@@ -26,7 +26,7 @@ async def _search(client: httpx.AsyncClient, query: str) -> list[Article]:
         "api-key": settings.guardian_api_key,
         "order-by": "newest",
         "page-size": settings.max_articles_per_source,
-        "show-fields": "trailText",
+        "show-fields": "trailText,thumbnail",
         "from-date": lookback_start().date().isoformat(),
     }
     # Per-request timeout, not the client default: 2 queries share one
@@ -38,7 +38,8 @@ async def _search(client: httpx.AsyncClient, query: str) -> list[Article]:
     articles = [
         make_article(SOURCE_NAME, title=item.get("webTitle"), url=item.get("webUrl"),
                      snippet=(item.get("fields") or {}).get("trailText"), outlet="The Guardian",
-                     published_at=item.get("webPublicationDate"), country="GB")
+                     published_at=item.get("webPublicationDate"), country="GB",
+                     image_url=(item.get("fields") or {}).get("thumbnail"))
         for item in dict_items(results)
     ]
     return [a for a in articles if a]

@@ -14,14 +14,15 @@ TOPIC_ONLY = SearchPlan(phrase="inflation outlook", queries=["inflation outlook"
 
 FINNHUB_MARKET = [
     {"headline": "Nvidia earnings beat estimates", "summary": "Chip demand.", "url": "https://ex.com/f1",
-     "datetime": 1792161000, "source": "Reuters"},
+     "datetime": 1792161000, "source": "Reuters", "image": "https://img.ex/1.jpg"},
     {"headline": "Oil prices slip", "summary": "Crude falls.", "url": "https://ex.com/f2",
      "datetime": 1792161000, "source": "Reuters"},
 ]
 FINNHUB_COMPANY = [{"headline": "NVDA guidance raised", "summary": "Outlook.", "url": "https://ex.com/f3",
                     "datetime": 1792161000, "source": "Yahoo"}]
 MARKETAUX = {"data": [{"title": "Nvidia shares jump", "description": "Rally.", "url": "https://www.mx.com/m",
-                       "published_at": "2026-10-16T13:00:00.000000Z", "source": "mx.com"}]}
+                       "published_at": "2026-10-16T13:00:00.000000Z", "source": "mx.com",
+                       "image_url": "https://img.ex/1.jpg"}]}
 AV_FEED = {"feed": [
     {"title": "Inflation cools in September", "url": "https://av.example.com/1",
      "time_published": "20261016T143000", "summary": "CPI eases.", "source": "Benzinga"},
@@ -117,3 +118,18 @@ async def test_finance_sources_not_called_for_general_topics(keys):
 def test_registered_as_finance_only():
     finance = {s.name for s in SOURCES if s.finance_only}
     assert finance == {"finnhub", "marketaux", "alphavantage"}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_finance_sources_map_image_or_none(keys):
+    respx.get(finnhub_source.FINNHUB_MARKET_NEWS).mock(return_value=httpx.Response(200, json=FINNHUB_MARKET))
+    respx.get(finnhub_source.FINNHUB_COMPANY_NEWS).mock(return_value=httpx.Response(200, json=FINNHUB_COMPANY))
+    bare_mx = {"data": [{k: v for k, v in MARKETAUX["data"][0].items() if k != "image_url"}]}
+    respx.get(marketaux_source.MARKETAUX_NEWS).mock(side_effect=[httpx.Response(200, json=MARKETAUX), httpx.Response(200, json=bare_mx)])
+    async with httpx.AsyncClient() as client:
+        fh = {a.title: a.image_url for a in await finnhub_source.fetch(FIN, client)}
+        assert fh["Nvidia earnings beat estimates"] == "https://img.ex/1.jpg"
+        assert fh["NVDA guidance raised"] is None
+        assert (await marketaux_source.fetch(FIN, client))[0].image_url == "https://img.ex/1.jpg"
+        assert (await marketaux_source.fetch(FIN, client))[0].image_url is None
