@@ -180,7 +180,10 @@ The archive page becomes a list of **topic threads**.
   - The All/Starred filter, now synced to `?filter=`. Starred shows only starred beads and hides threads with none.
   - Star and delete per briefing. A bead's focus or hover shows a small popover with the briefing's issued time and its star, open and delete actions. The builder may choose a different pattern if the popover fights keyboard use.
   - Compare two. "Compare two" is a toggle that switches beads into selection mode. The existing compare panel (`compare-col`) is reused as is.
-- Storage is unchanged. The newest 12 briefings are kept in this browser, and the page says so.
+- **Storage policy changes (owner's decision, 2026-10-19).** Today `fileBriefing` replaces any saved briefing with the same `area`, so a topic could never have more than one bead. Instead, filing keeps history:
+  - Up to **4 briefings per topic** (matched by the normalised focus above) and **24 in total**, newest first.
+  - When either cap is exceeded, the oldest briefing is dropped, preferring an unstarred one. A starred briefing is only dropped when everything that could be dropped is starred.
+  - The page says "Up to 4 briefings per topic and 24 in total are kept in this browser."
 - **Empty state:** the mountain painting band (cropped, smaller) with "No threads yet" and a "Start a brief" button.
 
 ## 9. Settings
