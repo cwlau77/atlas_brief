@@ -133,7 +133,7 @@
 .dev-tab:hover { box-shadow: inset 0 0 0 1px var(--celadon); }
 .dev-tab.open { background: var(--celadon-wash); box-shadow: inset 0 0 0 1px var(--celadon); }
 .dev-tab-kind { color: var(--celadon-deep); white-space: nowrap; }
-.dev-tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dev-tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dev-tab-panel { padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); background: var(--oat); }
 .link-inline { padding: 0; background: none; box-shadow: none; }
 .link-inline.contra .contra-accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
@@ -187,6 +187,8 @@
 }
 @media (max-width: 640px) {
   .link-inline.contra .contra-accounts { grid-template-columns: minmax(0, 1fr); }
+  .dev-tab { flex-wrap: wrap; row-gap: var(--space-1); }
+  .dev-tab-title { white-space: normal; }
 }
 @media print {
   .dev-context-teaser { white-space: normal; overflow: visible; }

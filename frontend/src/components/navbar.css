@@ -28,5 +28,7 @@
 @media (max-width: 640px) {
   .nav-inner { gap: 12px; }
   .nav-link { padding: 8px 10px; }
-  .nav-new { padding-inline: var(--space-3); }
+  .nav-new { padding: var(--space-2); }
+  /* Icon-only on phones; the text stays as the accessible name. */
+  .nav-new-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }

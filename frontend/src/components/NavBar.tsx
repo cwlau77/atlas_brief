@@ -33,7 +33,7 @@ export function NavBar() {
           <NavLink className={linkClass} to="/settings" data-cursor="link">Settings</NavLink>
         </nav>
         <Link className="btn btn-primary nav-new" to="/" state={{ focusAsk: true }} data-cursor="link">
-          <NewBriefIcon size={16} />New brief
+          <NewBriefIcon size={16} /><span className="nav-new-text">New brief</span>
         </Link>
       </div>
     </header>

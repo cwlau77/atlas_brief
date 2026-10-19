@@ -7,11 +7,14 @@ Ideas captured for later. Each needs its own design pass (brainstorm → spec �
 ### ~~Repo cleanup and code review~~ (done 2026-10-18)
 Thermo-nuclear review pass. Shipped: one Claude call helper (`backend/llm.py`) for planning, rerank, synthesis and context; a shared `make_article` for all 13 sources; a single pipeline log line in `main.py`; dead code removed (unused embedding helpers and setting, redundant URL dedupe, unused icons and helpers); `AppState` persistence moved out of state updaters (fixes a delete-failure toast that never fired); shipped plans archived. Deferred findings are under §5.
 
-### Rebrand to "Atlas"
-Rename the product from "Atlas Brief" to "Atlas", together with new brand work (logo, identity, UI refresh). This touches the masthead, footer and Home copy in `App.tsx` and `HomePage.tsx`, the page title and meta tags, the README files, and possibly the Vercel and Render project names. Do it as one pass with the logo so the product isn't rebranded twice.
+### ~~Rebrand to "Atlas"~~ (done 2026-10-18, celadon palette 2026-10-19)
+Shipped in the brand identity spec; the palette moved from moss to celadon in UI spec 2.
 
-### Clear way back to Home
-Right now the only way to get to Home is clicking the logo. Add an explicit "New brief" button (preferred: it names the action) and/or a Home link in the NavBar, visible on the Briefing, Archive and Settings pages.
+### ~~Clear way back to Home~~ (done 2026-10-19)
+A "New brief" button in the nav on every page (UI spec 2).
+
+### UI spec 3: story timeline tuning, globe arcs, click-to-zoom, story carousel, article images
+The third part of the UI vision (see `docs/superpowers/specs/2026-10-18-atlas-brand-identity-design.md` and `2026-10-19-ui-layout-polish-design.md`). Not yet designed. The globe item below is part of it.
 
 ### Globe: connecting arcs and named places
 Two gaps compared with the redesign mockup:

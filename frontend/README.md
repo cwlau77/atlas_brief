@@ -1,10 +1,12 @@
 # Atlas — frontend
 
 Vite + React + TypeScript SPA. Design system: **Oat**, a warm paper surface
-(oat, oat-deep, paper) with ink text and moss as the primary colour (logo,
-primary buttons, links, timeline, data), with terracotta reserved for
-signals — globe hotspots, high-priority alerts, focus rings and the logo
-dot. Type is Jost for headings, Hanken Grotesk for body text, and IBM Plex
+(oat, oat-deep, paper) with ink text and celadon as the primary colour (logo,
+primary buttons, links, timeline, data), with royal blue reserved for
+signals — globe hotspots, high-priority alerts, focus rings, the active tab,
+highlighted story threads and the logo dot. `--celadon` (#5E8A79) is for
+graphics only; text, links and button fills use `--celadon-deep` (#3A5F52)
+for contrast. Spacing uses the `--space-1`…`--space-9` scale. Type is Jost for headings, Hanken Grotesk for body text, and IBM Plex
 Mono for labels and data, all loaded from Google Fonts. Light-only; print
 styles force ink-on-paper.
 
@@ -21,12 +23,8 @@ npm run dev:live   # proxies /api/* to the live Render backend
 npx vitest run
 ```
 
-**Path caveat:** vitest cannot spawn workers from a directory whose path
-contains a space (`… /Atlas Brief/ …`). Run it through a space-free symlink:
-
-```bash
-ln -sfn "$(cd .. && pwd)" /tmp/atlasbrief && cd /tmp/atlasbrief/frontend && npx vitest run
-```
+Tests load CSS (`test.css: true` in `vite.config.ts`) so `palette.test.ts`
+can check stylesheets for stray colours.
 
 ## Globe land data
 

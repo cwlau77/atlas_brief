@@ -17,8 +17,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    // The project lives at a path with a space ("Atlas Brief"); the default
-    // forks pool fails to spawn workers on such paths, threads is fine.
+    // threads pool: kept from when the repo lived at a path with a space,
+    // where the default forks pool could not spawn workers.
     pool: 'threads',
     // CSS is stubbed to '' by default; palette.test.ts reads stylesheets as raw text.
     css: true,
