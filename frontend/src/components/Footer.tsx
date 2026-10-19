@@ -43,6 +43,7 @@ export function Footer() {
           <h2 className="label">Project</h2>
           <ul>
             <li><a href="https://github.com/cwlau77/atlas_brief" target="_blank" rel="noopener noreferrer" data-cursor="link">GitHub</a></li>
+            <li><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" data-cursor="link">City data © GeoNames (CC BY 4.0)</a></li>
           </ul>
         </section>
         <p className="footer-note">Analysis is model-written. Check it against the cited sources.</p>

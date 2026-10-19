@@ -35,6 +35,14 @@ describe('Footer', () => {
     expect(gh.getAttribute('rel')).toContain('noopener')
   })
 
+  it('credits GeoNames for the city data under Project', () => {
+    const geo = link('City data © GeoNames (CC BY 4.0)')!
+    expect(geo.closest('.footer-col')?.querySelector('h2')?.textContent).toBe('Project')
+    expect(geo.getAttribute('href')).toBe('https://www.geonames.org/')
+    expect(geo.getAttribute('target')).toBe('_blank')
+    expect(geo.getAttribute('rel')).toContain('noopener')
+  })
+
   it('carries the lockup home link, the model note and a decorative painting', () => {
     const home = container.querySelector('a[aria-label="Atlas home"]')!
     expect(home.querySelector('svg [data-part="fix"]')).not.toBeNull()

@@ -47,6 +47,20 @@ commit the regenerated file.
   panel and a visually-hidden list for screen readers. `StaticGlobe.tsx` is
   the no-WebGL fallback. Hotspot selection scrolls to `#dev-N` anchors
   rendered by `components/briefing/Timeline.tsx` / `DevelopmentCard.tsx`.
+- Briefing globes (not Home) zoom: clicking a point calls `engine.zoomTo` and
+  `StoryTab` opens `StoryCarousel` under the globe for that point's stories
+  (newest first, one centred card). Back, Esc or an ocean click zooms out.
+  Points come from `globe/regions.ts`: a development with a named `place`
+  (resolved server-side from GeoNames) sits only at its city point.
+- `StoryCard` is shared by the carousel and the Top stories strip
+  (`TopStories`, ranked by `lib/topStories.ts`). A missing or failed lead
+  image falls back to `RegionMap`, a crop of the globe's land dots (loaded
+  on demand, so the land data stays out of the main chunk).
+- Routes (`lib/routes.ts`) are tensions or source disagreements linked to two
+  or more developments. Up to five get a lane in the timeline gutter (fixed
+  width, so the spine never moves), a key entry, a colour dot on their tabs
+  and a globe arc (`globe/arcs.ts`). `state/useRouteHighlight.ts`, owned by
+  `StoryTab`, lights a route everywhere at once.
 - `src/state/` holds shared app state: `AppState.tsx` is the provider
   (saved briefings, starred ids, session briefing, settings, profile,
   toasts, all persisted to `localStorage`/`sessionStorage` with functional
