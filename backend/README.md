@@ -73,9 +73,16 @@ All knobs live in `.env` / `config.py`:
 
 See `models.Briefing` — the frontend should render:
 
-- `key_developments[]` — headline + analytical summary + sources + `historical_context`
+- `key_developments[]` — headline + analytical summary + sources + `historical_context`, plus an optional `place` (`{name, country, lat, lng}`) when the story names a city
+- every source citation may carry an optional `image_url` (https only, from the 8 sources that supply images)
 - `emerging_tensions[]`
 - `contradictions[]` — two competing accounts with separate source lists
 - `priority_alerts[]` — severity `critical | high | elevated` (render red for the first two)
 - `recommended_readings[]`
 - `article_count`, `source_breakdown` — telemetry for the footer
+
+## Data
+
+`data/cities.csv` lists the ~6,300 cities with population ≥ 100,000, used by `places.py` to turn the model's `"City, Country"` into coordinates (the model never supplies coordinates). Regenerate it with `.venv/bin/python backend/scripts/build_cities.py`.
+
+City data © GeoNames ([geonames.org](https://www.geonames.org/)), licensed under CC BY 4.0.

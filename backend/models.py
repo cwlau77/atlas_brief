@@ -30,6 +30,13 @@ class SourceCitation(BaseModel):
     image_url: Optional[str] = None
 
 
+class Place(BaseModel):
+    name: str
+    country: str
+    lat: float
+    lng: float
+
+
 class KeyDevelopment(BaseModel):
     headline: str
     summary: str
