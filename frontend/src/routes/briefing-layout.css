@@ -1,21 +1,18 @@
 .briefing { padding-bottom: 56px; }
-.masthead { position: relative; display: grid; gap: 14px; padding-block: 24px 0; }
-.masthead-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1; }
-.masthead-kicker { color: var(--celadon-deep); }
+.masthead { display: grid; gap: var(--space-3); padding-block: var(--space-3) 0; }
+.masthead-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-5); }
 .masthead-title {
-  position: relative;
-  z-index: 1;
   font-weight: 500;
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 5.4vw, 4.4rem);
-  letter-spacing: -0.035em;
-  line-height: 1;
+  font-size: clamp(2.25rem, 4vw, 3rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 .masthead-title::first-letter { text-transform: uppercase; }
-.masthead-meta { color: var(--ink-3); position: relative; z-index: 1; }
-.tabs { display: flex; gap: 4px; margin-top: 10px; border-bottom: 1px solid var(--rule); position: relative; z-index: 1; }
+.masthead-meta { color: var(--ink-3); }
+.tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--rule); }
 .tab {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   text-decoration: none;
   color: var(--ink-2);
   font-weight: 600;
@@ -25,4 +22,5 @@
 }
 .tab:hover { color: var(--ink); }
 .tab.active { color: var(--ink); border-color: var(--signal); }
-.masthead-band { position: relative; overflow: hidden; }
+.briefing.compact .masthead { gap: var(--space-2); }
+.briefing.compact .tab { padding: var(--space-2) var(--space-3); }

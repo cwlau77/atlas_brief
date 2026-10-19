@@ -1,4 +1,5 @@
 import { SOURCE_LABELS, shares, summarizeSignals, topEntries } from '../lib/signals'
+import { plural } from '../lib/plural'
 import { useBriefing } from './briefingContext'
 import './signals.css'
 
@@ -46,7 +47,7 @@ export function SignalsTab() {
 
       <div className="viz">
         <section aria-labelledby="mix-h">
-          <h2 id="mix-h" className="viz-title">Source mix <span className="label">{sourceTotal} articles</span></h2>
+          <h2 id="mix-h" className="viz-title">Source mix <span className="label">{plural(sourceTotal, 'article')}</span></h2>
           {sources.length ? (
             <>
               <div className="stack" role="img" aria-label={sources.map((s) => `${s.label} ${s.pct} percent`).join(', ')}>
@@ -59,7 +60,7 @@ export function SignalsTab() {
                   <div key={s.key}>
                     <span className="sw"><i style={{ background: SEGMENT_COLORS[i % SEGMENT_COLORS.length] }} />{s.label}</span>
                     <span className="pct">{s.pct}%</span>
-                    <span className="n label">{s.count} articles</span>
+                    <span className="n label">{plural(s.count, 'article')}</span>
                   </div>
                 ))}
               </div>

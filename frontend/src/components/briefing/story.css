@@ -1,6 +1,6 @@
-.story { display: grid; gap: 56px; padding-top: 32px; }
-.story-lead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 40px; align-items: center; }
-.story-lead-copy { display: grid; gap: 16px; align-content: center; }
+.story { display: grid; gap: var(--space-7); padding-top: var(--space-5); }
+.story-lead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: var(--space-6); align-items: start; }
+.story-lead-copy { display: grid; gap: var(--space-4); align-content: start; }
 .story-globe { width: 100%; max-width: 520px; justify-self: end; }
 .story-note { color: var(--ink-3); }
 
@@ -20,9 +20,9 @@
 
 .prio { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-2); }
 .prio svg { flex: none; }
-.prio-high svg { fill: var(--signal); }
-.prio-medium svg { fill: var(--ochre); }
-.prio-low svg { fill: none; stroke: var(--ink-3); }
+.prio-high svg { color: var(--signal); }
+.prio-medium svg { color: var(--ochre); }
+.prio-low svg { color: var(--ink-3); }
 
 .timeline-wrap { display: grid; gap: 48px; }
 .timeline {
@@ -114,7 +114,7 @@
 .reading-meta { color: var(--ink-2); font-size: 0.92rem; }
 .reading-meta .label { color: var(--ink-3); margin-right: 6px; }
 
-.compact .story { gap: 36px; }
+.compact .story { gap: var(--space-6); padding-top: var(--space-4); }
 .compact .timeline { row-gap: 12px; }
 .compact .dev { padding: 16px 18px; gap: 6px; }
 
