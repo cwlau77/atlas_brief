@@ -1,15 +1,14 @@
 import { Link, NavLink, useLocation } from 'react-router'
-import { useClock } from '../lib/useClock'
 import { useAppState } from '../state/hooks'
 import { latestBriefingId } from '../state/resolveBriefing'
 import { AtlasMark } from './AtlasMark'
+import { NewBriefIcon } from './icons'
 import './navbar.css'
 
 const linkClass = ({ isActive }: { isActive: boolean }) => `nav-link ${isActive ? 'active' : ''}`
 
 export function NavBar() {
-  const { session, saved, settings } = useAppState()
-  const clock = useClock(settings.timeZone, 30_000)
+  const { session, saved } = useAppState()
   const { pathname } = useLocation()
   const latest = latestBriefingId(session, saved)
   const onBriefing = pathname.startsWith('/brief/')
@@ -33,8 +32,8 @@ export function NavBar() {
           <NavLink className={linkClass} to="/archive" data-cursor="link">Archive</NavLink>
           <NavLink className={linkClass} to="/settings" data-cursor="link">Settings</NavLink>
         </nav>
-        <Link className="nav-clock label" to="/settings" title="Change the time zone in Settings" data-cursor="link">
-          {clock.time}
+        <Link className="btn btn-primary nav-new" to="/" state={{ focusAsk: true }} data-cursor="link">
+          <NewBriefIcon size={16} />New brief
         </Link>
       </div>
     </header>

@@ -26,4 +26,14 @@ describe('NavBar lockup', () => {
     expect(home.querySelector('svg [data-part="fix"]')).not.toBeNull()
     expect(home.textContent).toBe('atlas')
   })
+
+  it('offers New brief linking home with focus state', () => {
+    const link = container.querySelector('a.nav-new')!
+    expect(link.textContent).toBe('New brief')
+    expect(link.getAttribute('href')).toBe('/')
+  })
+
+  it('no longer shows the clock', () => {
+    expect(container.querySelector('.nav-clock')).toBeNull()
+  })
 })

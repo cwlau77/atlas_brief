@@ -5,6 +5,7 @@ import { RotatingHeadline } from '../components/RotatingHeadline'
 import { Globe } from '../globe/Globe'
 import { markIntroPlayed, shouldPlayIntro } from '../lib/intro'
 import { useClock } from '../lib/useClock'
+import { useFocusOnArrival } from '../lib/useFocusOnArrival'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { useTypewriter } from '../lib/useTypewriter'
 import { useAppState } from '../state/hooks'
@@ -24,6 +25,7 @@ export function HomePage() {
   const { settings } = useAppState()
   const clock = useClock(settings.timeZone, 15_000)
   const { generate, retry, loading, error } = useGenerateBriefing()
+  useFocusOnArrival('home-ask')
   const [intro, setIntro] = useState(() => shouldPlayIntro(reduced))
   const placeholder = useTypewriter(PROMPTS, { enabled: !reduced, pauseWhenFocusedId: 'home-ask' })
 
