@@ -12,9 +12,13 @@ export interface AppStateValue {
   toasts: ToastItem[]
   fileBriefing: (briefing: SavedBriefing) => void
   removeBriefing: (id: string) => void
+  /** Removes several briefings (and their stars) in one write. */
+  removeBriefings: (ids: string[]) => void
   /** Empties saved and starred; false when storage could not be cleared (the in-memory archive is still emptied). */
   clearArchive: () => boolean
   toggleStar: (id: string) => void
+  /** Stars (on) or unstars every id in one write. */
+  setStars: (ids: string[], on: boolean) => void
   setSession: (briefing: SavedBriefing) => void
   updateSettings: (patch: Partial<UserSettings>) => void
   saveProfile: (profile: UserProfile) => boolean

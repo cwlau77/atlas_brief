@@ -55,6 +55,35 @@
 .bead:hover { transform: scale(1.18); }
 .bead.picked { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--signal); }
 .bead-date { color: var(--ink-3); font-size: 0.66rem; white-space: nowrap; }
+/* Select mode: each bead is a checkbox. The native box is visually hidden but keeps focus and state. */
+.bead-check { position: relative; box-shadow: 0 0 0 3px var(--paper), 0 0 0 4.5px var(--rule); opacity: 0.7; }
+.bead-check.picked { opacity: 1; box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--signal); }
+.bead-check input { position: absolute; inset: -8px; width: auto; height: auto; margin: 0; opacity: 0; cursor: pointer; }
+.bead-check:focus-within { outline: 2px solid var(--signal); outline-offset: 6px; }
+.thread-name { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-2); align-items: center; }
+.thread-name > :not(.thread-check) { grid-column: 2; }
+.thread-check { grid-row: 1; width: 18px; height: 18px; margin: 0; accent-color: var(--celadon-deep); cursor: pointer; }
+.select-bar {
+  position: sticky;
+  bottom: var(--space-4);
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: center;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow-lift), inset 0 0 0 1px var(--rule);
+  animation: select-bar-in var(--dur-mid) var(--ease-out) both;
+}
+.select-bar .label { color: var(--celadon-deep); margin-right: var(--space-2); }
+.select-bar .btn { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-3); }
+@keyframes select-bar-in { from { opacity: 0; transform: translateY(12px); } }
+@media (prefers-reduced-motion: reduce) {
+  .select-bar { animation: none; }
+}
 .bead-pop {
   position: absolute;
   bottom: calc(100% - 4px);

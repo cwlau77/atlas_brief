@@ -38,19 +38,29 @@ function CompareColumn({ briefing, timeZone }: { briefing: SavedBriefing; timeZo
 const dayMonth = (iso: string, tz: string) => formatDate(iso, tz).replace(/ \d{4}$/, '')
 
 export function ArchivePage() {
-  const { saved, starred, toggleStar, removeBriefing, pushToast, settings } = useAppState()
+  const { saved, starred, toggleStar, setStars, removeBriefing, removeBriefings, pushToast, settings } = useAppState()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const filter = params.get('filter') === 'starred' ? 'starred' : 'all'
   const [comparing, setComparing] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
   const [pendingDelete, setPendingDelete] = useState<SavedBriefing | null>(null)
+  // Select mode: a checkbox per briefing, with bulk star and delete.
+  const [selecting, setSelecting] = useState(false)
+  const [picked, setPicked] = useState<string[]>([])
+  const [pendingBulk, setPendingBulk] = useState<string[] | null>(null)
   const tz = settings.timeZone
 
   const threads = useMemo<TopicThread[]>(() => {
     const visible = filter === 'starred' ? saved.filter((b) => starred.includes(b.id)) : saved
     return groupThreads(visible)
   }, [saved, starred, filter])
+  // Only what is on screen counts: a filter change or an unstar under the Starred filter hides briefings.
+  const visibleIds = useMemo(() => new Set(threads.flatMap((t) => t.briefings.map((b) => b.id))), [threads])
+  const selection = picked.filter((id) => visibleIds.has(id))
+  const allStarred = selection.length > 0 && selection.every((id) => starred.includes(id))
+  const togglePick = (ids: string[], on: boolean) =>
+    setPicked((prev) => (on ? [...prev, ...ids.filter((id) => !prev.includes(id))] : prev.filter((id) => !ids.includes(id))))
   const pair = useMemo(
     () => selected.map((id) => saved.find((b) => b.id === id)).filter((b): b is SavedBriefing => !!b),
     [selected, saved],
@@ -59,12 +69,20 @@ export function ArchivePage() {
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev.slice(-1), id]))
   const confirmDelete = () => {
+    if (pendingBulk) {
+      removeBriefings(pendingBulk)
+      setPicked([])
+      setPendingBulk(null)
+      pushToast(`${plural(pendingBulk.length, 'briefing')} removed`, 'info', 2000)
+      return
+    }
     if (!pendingDelete) return
     removeBriefing(pendingDelete.id)
     setSelected((prev) => prev.filter((s) => s !== pendingDelete.id))
     setPendingDelete(null)
     pushToast('Briefing removed', 'info', 2000)
   }
+  const bulkStarred = pendingBulk ? pendingBulk.filter((id) => starred.includes(id)).length : 0
 
   const beadLabel = (b: SavedBriefing) =>
     `${b.area}, ${dayMonth(b.generatedAt, tz)}, ${plural(b.stats.articles, 'article')}${hasHighAlert(b) ? ', high alert' : ''}`
@@ -104,18 +122,36 @@ export function ArchivePage() {
               <button type="button" className={`btn btn-quiet saved-filter ${filter === 'all' ? 'on' : ''}`} aria-pressed={filter === 'all'} onClick={() => setFilter('all')} data-cursor="link">All</button>
               <button type="button" className={`btn btn-quiet saved-filter ${filter === 'starred' ? 'on' : ''}`} aria-pressed={filter === 'starred'} onClick={() => setFilter('starred')} data-cursor="link">Starred</button>
             </div>
-            <button
-              type="button"
-              className={`btn btn-quiet saved-filter ${comparing ? 'on' : ''}`}
-              aria-pressed={comparing}
-              onClick={() => {
-                setComparing((c) => !c)
-                setSelected([])
-              }}
-              data-cursor="link"
-            >
-              Compare two
-            </button>
+            <div className="saved-filters">
+              <button
+                type="button"
+                className={`btn btn-quiet saved-filter ${selecting ? 'on' : ''}`}
+                aria-pressed={selecting}
+                onClick={() => {
+                  setSelecting((on) => !on)
+                  setPicked([])
+                  setComparing(false)
+                  setSelected([])
+                }}
+                data-cursor="link"
+              >
+                Select
+              </button>
+              <button
+                type="button"
+                className={`btn btn-quiet saved-filter ${comparing ? 'on' : ''}`}
+                aria-pressed={comparing}
+                onClick={() => {
+                  setComparing((c) => !c)
+                  setSelected([])
+                  setSelecting(false)
+                  setPicked([])
+                }}
+                data-cursor="link"
+              >
+                Compare two
+              </button>
+            </div>
           </div>
           {comparing && <p className="compare-hint label">Pick two beads to compare them side by side.</p>}
 
@@ -126,9 +162,21 @@ export function ArchivePage() {
               {threads.map((t) => {
                 const latest = t.briefings[t.briefings.length - 1]
                 const anyStar = t.briefings.some((b) => starred.includes(b.id))
+                const ids = t.briefings.map((b) => b.id)
+                const pickedHere = ids.filter((id) => selection.includes(id)).length
                 return (
                   <article key={t.key} className="thread-row">
                     <div className="thread-name">
+                      {selecting && (
+                        <input
+                          type="checkbox"
+                          className="thread-check"
+                          aria-label={`Select all in ${t.area}`}
+                          checked={pickedHere === ids.length}
+                          ref={(el) => { if (el) el.indeterminate = pickedHere > 0 && pickedHere < ids.length }}
+                          onChange={() => togglePick(ids, pickedHere < ids.length)}
+                        />
+                      )}
                       <h2 className="thread-title">{t.area}{anyStar && <StarIcon size={14} filled className="thread-star" />}</h2>
                       <p className="label">{plural(t.briefings.length, 'briefing')} · since {dayMonth(t.briefings[0].generatedAt, tz)}</p>
                     </div>
@@ -138,7 +186,16 @@ export function ArchivePage() {
                         const cls = `bead ${hasHighAlert(b) ? 'bead-alert' : ''} ${b === latest ? 'latest' : ''}`
                         return (
                           <li key={b.id} className="bead-slot">
-                            {comparing ? (
+                            {selecting ? (
+                              <label className={`${cls} bead-check ${selection.includes(b.id) ? 'picked' : ''}`} style={style} data-cursor="link">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select ${beadLabel(b)}`}
+                                  checked={selection.includes(b.id)}
+                                  onChange={(e) => togglePick([b.id], e.target.checked)}
+                                />
+                              </label>
+                            ) : comparing ? (
                               <button
                                 type="button"
                                 className={`${cls} ${selected.includes(b.id) ? 'picked' : ''}`}
@@ -152,7 +209,7 @@ export function ArchivePage() {
                               <Link className={cls} style={style} to={`/brief/${b.id}`} aria-label={beadLabel(b)} data-cursor="link" />
                             )}
                             <span className="bead-date label" aria-hidden="true">{dayMonth(b.generatedAt, tz)}</span>
-                            {!comparing && (
+                            {!comparing && !selecting && (
                               <div className="bead-pop">
                                 <p className="label">{formatDateTime(b.generatedAt, tz)}</p>
                                 {beadActions(b)}
@@ -181,6 +238,19 @@ export function ArchivePage() {
             </div>
           )}
 
+          {selecting && selection.length > 0 && (
+            <div className="select-bar" role="region" aria-label="Selected briefings">
+              <span className="label">{selection.length} selected</span>
+              <button type="button" className="btn btn-quiet" onClick={() => setStars(selection, !allStarred)} data-cursor="link">
+                <StarIcon size={14} filled={!allStarred} />{allStarred ? `Unstar ${selection.length}` : `Star ${selection.length}`}
+              </button>
+              <button type="button" className="btn btn-quiet" onClick={() => setPendingBulk(selection)} data-cursor="link">
+                <TrashIcon size={14} />Delete {selection.length}
+              </button>
+              <button type="button" className="btn btn-quiet" onClick={() => setPicked([])} data-cursor="link">Clear</button>
+            </div>
+          )}
+
           {pair.length === 2 && (
             <section className="compare-panel" aria-labelledby="compare-h">
               <h2 id="compare-h" className="label">Side by side</h2>
@@ -194,12 +264,15 @@ export function ArchivePage() {
       )}
 
       <ConfirmDialog
-        open={pendingDelete !== null}
-        title="Remove this briefing?"
-        body={pendingDelete ? `${beadLabel(pendingDelete)} will be removed from this browser.` : ''}
+        open={pendingDelete !== null || pendingBulk !== null}
+        title={pendingBulk ? `Remove ${plural(pendingBulk.length, 'briefing')}?` : 'Remove this briefing?'}
+        body={pendingBulk
+          ? `${plural(pendingBulk.length, 'briefing')} will be removed from this browser.${
+            bulkStarred ? ` ${bulkStarred} of them ${bulkStarred === 1 ? 'is' : 'are'} starred.` : ''}`
+          : pendingDelete ? `${beadLabel(pendingDelete)} will be removed from this browser.` : ''}
         confirmLabel="Remove"
         onConfirm={confirmDelete}
-        onCancel={() => setPendingDelete(null)}
+        onCancel={() => { setPendingDelete(null); setPendingBulk(null) }}
       />
     </div>
   )

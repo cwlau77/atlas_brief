@@ -82,4 +82,69 @@ describe('ArchivePage threads', () => {
     expect(names.some((n) => n?.startsWith('Star'))).toBe(true)
     expect(names.some((n) => n?.startsWith('Delete'))).toBe(true)
   })
+
+  describe('select mode', () => {
+    const button = (name: string) => [...container.querySelectorAll('button')].find((b) => b.textContent === name || b.getAttribute('aria-label') === name)
+    const box = (name: RegExp) => [...container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].find((c) => name.test(c.getAttribute('aria-label') ?? ''))!
+    const redAll = /^Select all in red sea\s+shipping$/i
+    const boxes = () => [...container.querySelectorAll<HTMLInputElement>('.thread-string input[type="checkbox"]')]
+    const stored = (key: string) => JSON.parse(localStorage.getItem(key) ?? '[]') as unknown[]
+    const enter = () => { mount(); act(() => button('Select')!.click()) }
+
+    it('puts a named checkbox on every briefing and a select-all on every thread', () => {
+      enter()
+      expect(button('Select')!.getAttribute('aria-pressed')).toBe('true')
+      expect(boxes()).toHaveLength(3)
+      expect(boxes()[0].getAttribute('aria-label')).toMatch(/^Select Red Sea shipping, 12 Oct/)
+      expect(box(redAll)).toBeDefined()
+      expect(container.querySelector('a.bead')).toBeNull()
+    })
+
+    it('selects a whole thread, showing partial selection on its select-all', () => {
+      enter()
+      const all = box(redAll)
+      act(() => boxes()[0].click())
+      expect(all.indeterminate).toBe(true)
+      act(() => all.click())
+      expect(boxes().slice(0, 2).every((c) => c.checked)).toBe(true)
+      expect(all.checked).toBe(true)
+      expect(container.querySelector('.select-bar')?.textContent).toContain('2 selected')
+      act(() => all.click())
+      expect(boxes().some((c) => c.checked)).toBe(false)
+    })
+
+    it('stars, then unstars, everything selected', () => {
+      enter()
+      act(() => box(redAll).click())
+      act(() => button('Star 2')!.click())
+      expect(stored(KEYS.starred).sort()).toEqual(['c1', 'r1', 'r2'])
+      act(() => button('Unstar 2')!.click())
+      expect(stored(KEYS.starred)).toEqual(['c1'])
+    })
+
+    it('deletes the selection after a confirmation that counts starred briefings', () => {
+      enter()
+      act(() => boxes()[2].click()) // c1, starred
+      act(() => boxes()[0].click()) // r1
+      act(() => button('Delete 2')!.click())
+      const dialog = container.querySelector('dialog')!
+      expect(dialog.textContent).toContain('Remove 2 briefings?')
+      expect(dialog.textContent).toContain('1 of them is starred')
+      act(() => [...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Remove')!.click())
+      expect((stored(KEYS.saved) as { id: string }[]).map((b) => b.id)).toEqual(['r2'])
+      expect(stored(KEYS.starred)).toEqual([])
+      expect(container.querySelector('.select-bar')).toBeNull()
+    })
+
+    it('clears the selection when leaving select mode, and turns Compare off', () => {
+      enter()
+      act(() => boxes()[0].click())
+      act(() => button('Compare two')!.click())
+      expect(button('Select')!.getAttribute('aria-pressed')).toBe('false')
+      expect(boxes()).toHaveLength(0)
+      act(() => button('Select')!.click())
+      expect(button('Compare two')!.getAttribute('aria-pressed')).toBe('false')
+      expect(boxes().some((c) => c.checked)).toBe(false)
+    })
+  })
 })

@@ -108,8 +108,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setStarred((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : prev))
   }, [])
 
+  const removeBriefings = useCallback((ids: string[]) => {
+    const drop = new Set(ids)
+    setSaved((prev) => prev.filter((b) => !drop.has(b.id)))
+    setStarred((prev) => (prev.some((s) => drop.has(s)) ? prev.filter((s) => !drop.has(s)) : prev))
+  }, [])
+
   const toggleStar = useCallback((id: string) => {
     setStarred((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]))
+  }, [])
+
+  const setStars = useCallback((ids: string[], on: boolean) => {
+    setStarred((prev) => (on
+      ? [...prev, ...ids.filter((id) => !prev.includes(id))]
+      : prev.filter((s) => !ids.includes(s))))
   }, [])
 
   const setSession = useCallback((briefing: SavedBriefing) => {
@@ -130,9 +142,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppStateValue>(() => ({
     saved, starred, session, settings, profile, toasts,
-    fileBriefing, removeBriefing, clearArchive, toggleStar, setSession, updateSettings, saveProfile, pushToast, dismissToast,
-  }), [saved, starred, session, settings, profile, toasts,
-    fileBriefing, removeBriefing, clearArchive, toggleStar, setSession, updateSettings, saveProfile, pushToast, dismissToast])
+    fileBriefing, removeBriefing, removeBriefings, clearArchive, toggleStar, setStars, setSession, updateSettings,
+    saveProfile, pushToast, dismissToast,
+  }), [saved, starred, session, settings, profile, toasts, fileBriefing, removeBriefing, removeBriefings, clearArchive,
+    toggleStar, setStars, setSession, updateSettings, saveProfile, pushToast, dismissToast])
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
 }
