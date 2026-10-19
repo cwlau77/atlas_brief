@@ -65,6 +65,7 @@ export function ArchivePage() {
 
       {saved.length === 0 ? (
         <div className="saved-empty">
+          <img className="brand-object" src="/brand/atlas-mark.svg" alt="" width="96" height="96" />
           <h2>The archive is empty</h2>
           <p>Generate a briefing and it is saved here automatically.</p>
           <Link className="btn btn-primary" to="/" data-cursor="link">Start a brief</Link>

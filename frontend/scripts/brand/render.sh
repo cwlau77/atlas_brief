@@ -7,5 +7,6 @@ in="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 bg=""
 if [[ "${5:-}" == "transparent" ]]; then bg="--default-background-color=00000000"; fi
 "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+  --virtual-time-budget=5000 \
   $bg --window-size="$3,$4" --screenshot="$2" "file://$in" >/dev/null 2>&1
 sips -g pixelWidth -g pixelHeight "$2" | tail -2

@@ -22,6 +22,8 @@
 .empty-state .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .section-label { color: var(--moss); margin-bottom: 20px; }
 
+.brand-object { display: block; width: 96px; height: 96px; object-fit: contain; margin-bottom: 8px; }
+
 .footer { border-top: 1px solid var(--rule); padding-block: 32px 48px; color: var(--ink-3); }
 .footer .wrap {
   display: flex;

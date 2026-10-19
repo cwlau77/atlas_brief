@@ -1,5 +1,7 @@
 # Atlas
 
+<p align="center"><img src="frontend/public/brand/og-card.png" alt="Atlas: brief me on any place or policy" width="720"></p>
+
 Global news intelligence for time-constrained readers: one focus phrase in, a
 synthesized briefing out — key developments with historical context, emerging
 tensions, cross-source contradictions, priority alerts, and recommended
