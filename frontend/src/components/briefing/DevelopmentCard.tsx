@@ -6,7 +6,7 @@ import { LinkedTabs, type LinkHandlers } from './LinkedTabs'
 import { PriorityMark } from './PriorityMark'
 import { SourceChips } from './SourceChips'
 
-export function DevelopmentCard({ dev, index, showContext, style, links, briefing, openKeys, onToggleLink, onHoverLink }: LinkHandlers & {
+export function DevelopmentCard({ dev, index, showContext, style, links, briefing, openKeys, onToggleLink, onHoverLink, colorFor, lit }: LinkHandlers & {
   dev: ViewDevelopment
   index: number
   showContext: boolean
@@ -50,7 +50,7 @@ export function DevelopmentCard({ dev, index, showContext, style, links, briefin
       <SourceChips sources={dev.sources} />
       <LinkedTabs
         devIndex={index} links={links} briefing={briefing}
-        openKeys={openKeys} onToggleLink={onToggleLink} onHoverLink={onHoverLink}
+        openKeys={openKeys} onToggleLink={onToggleLink} onHoverLink={onHoverLink} colorFor={colorFor} lit={lit}
       />
     </article>
   )

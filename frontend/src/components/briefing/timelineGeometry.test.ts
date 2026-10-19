@@ -9,8 +9,12 @@ describe('timeline geometry', () => {
   it('positions the spine from the grid column variables, not literals', () => {
     const grid = rule('.timeline')
     const spine = rule('.spine')
-    expect(grid).toContain('grid-template-columns: var(--t-time) var(--t-node)')
+    expect(grid).toContain('grid-template-columns: var(--t-time) var(--t-lanes) var(--t-node) minmax(0, 1fr)')
     expect(grid).toContain('column-gap: var(--t-gap)')
-    expect(spine).toMatch(/left: calc\(var\(--t-time\) \+ var\(--t-gap\) \+ var\(--t-node\) \/ 2 - 1px\)/)
+    expect(spine).toContain('left: calc(var(--t-time) + var(--t-gap) * 2 + var(--t-lanes) + var(--t-node) / 2 - 1px)')
+  })
+  // A fixed lane column for MAX_LANES, so the spine and cards sit in the same place whatever the route count.
+  it('reserves a fixed-width lane column for five routes', () => {
+    expect(rule('.timeline')).toContain('--t-lanes: calc(5 * 14px)')
   })
 })

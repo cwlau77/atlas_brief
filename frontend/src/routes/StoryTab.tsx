@@ -10,6 +10,7 @@ import { buildRegionPoints, pointKey, type RegionPoint } from '../globe/regions'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { usePrintOnLoad } from '../lib/usePrintOnLoad'
 import { useAppState } from '../state/hooks'
+import { useRouteHighlight } from '../state/useRouteHighlight'
 import { useBriefing } from './briefingContext'
 
 export function StoryTab() {
@@ -27,6 +28,7 @@ export function StoryTab() {
     el?.focus({ preventScroll: true })
   }, [reduced])
   const count = briefing.keyDevelopments.length
+  const highlight = useRouteHighlight()
   // The globe point whose carousel is open; a key that no longer matches (new briefing) reads as closed.
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const focused = regions.find((r) => pointKey(r) === focusedKey) ?? null
@@ -71,7 +73,7 @@ export function StoryTab() {
         <h2 id="timeline-h" className="section-label label">
           Key developments · {count} event{count === 1 ? '' : 's'}
         </h2>
-        <Timeline briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced} />
+        <Timeline briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced} highlight={highlight} />
       </section>
       <div className="wrap">
         <ReadingList readings={briefing.readingList} />
