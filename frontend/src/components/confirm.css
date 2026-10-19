@@ -1,4 +1,6 @@
 .confirm {
+  /* base.css zeroes every margin, which would drop the browser's centring of a modal dialog. */
+  margin: auto;
   max-width: min(440px, calc(100vw - 2 * var(--space-5)));
   padding: var(--space-5);
   border: 0;

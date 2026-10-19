@@ -1,4 +1,10 @@
 .has-cursor, .has-cursor * { cursor: none !important; }
+/* A modal dialog sits in the top layer, above the custom cursor, which would vanish behind it:
+   hand back the native cursor while one is open. */
+html:has(dialog[open]).has-cursor,
+html:has(dialog[open]).has-cursor * { cursor: auto !important; }
+html:has(dialog[open]).has-cursor dialog button { cursor: pointer !important; }
+html:has(dialog[open]) .cur { opacity: 0; }
 .cur { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; will-change: transform; transition: opacity 0.2s; }
 .cur.hidden { opacity: 0; }
 .cur-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--celadon); transition: opacity 0.2s, width 0.2s, height 0.2s, margin 0.2s; }
