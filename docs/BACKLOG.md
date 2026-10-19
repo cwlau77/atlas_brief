@@ -19,6 +19,9 @@ Shipped per `docs/superpowers/specs/2026-10-19-ui-spec-3-design.md`: article ima
 ### Home: trending topics instead of fixed sample chips
 Under the hero's ask box, replace the four fixed topic chips (`SUGGESTIONS` in `HomePage.tsx`) with a "Trending now" dropdown or strip of hot stories and areas, refreshed from live sources. Needs a design pass: where trending comes from (GDELT, Google News top stories or recent Atlas briefings), how often it refreshes, and a fallback when the backend is asleep. Owner request, 2026-10-19.
 
+### Archive: select, delete and star in bulk
+Add a select mode to the Archive (`routes/ArchivePage.tsx`): a "Select" toggle that puts a checkbox on each briefing, plus "Select all" per topic thread. A toolbar acting on the selection offers **Delete** and **Star / Unstar**. Today each briefing can only be starred or deleted one at a time through its bead actions. Keep spec 2's rules: real buttons and checkboxes with names, no `window.confirm` (use `ConfirmDialog`, saying how many will be deleted), one failure toast if the storage write fails, and starred briefings are never dropped silently. Owner request, 2026-10-19.
+
 ## 1. Ask Atlas about this briefing (chat)
 
 A chat panel on the briefing page that answers questions about the current briefing: "Why does the Suez revenue drop matter?", "Which sources disagree about the tanker damage?", "What should I read first?"
