@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Route, Routes } from 'react-router'
 import { CursorLens } from './components/CursorLens'
+import { Footer } from './components/Footer'
 import { NavBar } from './components/NavBar'
 import { ToastHost } from './components/Toast'
 import { warmBackend } from './lib/api'
@@ -36,12 +37,7 @@ function Shell() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      <footer className="footer">
-        <div className="wrap">
-          <span>Atlas · thirteen news sources and 26 newsroom feeds</span>
-          <span>Analysis is model-written. Check it against the cited sources.</span>
-        </div>
-      </footer>
+      <Footer />
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
       <CursorLens />
     </div>

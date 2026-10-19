@@ -18,20 +18,12 @@
 .page-kicker { color: var(--celadon-deep); }
 .page-title { font-size: clamp(2.2rem, 4.6vw, 3.6rem); letter-spacing: -0.035em; line-height: 1.02; }
 .page-lede { color: var(--ink-2); max-width: 60ch; }
+.page-head-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-5); }
+.page-head-row .page-title { font-size: clamp(2.25rem, 4vw, 3rem); }
+.page-meta { color: var(--ink-3); }
 .empty-state { justify-items: start; max-width: 680px; }
 .empty-state .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .section-label { color: var(--celadon-deep); margin-bottom: 20px; }
 
 .brand-object { display: block; width: 96px; height: 96px; object-fit: contain; margin-bottom: 8px; }
 
-.footer { border-top: 1px solid var(--rule); padding-block: 32px 48px; color: var(--ink-3); }
-.footer .wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 32px;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
