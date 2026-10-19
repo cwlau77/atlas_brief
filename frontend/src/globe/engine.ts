@@ -3,6 +3,7 @@
 // owns its lifecycle and reads hotspot screen positions via onFrame.
 import * as THREE from 'three'
 import { LAND_POINTS_B64 } from './landPoints'
+import type { GlobeArc } from './arcs'
 import { decodeLandPoints, toVec3 } from './regions'
 
 export interface GlobeHotspot { lat: number; lng: number; count: number }
@@ -86,6 +87,36 @@ const HOT_FRAG = /* glsl */ `
     gl_FragColor = vec4(0.2, 0.345, 0.78, a);
   }`
 
+// Route arcs: fade toward the limb like the land, dashes cut by distance along the arc.
+const ARC_VERT = /* glsl */ `
+  attribute float aDist;
+  varying float vFace, vDist;
+  void main() {
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vFace = smoothstep(-0.05, 0.35, dot(normalize(wp.xyz), normalize(cameraPosition - wp.xyz)));
+    vDist = aDist;
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }`
+
+const ARC_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uOpacity, uDashed;
+  varying float vFace, vDist;
+  void main() {
+    if (uDashed > 0.5 && fract(vDist * 22.0) > 0.55) discard;
+    float a = uOpacity * vFace;
+    if (a < 0.01) discard;
+    gl_FragColor = vec4(uColor, a);
+  }`
+
+const ARC_LIT = 0x3358C7
+const ARC_OPACITY = 0.9
+const ARC_DIM = 0.3
+// Raycast slack for hovering a 1px arc, in globe radii.
+const ARC_PICK = 0.02
+
+interface ArcLine { key: string; color: number; line: THREE.Line; mat: THREE.ShaderMaterial }
+
 interface Shared {
   uTime: THREE.IUniform<number>
   uIntro: THREE.IUniform<number>
@@ -115,6 +146,8 @@ const fmtCoord = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed
 
 export class GlobeEngine {
   onFrame: ((info: FrameInfo) => void) | null = null
+  /** Called when the pointer moves onto an arc (its route key) or off every arc (null). */
+  onArcHover: ((key: string | null) => void) | null = null
 
   private readonly opts: EngineOptions
   private readonly renderer: THREE.WebGLRenderer
@@ -134,6 +167,10 @@ export class GlobeEngine {
   private camZ = CAMERA_Z
   private camTarget = CAMERA_Z
   private zoomed = false
+  private arcs: ArcLine[] = []
+  private litArcs = new Set<string>()
+  private hoverArc: string | null = null
+  private pointerMoved = false
   private yaw = -0.6
   private pitch = BASE_PITCH
   private spinVel = 0
@@ -211,6 +248,54 @@ export class GlobeEngine {
 
   setPointer(ndc: { x: number; y: number } | null): void {
     this.pointer = ndc ? new THREE.Vector2(ndc.x, ndc.y) : null
+    this.pointerMoved = true
+  }
+
+  /** Replace the route arcs. They live on the globe, so they turn and zoom with it. */
+  setArcs(list: GlobeArc[]): void {
+    for (const a of this.arcs) {
+      this.globe.remove(a.line)
+      a.line.geometry.dispose()
+      a.mat.dispose()
+    }
+    this.arcs = list.map((arc) => {
+      const geo = new THREE.BufferGeometry()
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(arc.points.flatMap((p) => [p.x, p.y, p.z]), 3))
+      const dist = new Float32Array(arc.points.length)
+      for (let i = 1; i < arc.points.length; i++) {
+        const p = arc.points[i], q = arc.points[i - 1]
+        dist[i] = dist[i - 1] + Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z)
+      }
+      geo.setAttribute('aDist', new THREE.BufferAttribute(dist, 1))
+      const color = parseInt(arc.color.replace('#', ''), 16)
+      const mat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        uniforms: { uColor: { value: rawColor(color) }, uOpacity: { value: ARC_OPACITY }, uDashed: { value: arc.dashed ? 1 : 0 } },
+        vertexShader: ARC_VERT,
+        fragmentShader: ARC_FRAG,
+      })
+      const line = new THREE.Line(geo, mat)
+      line.userData.key = arc.key
+      this.globe.add(line)
+      return { key: arc.key, color, line, mat }
+    })
+    this.paintArcs()
+  }
+
+  /** Light these route keys in royal blue and fade the other arcs; an empty set restores them. */
+  setLitArcs(keys: Set<string>): void {
+    this.litArcs = keys
+    this.paintArcs()
+  }
+
+  private paintArcs(): void {
+    const any = this.arcs.some((a) => this.litArcs.has(a.key))
+    for (const a of this.arcs) {
+      const on = this.litArcs.has(a.key)
+      ;(a.mat.uniforms.uColor.value as THREE.Color).setHex(on ? ARC_LIT : a.color, THREE.LinearSRGBColorSpace)
+      a.mat.uniforms.uOpacity.value = on ? 1 : any ? ARC_DIM : ARC_OPACITY
+    }
   }
 
   setHotspots(list: GlobeHotspot[]): void {
@@ -308,8 +393,26 @@ export class GlobeEngine {
     this.disposed = true
     cancelAnimationFrame(this.raf)
     this.onFrame = null
+    this.onArcHover = null
+    this.setArcs([])
     for (const d of this.disposables) d.dispose()
     this.renderer.dispose()
+  }
+
+  /** Which arc, if any, is under the pointer; only front-facing parts count. */
+  private pickArc(): void {
+    let key: string | null = null
+    if (this.pointer) {
+      this.ray.params.Line = { threshold: ARC_PICK }
+      const camDir = this.camera.position.clone().normalize()
+      const hit = this.ray.intersectObjects(this.arcs.map((a) => a.line), false)
+        .find((h) => h.point.clone().normalize().dot(camDir) > 0.1)
+      key = (hit?.object.userData.key as string | undefined) ?? null
+    }
+    if (key !== this.hoverArc) {
+      this.hoverArc = key
+      this.onArcHover?.(key)
+    }
   }
 
   private cloud(positions: Float32Array, color: number, size: number, alpha: number): THREE.Points {
@@ -392,6 +495,8 @@ export class GlobeEngine {
         readout = `${fmtCoord(Math.asin(local.y) / DEG, 'N', 'S')}  ${fmtCoord(Math.atan2(local.x, local.z) / DEG, 'E', 'W')}`
       }
     }
+    if (this.pointerMoved && this.arcs.length) this.pickArc()
+    this.pointerMoved = false
     u.uHover.value += ((this.overSphere ? 1 : 0) - u.uHover.value) * Math.min(1, dt * 4)
     u.uMouse.value.copy(this.mouseLocal)
 

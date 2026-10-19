@@ -6,7 +6,10 @@ import { Timeline } from '../components/briefing/Timeline'
 import { TopStories } from '../components/briefing/TopStories'
 import '../components/briefing/story.css'
 import { Globe } from '../globe/Globe'
+import { buildArcs } from '../globe/arcs'
 import { buildRegionPoints, pointKey, type RegionPoint } from '../globe/regions'
+import { buildRoutes } from '../lib/routes'
+import { sortDevelopments } from '../lib/timeline'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { usePrintOnLoad } from '../lib/usePrintOnLoad'
 import { useAppState } from '../state/hooks'
@@ -29,6 +32,10 @@ export function StoryTab() {
   }, [reduced])
   const count = briefing.keyDevelopments.length
   const highlight = useRouteHighlight()
+  const arcs = useMemo(
+    () => buildArcs(briefing, buildRoutes(briefing, sortDevelopments(briefing.keyDevelopments)).routes),
+    [briefing],
+  )
   // The globe point whose carousel is open; a key that no longer matches (new briefing) reads as closed.
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const focused = regions.find((r) => pointKey(r) === focusedKey) ?? null
@@ -53,6 +60,9 @@ export function StoryTab() {
             onSelectStory={scrollToStory}
             onFocusPoint={onFocusPoint}
             zoomedTo={focused ? focusedKey : null}
+            arcs={arcs}
+            litArcs={highlight.lit}
+            onArcHover={highlight.setHovered}
             label={`Globe marking ${regions.length} place${regions.length === 1 ? '' : 's'} from this briefing. Select a point to zoom in and browse its stories.`}
           />
           {focused && (

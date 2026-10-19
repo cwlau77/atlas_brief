@@ -3,6 +3,7 @@ import { setGlobeReadout } from '../components/cursorBus'
 import { formatTime } from '../lib/time'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { attachDrag } from './controls'
+import type { GlobeArc } from './arcs'
 import { GlobeEngine, type GlobeHotspot } from './engine'
 import { pointKey, topRegion, type RegionPoint } from './regions'
 import { StaticGlobe } from './StaticGlobe'
@@ -31,14 +32,21 @@ export interface GlobeViewProps {
   onFocusPoint?: (point: RegionPoint | null) => void
   /** Briefing mode: the pointKey of the point the camera is zoomed to; null zooms back out. */
   zoomedTo?: string | null
+  /** Briefing mode: route arcs, the route keys lit elsewhere on the page, and arc hover reports. */
+  arcs?: GlobeArc[]
+  litArcs?: Set<string>
+  onArcHover?: (key: string | null) => void
 }
+
+const NO_ARCS: GlobeArc[] = []
+const NOTHING_LIT = new Set<string>()
 
 // A press that moves further than this is a drag, not a click on the ocean.
 const CLICK_SLOP_PX = 5
 
 export default function GlobeView({
   mode, label, regions = NO_REGIONS, timeZone = 'auto', playIntro = false, scanning = false, onSelectStory,
-  onFocusPoint, zoomedTo = null,
+  onFocusPoint, zoomedTo = null, arcs = NO_ARCS, litArcs = NOTHING_LIT, onArcHover,
 }: GlobeViewProps) {
   const reduced = usePrefersReducedMotion()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -165,6 +173,16 @@ export default function GlobeView({
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [zoomable, zoomedTo, onFocusPoint])
+
+  const shownArcs = mode === 'briefing' ? arcs : NO_ARCS
+  useEffect(() => { engineRef.current?.setArcs(shownArcs) }, [shownArcs, engineVersion])
+  useEffect(() => { engineRef.current?.setLitArcs(litArcs) }, [litArcs, engineVersion])
+  const arcHoverRef = useRef(onArcHover)
+  useEffect(() => {
+    arcHoverRef.current = onArcHover
+    const engine = engineRef.current
+    if (engine) engine.onArcHover = (key) => arcHoverRef.current?.(key)
+  }, [onArcHover, engineVersion])
 
   useEffect(() => { engineRef.current?.setScanning(scanning) }, [scanning, engineVersion])
   // Hold auto-spin while a hotspot is pinned open or a hotspot/the panel has keyboard focus.
