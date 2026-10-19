@@ -1,5 +1,5 @@
 // Shared test data: a small Red Sea briefing that exercises regions, links,
-// untimed sources and an unmatched tension.
+// untimed sources, an unmatched tension, a lead image and a named city (Aden).
 import { normalizeBriefing, type SavedBriefing } from '../lib/normalize'
 import type { ApiBriefing } from '../lib/types'
 
@@ -12,10 +12,11 @@ export const API_FIXTURE: ApiBriefing = {
       summary: 'A tanker reported a fire after a drone hit its port side.',
       regions: ['Yemen', 'Red Sea'],
       sources: [
-        { outlet: 'Reuters', url: 'https://r.eu/1', published_at: '2026-10-16T02:10:00Z' },
+        { outlet: 'Reuters', url: 'https://r.eu/1', published_at: '2026-10-16T02:10:00Z', image_url: 'https://img.r.eu/1.jpg' },
         { outlet: "Lloyd's List", url: 'https://ll.com/2', published_at: '2026-10-16T02:40:00Z' },
       ],
       historical_context: 'First confirmed hit since June.',
+      place: { name: 'Aden', country: 'Yemen', lat: 12.78, lng: 45.04 },
     },
     {
       headline: 'Carriers extend Cape of Good Hope routing',

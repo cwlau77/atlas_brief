@@ -6,6 +6,14 @@ export interface SourceCitation {
   outlet: string
   url: string
   published_at: string | null
+  image_url?: string | null
+}
+
+export interface ApiPlace {
+  name: string
+  country: string
+  lat: number
+  lng: number
 }
 
 export interface KeyDevelopment {
@@ -14,6 +22,7 @@ export interface KeyDevelopment {
   regions: string[]
   sources: SourceCitation[]
   historical_context: string | null
+  place?: ApiPlace | null
 }
 
 export interface Tension {

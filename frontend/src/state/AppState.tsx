@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { ToastItem } from '../components/Toast'
-import type { SavedBriefing } from '../lib/normalize'
+import { withDefaults, type SavedBriefing } from '../lib/normalize'
 import { fileInto } from '../lib/archive'
 import { KEYS, loadJSON, removeKeys, saveJSON } from '../lib/storage'
 import { AppStateContext, type AppStateValue } from './context'
@@ -14,7 +14,7 @@ function loadSession(): SavedBriefing | null {
   try {
     const raw = window.sessionStorage.getItem(SESSION_KEY)
     const value: unknown = raw ? JSON.parse(raw) : null
-    return isSavedBriefing(value) ? value : null
+    return isSavedBriefing(value) ? withDefaults(value) : null
   } catch {
     return null
   }
@@ -30,7 +30,7 @@ function storeSession(briefing: SavedBriefing): void {
 
 function loadSaved(): SavedBriefing[] {
   const value = loadJSON<unknown>(KEYS.saved, [])
-  return Array.isArray(value) ? value.filter(isSavedBriefing) : []
+  return Array.isArray(value) ? value.filter(isSavedBriefing).map(withDefaults) : []
 }
 
 function loadStarred(): string[] {

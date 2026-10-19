@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { flattenSourceCitations, normalizeBriefing } from './normalize'
+import { isSavedBriefing } from '../state/resolveBriefing'
+import { flattenSourceCitations, normalizeBriefing, withDefaults, type SavedBriefing } from './normalize'
 import type { ApiBriefing } from './types'
 
 const FIXTURE: ApiBriefing = {
@@ -92,5 +93,47 @@ describe('normalizeBriefing', () => {
   it('keeps the area and generation timestamp', () => {
     expect(vm.area).toBe('south asian security')
     expect(vm.generatedAt).toBe('2026-07-06T10:00:00Z')
+  })
+})
+
+describe('lead images and places', () => {
+  const withMedia: ApiBriefing = {
+    ...FIXTURE,
+    key_developments: [
+      {
+        ...FIXTURE.key_developments[0],
+        sources: [
+          { outlet: 'BBC World', url: 'https://b.bc/1', published_at: null },
+          { outlet: 'The Hindu', url: 'https://th.in/2', published_at: null, image_url: 'https://img.th/2.jpg' },
+          { outlet: 'Dawn', url: 'https://da.wn/9', published_at: null, image_url: 'https://img.da/9.jpg' },
+        ],
+        place: { name: 'Islamabad', country: 'Pakistan', lat: 33.72, lng: 73.04 },
+      },
+      FIXTURE.key_developments[1],
+    ],
+  }
+
+  it('takes the first source image in citation order as the lead image', () => {
+    const b = normalizeBriefing(withMedia, 'daily')
+    expect(b.keyDevelopments[0].leadImage).toBe('https://img.th/2.jpg')
+    expect(b.keyDevelopments[1].leadImage).toBeNull()
+  })
+
+  it('passes the place through, or null', () => {
+    const b = normalizeBriefing(withMedia, 'daily')
+    expect(b.keyDevelopments[0].place).toEqual({ name: 'Islamabad', country: 'Pakistan', lat: 33.72, lng: 73.04 })
+    expect(b.keyDevelopments[1].place).toBeNull()
+  })
+
+  it('fills missing leadImage and place on an old saved briefing', () => {
+    const current = normalizeBriefing(FIXTURE, 'daily')
+    const old = JSON.parse(JSON.stringify({
+      ...current,
+      keyDevelopments: current.keyDevelopments.map(({ leadImage: _l, place: _p, ...rest }) => rest),
+    })) as unknown
+    expect(isSavedBriefing(old)).toBe(true)
+    const loaded = withDefaults(old as SavedBriefing)
+    expect(loaded.keyDevelopments.map((d) => [d.leadImage, d.place])).toEqual([[null, null], [null, null]])
+    expect(loaded.keyDevelopments[0].title).toBe('Border talks resume')
   })
 })

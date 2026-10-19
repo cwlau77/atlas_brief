@@ -4,7 +4,7 @@ import type { ViewDevelopment } from './normalize'
 import { linkBriefing, linksByDevelopment, mentionsRegion, sortDevelopments } from './timeline'
 
 const dev = (timestamp: string, title = timestamp): ViewDevelopment => ({
-  title, content: '', historicalContext: '', priority: 'low', regions: [], sources: [], timestamp,
+  title, content: '', historicalContext: '', priority: 'low', regions: [], sources: [], timestamp, leadImage: null, place: null,
 })
 
 describe('sortDevelopments', () => {

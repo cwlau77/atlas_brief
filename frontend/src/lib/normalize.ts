@@ -1,7 +1,7 @@
 // API briefing -> SavedBriefing, the persisted view-model. Its shape must stay
 // readable by entries already sitting in users' localStorage.
 
-import type { ApiBriefing, Contradiction, SourceCitation } from './types'
+import type { ApiBriefing, ApiPlace, Contradiction, SourceCitation } from './types'
 
 export type AlertTone = 'urgent' | 'warning' | 'info'
 
@@ -21,6 +21,8 @@ export interface ViewDevelopment {
   regions: string[]
   sources: SourceCitation[]
   timestamp: string
+  leadImage: string | null
+  place: ApiPlace | null
 }
 
 export interface ViewTension {
@@ -123,6 +125,8 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
       regions: item.regions || [],
       sources: item.sources || [],
       timestamp: item.sources?.[0]?.published_at || apiBriefing.generated_at,
+      leadImage: (item.sources || []).find((s) => s.image_url)?.image_url || null,
+      place: item.place || null,
     })),
     emergingTensions: (apiBriefing.emerging_tensions || []).map((item, index) => ({
       actors: (item.actors || []).join(' ↔ ') || 'Multiple actors',
@@ -136,6 +140,18 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
       publication: item.outlet,
       why: item.why,
       link: item.url,
+    })),
+  }
+}
+
+/** Briefings saved before a field existed read back without it; fill the gaps on load. */
+export function withDefaults(b: SavedBriefing): SavedBriefing {
+  return {
+    ...b,
+    keyDevelopments: b.keyDevelopments.map((d) => ({
+      ...d,
+      leadImage: typeof d.leadImage === 'string' ? d.leadImage : null,
+      place: d.place ?? null,
     })),
   }
 }
