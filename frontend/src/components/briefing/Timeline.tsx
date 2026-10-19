@@ -1,15 +1,11 @@
-import { Fragment, useLayoutEffect, useMemo, useRef } from 'react'
+import { Fragment, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { SavedBriefing } from '../../lib/normalize'
 import { formatTime, UNKNOWN_TIME } from '../../lib/time'
-import { firstLinkedRow, linkBriefing, sortDevelopments } from '../../lib/timeline'
+import { linkBriefing, linksByDevelopment, sortDevelopments, type LinkRef } from '../../lib/timeline'
 import { DevelopmentCard } from './DevelopmentCard'
 import { ContradictionCard, TensionCard } from './LinkedCards'
 
-const SVG_NS = 'http://www.w3.org/2000/svg'
 const READING_LINE = 0.6 // fraction of viewport height
-
-interface LinkedItem { key: string; kind: 'tension' | 'contradiction'; i: number }
-interface Branch { from: string; to: string }
 
 export function Timeline({ briefing, timeZone, showContext, reduced }: {
   briefing: SavedBriefing
@@ -19,36 +15,28 @@ export function Timeline({ briefing, timeZone, showContext, reduced }: {
 }) {
   const order = useMemo(() => sortDevelopments(briefing.keyDevelopments), [briefing])
   const links = useMemo(() => linkBriefing(briefing), [briefing])
+  const byDev = useMemo(() => linksByDevelopment(links), [links])
+  // Items that match no development keep their own section; nothing is attached at random.
+  const unlinked = useMemo<LinkRef[]>(() => [
+    ...links.tensions.flatMap((devs, i) => (devs.length ? [] : [{ kind: 'tension' as const, i, key: `tension-${i}` }])),
+    ...links.contradictions.flatMap((devs, i) => (devs.length ? [] : [{ kind: 'contradiction' as const, i, key: `contradiction-${i}` }])),
+  ], [links])
 
-  // Each linked card sits in the row of its earliest related development.
-  const { byRow, unlinked, branches } = useMemo(() => {
-    const byRow = new Map<number, LinkedItem[]>()
-    const unlinked: LinkedItem[] = []
-    const branches: Branch[] = []
-    const place = (kind: LinkedItem['kind'], list: number[][]) => {
-      list.forEach((devs, i) => {
-        const item = { key: `${kind}-${i}`, kind, i }
-        const row = firstLinkedRow(devs, order)
-        if (row === null) {
-          unlinked.push(item)
-          return
-        }
-        byRow.set(row, [...(byRow.get(row) ?? []), item])
-        for (const d of devs) branches.push({ from: `dev-${d}`, to: `link-${item.key}` })
-      })
-    }
-    place('tension', links.tensions)
-    place('contradiction', links.contradictions)
-    return { byRow, unlinked, branches }
-  }, [links, order])
+  const [openKeys, setOpenKeys] = useState<Set<string>>(() => new Set())
+  const [, setHovered] = useState<string | null>(null)
+  const onToggleLink = useCallback((key: string) => setOpenKeys((prev) => {
+    const next = new Set(prev)
+    if (!next.delete(key)) next.add(key)
+    return next
+  }), [])
 
   const rootRef = useRef<HTMLDivElement>(null)
   const spineRef = useRef<HTMLDivElement>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
 
+  // The spine's scroll progress fill and node states: unchanged from the original timeline.
   useLayoutEffect(() => {
-    const root = rootRef.current, spine = spineRef.current, svg = svgRef.current
-    if (!root || !spine || !svg) return
+    const root = rootRef.current, spine = spineRef.current
+    if (!root || !spine) return
     let alive = true
     let raf = 0
     const geometry = { top: 0, bottom: 0 }
@@ -62,10 +50,6 @@ export function Timeline({ briefing, timeZone, showContext, reduced }: {
         const dot = n.firstElementChild?.getBoundingClientRect()
         if (dot) n.classList.toggle('on', dot.top + dot.height / 2 < line())
       })
-      svg.querySelectorAll<SVGPathElement>('.branch-lit').forEach((p) => {
-        const dev = document.getElementById(p.dataset.from ?? '')
-        if (dev && dev.getBoundingClientRect().top < line()) p.style.strokeDashoffset = '0'
-      })
     }
 
     const layout = () => {
@@ -78,33 +62,6 @@ export function Timeline({ briefing, timeZone, showContext, reduced }: {
         geometry.bottom = b.top + b.height / 2 - tr.top
         spine.style.top = `${geometry.top}px`
         spine.style.height = `${Math.max(0, geometry.bottom - geometry.top)}px`
-      }
-      svg.replaceChildren()
-      if (getComputedStyle(svg).display !== 'none') {
-        svg.setAttribute('viewBox', `0 0 ${tr.width} ${tr.height}`)
-        for (const br of branches) {
-          const from = document.getElementById(br.from), to = document.getElementById(br.to)
-          if (!from || !to) continue
-          const fa = from.getBoundingClientRect(), ta = to.getBoundingClientRect()
-          const x1 = fa.right - tr.left, y1 = fa.top + Math.min(44, fa.height / 2) - tr.top
-          const x2 = ta.left - tr.left, y2 = ta.top + Math.min(30, ta.height / 2) - tr.top
-          const mx = (x1 + x2) / 2
-          const d = `M${x1.toFixed(1)} ${y1.toFixed(1)} C${mx.toFixed(1)} ${y1.toFixed(1)}, ${mx.toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`
-          const track = document.createElementNS(SVG_NS, 'path')
-          track.setAttribute('d', d)
-          track.setAttribute('class', 'branch-track')
-          const lit = document.createElementNS(SVG_NS, 'path')
-          lit.setAttribute('d', d)
-          lit.setAttribute('class', 'branch-lit')
-          lit.dataset.from = br.from
-          svg.append(track, lit)
-          const len = lit.getTotalLength()
-          lit.style.strokeDasharray = `${len}`
-          // Already-passed branches appear drawn without replaying the animation.
-          const passed = reduced || fa.top < line()
-          if (passed) lit.style.transition = 'none'
-          lit.style.strokeDashoffset = passed ? '0' : `${len}`
-        }
       }
       update()
     }
@@ -126,12 +83,7 @@ export function Timeline({ briefing, timeZone, showContext, reduced }: {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', layout)
     }
-  }, [branches, reduced, showContext])
-
-  const renderLinked = (item: LinkedItem) =>
-    item.kind === 'tension'
-      ? <TensionCard key={item.key} id={`link-${item.key}`} tension={briefing.emergingTensions[item.i]} />
-      : <ContradictionCard key={item.key} id={`link-${item.key}`} contradiction={briefing.contradictions[item.i]} />
+  }, [reduced, showContext])
 
   if (!order.length) return <p className="story-note">This briefing has no key developments.</p>
 
@@ -139,7 +91,6 @@ export function Timeline({ briefing, timeZone, showContext, reduced }: {
     <div className="timeline-wrap">
       <div className="timeline" ref={rootRef}>
         <div className="spine" ref={spineRef} aria-hidden="true"><i /><b /></div>
-        <svg className="branches" ref={svgRef} aria-hidden="true" />
         {order.map((entry, row) => (
           <Fragment key={entry.index}>
             <div className="t-time label" style={{ gridRow: row + 1 }}>
@@ -148,19 +99,22 @@ export function Timeline({ briefing, timeZone, showContext, reduced }: {
                 : <time dateTime={entry.dev.timestamp}>{formatTime(entry.dev.timestamp, timeZone)}</time>}
             </div>
             <div className="t-node" style={{ gridRow: row + 1 }} aria-hidden="true"><span /></div>
-            <DevelopmentCard dev={entry.dev} index={entry.index} showContext={showContext} style={{ gridRow: row + 1 }} />
-            {byRow.has(row) && (
-              <div className="t-links" style={{ gridRow: row + 1 }}>
-                {byRow.get(row)!.map(renderLinked)}
-              </div>
-            )}
+            <DevelopmentCard
+              dev={entry.dev} index={entry.index} showContext={showContext} style={{ gridRow: row + 1 }}
+              links={byDev.get(entry.index) ?? []} briefing={briefing}
+              openKeys={openKeys} onToggleLink={onToggleLink} onHoverLink={setHovered}
+            />
           </Fragment>
         ))}
       </div>
       {unlinked.length > 0 && (
         <section className="also" aria-labelledby="also-h">
           <h2 id="also-h" className="section-label label">Also in this briefing</h2>
-          <div className="also-grid">{unlinked.map(renderLinked)}</div>
+          <div className="also-grid">
+            {unlinked.map((l) => (l.kind === 'tension'
+              ? <TensionCard key={l.key} id={`link-${l.key}`} tension={briefing.emergingTensions[l.i]} />
+              : <ContradictionCard key={l.key} id={`link-${l.key}`} contradiction={briefing.contradictions[l.i]} />))}
+          </div>
         </section>
       )}
     </div>

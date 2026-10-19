@@ -51,10 +51,20 @@ export function linkBriefing(
   }
 }
 
-export function firstLinkedRow(devIndexes: number[], order: TimelineEntry[]): number | null {
-  let best: number | null = null
-  order.forEach((entry, row) => {
-    if (devIndexes.includes(entry.index) && (best === null || row < best)) best = row
-  })
-  return best
+export interface LinkRef {
+  kind: 'tension' | 'contradiction'
+  i: number
+  key: string
+}
+
+/** Development index → the tensions, then contradictions, linked to it. */
+export function linksByDevelopment(links: BriefingLinks): Map<number, LinkRef[]> {
+  const map = new Map<number, LinkRef[]>()
+  const add = (kind: LinkRef['kind'], list: number[][]) =>
+    list.forEach((devs, i) => {
+      for (const d of devs) map.set(d, [...(map.get(d) ?? []), { kind, i, key: `${kind}-${i}` }])
+    })
+  add('tension', links.tensions)
+  add('contradiction', links.contradictions)
+  return map
 }

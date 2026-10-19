@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { makeBriefing } from '../test/fixtures'
 import type { ViewDevelopment } from './normalize'
-import { firstLinkedRow, linkBriefing, mentionsRegion, sortDevelopments } from './timeline'
+import { linkBriefing, linksByDevelopment, mentionsRegion, sortDevelopments } from './timeline'
 
 const dev = (timestamp: string, title = timestamp): ViewDevelopment => ({
   title, content: '', historicalContext: '', priority: 'low', regions: [], sources: [], timestamp,
@@ -57,11 +57,11 @@ describe('linkBriefing', () => {
   })
 })
 
-describe('firstLinkedRow', () => {
-  it('returns the earliest row among linked developments', () => {
-    const order = sortDevelopments([dev('2026-10-16T09:00:00Z'), dev('2026-10-16T03:00:00Z')])
-    expect(firstLinkedRow([0, 1], order)).toBe(0) // index 1 sits in row 0
-    expect(firstLinkedRow([0], order)).toBe(1)
-    expect(firstLinkedRow([], order)).toBeNull()
+describe('linksByDevelopment', () => {
+  it('maps each development to its tensions, then contradictions', () => {
+    expect(linksByDevelopment(linkBriefing(makeBriefing()))).toEqual(new Map([
+      [0, [{ kind: 'tension', i: 0, key: 'tension-0' }, { kind: 'contradiction', i: 0, key: 'contradiction-0' }]],
+      [2, [{ kind: 'tension', i: 1, key: 'tension-1' }]],
+    ]))
   })
 })
