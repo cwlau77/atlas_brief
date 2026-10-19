@@ -14,3 +14,6 @@ build_data_dictionary.py
 node_modules/
 frontend/dist/
 .pytest_cache/
+
+# Higgsfield raw outputs (only the log is tracked)
+brandkit/*.png
