@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { AlertCallout } from '../components/briefing/AlertCallout'
 import { ReadingList } from '../components/briefing/ReadingList'
 import { Timeline } from '../components/briefing/Timeline'
+import { TopStories } from '../components/briefing/TopStories'
 import '../components/briefing/story.css'
 import { Globe } from '../globe/Globe'
 import { buildRegionPoints } from '../globe/regions'
@@ -42,6 +43,7 @@ export function StoryTab() {
           />
         </div>
       </div>
+      <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} />
       <section className="wrap" aria-labelledby="timeline-h">
         <h2 id="timeline-h" className="section-label label">
           Key developments · {count} event{count === 1 ? '' : 's'}

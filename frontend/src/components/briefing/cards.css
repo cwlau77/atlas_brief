@@ -1,0 +1,81 @@
+/* Story cards (Top stories strip and the globe carousel) and the region-map fallback. */
+.story-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--rule-soft);
+  overflow: hidden;
+  transition: box-shadow var(--dur-quick) var(--ease-out);
+}
+.story-card:hover, .story-card:focus-within { box-shadow: inset 0 0 0 1px var(--celadon), var(--shadow-lift); }
+.story-card-media { position: relative; aspect-ratio: 16 / 9; background: var(--oat-deep); overflow: hidden; }
+.story-card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.story-card-credit {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: rgba(248, 244, 235, 0.88);
+  color: var(--ink-2);
+  font-size: 0.68rem;
+}
+.story-card-body { display: grid; align-content: start; gap: var(--space-2); padding: var(--space-4); }
+.story-card-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); color: var(--ink-3); }
+.story-card-title { font-size: 1.02rem; line-height: 1.3; }
+.story-card-open {
+  all: unset;
+  cursor: pointer;
+  color: var(--ink);
+}
+/* The headline button covers the whole card, so a click anywhere opens it. */
+.story-card-open::after { content: ''; position: absolute; inset: 0; border-radius: var(--radius); }
+.story-card-open:focus-visible::after { outline: 2px solid var(--signal); outline-offset: -2px; }
+.story-card-foot { color: var(--ink-3); }
+.story-card-cta { color: var(--celadon-deep); font-size: 0.86rem; }
+
+.region-map { position: absolute; inset: 0; background: var(--paper); }
+.region-map svg { display: block; width: 100%; height: 100%; }
+.region-map circle { fill: var(--celadon); opacity: 0.55; }
+.region-map .region-map-pin { fill: none; stroke: var(--celadon-deep); stroke-width: 0.35; opacity: 1; }
+.region-map-label {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-2);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--celadon-deep);
+}
+
+.top-stories { display: grid; gap: var(--space-4); }
+.story-strip {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 980px) {
+  .story-strip {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(240px, 72%);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: var(--space-2);
+  }
+  .story-strip > li { scroll-snap-align: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-card { transition: none; }
+}
+
+@media print {
+  .story-card-media { display: none; }
+  .story-card { box-shadow: none; border: 1px solid var(--rule); break-inside: avoid; }
+}
