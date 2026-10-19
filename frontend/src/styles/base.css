@@ -51,7 +51,7 @@ a {
   text-underline-offset: 3px;
   text-decoration-color: var(--sand);
 }
-a:hover { text-decoration-color: var(--moss); }
+a:hover { text-decoration-color: var(--celadon-deep); }
 
 button { font: inherit; color: inherit; cursor: pointer; }
 input, select, textarea { font: inherit; color: inherit; }
@@ -62,7 +62,7 @@ input, select, textarea { font: inherit; color: inherit; }
   border-radius: 4px;
 }
 
-::selection { background: rgba(61, 90, 69, 0.2); color: var(--ink); }
+::selection { background: rgba(94, 138, 121, 0.2); color: var(--ink); }
 
 .wrap {
   width: 100%;
@@ -111,11 +111,11 @@ input, select, textarea { font: inherit; color: inherit; }
     border-color var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--moss); color: #F3EEE3; }
-.btn-primary:hover { background: var(--moss-deep); }
+.btn-primary { background: var(--celadon-deep); color: #F3EEE3; }
+.btn-primary:hover { background: var(--celadon-press); }
 .btn-primary:disabled { background: var(--oat-deep); color: var(--ink-3); cursor: not-allowed; }
 .btn-quiet { background: transparent; color: var(--ink-2); border-color: var(--rule); }
-.btn-quiet:hover { border-color: var(--moss); color: var(--ink); }
+.btn-quiet:hover { border-color: var(--celadon); color: var(--ink); }
 .btn-quiet:disabled { opacity: 0.5; cursor: not-allowed; }
 
 @media (prefers-reduced-motion: reduce) {

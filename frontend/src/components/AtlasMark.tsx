@@ -1,10 +1,10 @@
-// The Atlas mark: a map folded in three, shaded in moss greens, with a
+// The Atlas mark: a map folded in three, shaded in celadon greens, with a
 // royal blue fix at the peak. Geometry and colours are fixed by the brand spec.
 type Palette = { left: string; centre: string; right: string; fix: string }
 
 export const ATLAS_MARK_PALETTES: { default: Palette; reversed: Palette } = {
-  default: { left: '#6F8A6F', centre: '#3D5A45', right: '#2A3F31', fix: '#3358C7' },
-  reversed: { left: '#F3EEE3', centre: '#C9D2C0', right: '#9AAA92', fix: '#8FA9F2' },
+  default: { left: '#B4CCBE', centre: '#5E8A79', right: '#3A5F52', fix: '#3358C7' },
+  reversed: { left: '#F3EEE3', centre: '#D3E2D9', right: '#A9C6B8', fix: '#8FA9F2' },
 }
 
 export function AtlasMark({ reversed = false, title, className }: {

@@ -18,11 +18,11 @@ describe('AtlasMark', () => {
 
   const fill = (part: string) => container.querySelector(`[data-part="${part}"]`)?.getAttribute('fill')
 
-  it('draws three green folds and a royal blue fix', () => {
+  it('draws three celadon folds and a royal blue fix', () => {
     act(() => root.render(<AtlasMark />))
-    expect(fill('left')).toBe('#6F8A6F')
-    expect(fill('centre')).toBe('#3D5A45')
-    expect(fill('right')).toBe('#2A3F31')
+    expect(fill('left')).toBe('#B4CCBE')
+    expect(fill('centre')).toBe('#5E8A79')
+    expect(fill('right')).toBe('#3A5F52')
     expect(fill('fix')).toBe('#3358C7')
     expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
   })

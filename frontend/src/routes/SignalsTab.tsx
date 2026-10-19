@@ -2,7 +2,7 @@ import { SOURCE_LABELS, shares, summarizeSignals, topEntries } from '../lib/sign
 import { useBriefing } from './briefingContext'
 import './signals.css'
 
-const SEGMENT_COLORS = ['var(--moss)', 'var(--sage)', 'var(--sand)', 'var(--ochre)', 'var(--ink-3)']
+const SEGMENT_COLORS = ['var(--celadon)', 'var(--celadon-light)', 'var(--sand)', 'var(--ochre)', 'var(--ink-3)']
 
 function RankRows({ rows, emptyText }: { rows: [string, number][]; emptyText: string }) {
   if (!rows.length) return <p className="viz-empty">{emptyText}</p>

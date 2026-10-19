@@ -173,8 +173,8 @@ export class GlobeEngine {
     this.globe.add(occluder)
     this.disposables.push(occluderGeo, occluderMat)
 
-    this.globe.add(this.cloud(randomSphere(OCEAN_POINTS), 0x9AAA92, 1.5, 0.5))
-    this.globe.add(this.cloud(decodeLandPoints(LAND_POINTS_B64), 0x3D5A45, 2.5, 0.92))
+    this.globe.add(this.cloud(randomSphere(OCEAN_POINTS), 0xB4CCBE, 1.5, 0.5))
+    this.globe.add(this.cloud(decodeLandPoints(LAND_POINTS_B64), 0x5E8A79, 2.5, 0.92))
 
     this.hotMat = new THREE.ShaderMaterial({
       transparent: true,

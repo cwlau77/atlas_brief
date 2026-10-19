@@ -1,4 +1,4 @@
-/* Atlas design tokens: "Oat". Light only. */
+/* Atlas design tokens: "Oat" with celadon. Light only. */
 :root {
   color-scheme: light;
 
@@ -10,11 +10,13 @@
   --ink-3: #646A60;
   --rule: #D6CDBA;
   --rule-soft: #E2DACA;
-  --moss: #3D5A45;
-  --moss-light: #6F8A6F;
-  --moss-deep: #2A3F31;
-  --moss-wash: rgba(61, 90, 69, 0.10);
-  --sage: #9AAA92;
+  /* Celadon: brand primary. --celadon is for graphics only (3.55:1 on paper);
+     text, links and button fills use --celadon-deep (6.5:1). */
+  --celadon-light: #B4CCBE;
+  --celadon: #5E8A79;
+  --celadon-deep: #3A5F52;
+  --celadon-press: #2F4E43;
+  --celadon-wash: rgba(94, 138, 121, 0.10);
   --sand: #C7B89C;
   /* Royal blue: signal colour only (hotspots, high alerts, focus, active tab, errors, the logo fix). */
   --signal: #3358C7;
@@ -34,6 +36,16 @@
   --dur-quick: 150ms;
   --dur-mid: 300ms;
   --dur-enter: 900ms;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
 
   --gutter: clamp(16px, 4vw, 56px);
   --maxw: 1240px;

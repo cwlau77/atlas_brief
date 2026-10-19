@@ -20,7 +20,7 @@
   animation: toast-in 0.3s var(--ease-out) both;
 }
 .toast span { flex: 1; }
-.toast-success { box-shadow: inset 3px 0 0 var(--sage), 0 20px 40px -24px rgba(28, 35, 31, 0.6); }
+.toast-success { box-shadow: inset 3px 0 0 var(--celadon-light), 0 20px 40px -24px rgba(28, 35, 31, 0.6); }
 .toast-error { box-shadow: inset 3px 0 0 var(--signal), 0 20px 40px -24px rgba(28, 35, 31, 0.6); }
 .toast-close { border: 0; background: transparent; color: var(--paper); opacity: 0.7; font-size: 1.2rem; line-height: 1; padding: 2px 6px; border-radius: 6px; }
 .toast-close:hover { opacity: 1; }

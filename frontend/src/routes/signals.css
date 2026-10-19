@@ -25,8 +25,8 @@
 .row { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) 3rem; gap: 14px; align-items: center; font-size: 0.94rem; }
 .row-name { overflow-wrap: anywhere; }
 .bar { height: 6px; border-radius: 3px; background: var(--rule-soft); overflow: hidden; }
-.bar i { display: block; height: 100%; border-radius: 3px; background: var(--moss); }
-.row:first-child .bar i { background: var(--moss); }
+.bar i { display: block; height: 100%; border-radius: 3px; background: var(--celadon); }
+.row:first-child .bar i { background: var(--celadon); }
 .row-n { text-align: right; color: var(--ink-2); font-size: 0.8rem; }
 
 .compact .signals { gap: 28px; }
