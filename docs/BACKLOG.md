@@ -16,7 +16,8 @@ A "New brief" button in the nav on every page (UI spec 2).
 ### ~~UI spec 3: globe zoom and story carousel, top stories, routes, arcs, named cities, article images~~ (done 2026-10-19)
 Shipped per `docs/superpowers/specs/2026-10-19-ui-spec-3-design.md`: article images from 8 sources, named cities resolved against a bundled GeoNames list, a Top stories photo strip, click-to-zoom with a centred carousel on briefing globes, and transit-style routes (key, colour-matched tabs, explain-on-hover) with matching globe arcs. This also covered the old "Globe: connecting arcs and named places" item.
 
-### Home: trending topics instead of fixed sample chips
+### ~~Home: trending topics instead of fixed sample chips~~ (done 2026-10-19)
+Shipped as `GET /trending` (`backend/trending.py`): Google News US top stories grouped by Haiku into up to 6 specific topics, cached an hour in process. Home shows them as "Trending now" chips and keeps the fixed chips when the backend is asleep, has no key, or fails. Original note:
 Under the hero's ask box, replace the four fixed topic chips (`SUGGESTIONS` in `HomePage.tsx`) with a "Trending now" dropdown or strip of hot stories and areas, refreshed from live sources. Needs a design pass: where trending comes from (GDELT, Google News top stories or recent Atlas briefings), how often it refreshes, and a fallback when the backend is asleep. Owner request, 2026-10-19.
 
 ### ~~Archive: select, delete and star in bulk~~ (done 2026-10-19)

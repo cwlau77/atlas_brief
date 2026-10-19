@@ -27,7 +27,13 @@
 .home-lede { max-width: 34em; font-size: 1.12rem; color: var(--ink-2); text-wrap: pretty; }
 .home-lede em { color: var(--ink); font-style: normal; }
 .home-ask { display: grid; gap: 12px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chips-label { color: var(--celadon-deep); margin-right: var(--space-1); }
+.chips-live .chip { animation: chip-in var(--dur-mid) var(--ease-out) both; }
+@keyframes chip-in { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .chips-live .chip { animation: none; }
+}
 .chip {
   font-size: 0.86rem;
   color: var(--ink-2);

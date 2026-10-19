@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AskForm } from '../components/AskForm'
 import { Contours, type ContourCenter } from '../components/Contours'
 import { RotatingHeadline } from '../components/RotatingHeadline'
+import { TopicChips } from '../components/TopicChips'
 import { Globe } from '../globe/Globe'
 import { markIntroPlayed, shouldPlayIntro } from '../lib/intro'
 import { useClock } from '../lib/useClock'
@@ -59,13 +60,7 @@ export function HomePage() {
           </p>
           <div className="home-ask">
             <AskForm id="home-ask" loading={loading} error={error} onGenerate={generate} onRetry={retry} placeholder={placeholder} />
-            <div className="chips" aria-label="Suggested topics">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} type="button" className="chip" onClick={() => void generate(s, 'daily')} disabled={loading} data-cursor="link">
-                  {s}
-                </button>
-              ))}
-            </div>
+            <TopicChips fallback={SUGGESTIONS} onPick={(t) => void generate(t, 'daily')} disabled={loading} />
           </div>
           <p className="provenance label">
             <span>Google News</span><span>NewsAPI</span><span>GDELT 2.0</span><span>26 newsroom feeds</span><span>Model-written, source-cited</span>

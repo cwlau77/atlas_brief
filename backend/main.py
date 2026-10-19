@@ -12,6 +12,7 @@ from backend.processing.rerank import rank_articles
 from backend.processing.urls import dedupe_exact
 from backend.rate_limit import SlidingWindowLimiter
 from backend.search_plan import plan_search
+from backend.trending import Trending, get_trending
 from backend.synthesis import (
     SynthesisFailedError,
     SynthesisUnavailableError,
@@ -50,6 +51,12 @@ app.add_middleware(
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/trending", response_model=Trending)
+async def trending_endpoint() -> Trending:
+    """Topics for Home's "Trending now" chips; empty when they can't be produced (Home keeps its fixed chips)."""
+    return await get_trending()
 
 
 @app.get("/", include_in_schema=False)

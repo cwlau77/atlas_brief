@@ -60,6 +60,8 @@ curl -s -X POST http://localhost:8000/briefing \
 
 Health check: `GET /health`.
 
+Trending topics for Home: `GET /trending` → `{topics, generated_at}`. Google News top stories grouped by Haiku into up to 6 short topics, cached for `TRENDING_TTL_MINUTES` (default 60). Without an Anthropic key, or on any failure, `topics` is empty and Home keeps its fixed chips.
+
 ## Tuning
 
 All knobs live in `.env` / `config.py`:
