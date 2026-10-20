@@ -34,7 +34,6 @@ export function StoryTab() {
     el?.focus({ preventScroll: true })
   }, [reduced])
   const count = briefing.keyDevelopments.length
-  const noAlerts = briefing.alerts.length === 0
   const highlight = useIndexHighlight()
   const order = useMemo(() => sortNewestFirst(briefing.keyDevelopments), [briefing])
   const indexItems = useMemo(() => buildTensionIndex(briefing, order), [briefing, order])
@@ -99,52 +98,53 @@ export function StoryTab() {
 
   return (
     <div className="story">
-      <div className="story-lead wrap">
-        <div className="story-lead-copy">
-          <AlertCallout alerts={briefing.alerts} />
-          {/* No alerts: the top stories fill the column beside the globe instead of leaving it empty. */}
-          {noAlerts && <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} layout="stack" />}
-        </div>
-        <div className="story-globe">
-          <Globe
-            mode="briefing"
-            regions={regions}
-            timeZone={settings.timeZone}
-            onSelectStory={scrollToStory}
-            onFocusPoint={onFocusPoint}
-            zoomedTo={focused ? focusedKey : null}
-            arcs={arcs}
-            litArcs={litArcs}
-            onArcHover={onArcHover}
-            follow={carouselOpen ? null : follow}
-            label={`Globe marking ${regions.length} place${regions.length === 1 ? '' : 's'} from this briefing. Select a point to zoom in and browse its stories.`}
-          />
-          {shown && (
-            <StoryCarousel
-              key={shownKey}
-              title={shown.name}
-              devIndexes={shownDevs}
-              briefing={briefing}
-              timeZone={settings.timeZone}
-              onOpen={scrollToStory}
-              onClose={closeCarousel}
-              closing={shownKey !== focusedKey}
-              onExited={onCarouselExited}
-            />
-          )}
-        </div>
-      </div>
-      {!noAlerts && <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} />}
-      <section className="wrap" aria-labelledby="timeline-h">
+      <AlertCallout alerts={briefing.alerts} />
+      <section id="key-developments" className="kd wrap" aria-labelledby="timeline-h">
         <h2 id="timeline-h" className="section-label label label-mark">
           Key developments · {count} event{count === 1 ? '' : 's'}
         </h2>
-        <TensionIndex id="tension-index" items={indexItems} devCount={count} order={indexOrder} highlight={highlight} />
-        <Timeline
-          briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced}
-          items={indexItems} highlight={highlight} onCardHover={setHoveredDev} onCardFocus={setFocusedDev} onTagTap={setTappedDev}
-        />
+        <div className="kd-cols">
+          <div className="kd-main">
+            <TensionIndex id="tension-index" items={indexItems} devCount={count} order={indexOrder} highlight={highlight} />
+            <Timeline
+              briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced}
+              items={indexItems} highlight={highlight} onCardHover={setHoveredDev} onCardFocus={setFocusedDev} onTagTap={setTappedDev}
+            />
+          </div>
+          {/* Beside the timeline at 980px and up, sticky so hover-follow stays in view; above it on narrower screens. */}
+          <div className="kd-globe">
+            <div className="kd-globe-sticky story-globe">
+              <Globe
+                mode="briefing"
+                regions={regions}
+                timeZone={settings.timeZone}
+                onSelectStory={scrollToStory}
+                onFocusPoint={onFocusPoint}
+                zoomedTo={focused ? focusedKey : null}
+                arcs={arcs}
+                litArcs={litArcs}
+                onArcHover={onArcHover}
+                follow={carouselOpen ? null : follow}
+                label={`Globe marking ${regions.length} place${regions.length === 1 ? '' : 's'} from this briefing. Select a point to zoom in and browse its stories.`}
+              />
+              {shown && (
+                <StoryCarousel
+                  key={shownKey}
+                  title={shown.name}
+                  devIndexes={shownDevs}
+                  briefing={briefing}
+                  timeZone={settings.timeZone}
+                  onOpen={scrollToStory}
+                  onClose={closeCarousel}
+                  closing={shownKey !== focusedKey}
+                  onExited={onCarouselExited}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </section>
+      <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} />
       <div className="wrap">
         <ReadingList readings={briefing.readingList} />
       </div>

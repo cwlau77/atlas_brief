@@ -43,6 +43,8 @@ npx vitest run src/lib/storage.test.ts   # single file
 
 **Frontend:** the browser only calls `/api/*`; `frontend/vercel.json` rewrites it to the Render URL in prod and the Vite proxy does so in dev. Routes are in `src/routes/` (plain `react-router`, no data router). Shared state is `src/state/AppState.tsx` (functional updaters; persistence happens outside the updaters). The globe is custom three.js, not globe.gl: `globe/engine.ts` owns the renderer, `GlobeView.tsx` is the lazy wrapper, `StaticGlobe.tsx` is the no-WebGL fallback. `globe/landPoints.ts` is generated; re-run `npm run build:land` only after upgrading `world-atlas`. Design tokens live only in `src/styles/tokens.css`. All motion must respect `prefers-reduced-motion`.
 
+**Story tab** (`src/routes/StoryTab.tsx`): Read first alert cells (only when there are alerts), then `section#key-developments` with the tension index and newest-first timeline on the left and a sticky globe on the right that follows card hover (`globe/follow.ts`; above the timeline and not sticky below 980px), then Top stories and the reading list. Card images come from `lib/cardImage.ts`: the outlet's photo first, else a Wikimedia Commons "File photo" that `backend/synthesis/commons.py` attaches during synthesis (in-memory 24h cache, failures only logged).
+
 ## Deployment gotchas
 
 - Vercel's **Root Directory must be `frontend`**; otherwise the root `requirements.txt` makes Vercel treat the project as Python and the build fails.

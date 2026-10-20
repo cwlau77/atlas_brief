@@ -62,8 +62,6 @@
 .story-card-grain[data-image-fallback="4"] { --g1: var(--rule); --g2: var(--ink-3); --g3: var(--paper-deep); }
 
 .top-stories { display: grid; gap: var(--space-4); }
-.top-stories-stack { gap: var(--space-3); }
-.story-stack { list-style: none; display: grid; gap: var(--space-3); }
 .story-strip {
   list-style: none;
   display: grid;

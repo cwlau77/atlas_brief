@@ -1,7 +1,13 @@
 # Briefing page: timeline first, tension index, globe that follows, imagery. Design spec
 
 **Date:** 2026-10-20
-**Status:** Draft, awaiting owner approval.
+**Status:** Implemented on branch story/briefing-page.
+**Implementation deviations:**
+- Development cards that the highlighted row doesn't touch dim to opacity 0.55, not the ~30% in §5.1. At 30% the text of pinned-state cards was unreadable.
+- Previewing an index row (hover) also waits for the 250ms dwell before the globe moves, like card hover (§6), so sweeping across the index doesn't lurch the globe.
+- Only keyboard focus (`:focus-visible`) holds the globe on a card. A mouse click that leaves focus on a card does not pin the globe there.
+- On touch devices, a region-tag tap is a one-off request. It expires when a row is pinned or previewed, or when a carousel opens, so the latest intent wins.
+- The outside-click unpin listener uses `click`, not `pointerdown`, so a touch scroll that starts outside the index keeps the pin.
 **Roadmap:** project 2 of 4 from the 2026-10-20 design review (see `2026-10-20-newsprint-identity-design.md` §0). Project 1 (Newsprint & Ultramarine identity) has shipped to local `main`. All styling here uses its tokens and rules.
 **Exploration board:** visual companion `.superpowers/brainstorm/15508-1792520807/content/kd-directions.html`, direction A.
 
