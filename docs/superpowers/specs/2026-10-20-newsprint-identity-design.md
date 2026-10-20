@@ -65,14 +65,14 @@ All colour lives in `frontend/src/styles/tokens.css`. Token names change to desc
 | Raised surface / deep band | `--paper-deep` | `#EBEBE6` | `--oat-deep`, old `--paper` |
 | Primary text, primary buttons, wordmark | `--ink` | `#0E1116` | `--ink` `#1C231F`, `--celadon-deep` as text |
 | Secondary text | `--ink-2` | `#3F4752` | `--ink-2` |
-| Tertiary text, meta | `--ink-3` | `#717985` | `--ink-3` |
+| Tertiary text, meta | `--ink-3` | `#636A75` (see deviations) | `--ink-3` |
 | Grid rules | `--rule` | `#DADBD5` | `--rule` |
 | Strong rules, input borders | `--rule-strong` | `#B9BBB3` | `--sand`, `--rule-soft` (merge) |
 | Highlight | `--accent` | `#1F3FE0` | `--signal`, `--celadon` |
 | Highlight pressed | `--accent-press` | `#1832B8` | `--signal-ink`, `--celadon-press` |
 | Highlight wash | `--accent-wash` | `rgba(31, 63, 224, 0.08)` | `--signal-wash`, `--celadon-wash` |
 | Heat: high | `--hot` | `#E2381B` (text on paper: `--hot-ink` `#B8280F`) | high-alert role of `--signal` |
-| Heat: elevated | `--warm` | `#E58A00` (text on paper: `--warm-ink` `#8F5600`) | `--ochre` |
+| Heat: elevated | `--warm` | `#C27400` (see deviations; text on paper: `--warm-ink` `#8F5600`) | `--ochre` |
 
 **Where ultramarine goes:** button hover and focus fills (primary buttons are ink at rest and turn ultramarine on hover), links and their hover, the active tab, focus rings, selected states, the highlighted word in the hero headline, globe route arcs and the logo panels.
 
