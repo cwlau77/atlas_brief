@@ -74,3 +74,17 @@ def test_budget_defaults():
     defaults = Settings.model_fields
     assert defaults["briefing_budget_per_hour"].default == 20
     assert defaults["briefing_budget_per_day"].default == 100
+
+
+@respx.mock
+def test_refusals_log_why(client, caplog):
+    import logging
+    respx.post(SITEVERIFY_URL).mock(return_value=httpx.Response(
+        200, json={"success": False, "error-codes": ["invalid-input-secret"]}))
+    with caplog.at_level(logging.WARNING, logger="briefing.turnstile"):
+        post(client)          # no token
+        post(client, "bad")   # rejected by Cloudflare
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("status=missing_token" in m for m in messages)
+    assert any("status=rejected" in m and "invalid-input-secret" in m for m in messages)
+    assert all("secret" not in m.split("errors=")[0] for m in messages)  # never the secret itself

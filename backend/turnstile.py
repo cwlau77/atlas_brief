@@ -24,12 +24,19 @@ async def verify(token: str | None) -> bool:
     if not secret:
         return True
     if not token:
+        # Usually a page loaded before the site key went live, or a script calling the API directly.
+        logger.warning("turnstile status=missing_token")
         return False
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             resp = await client.post(SITEVERIFY_URL, data={"secret": secret, "response": token})
         resp.raise_for_status()
-        return bool(resp.json().get("success"))
+        result = resp.json()
     except (httpx.HTTPError, ValueError) as exc:
         logger.warning("turnstile status=unreachable detail=%s; allowing request", type(exc).__name__)
         return True
+    if result.get("success"):
+        return True
+    # Cloudflare's reason, e.g. invalid-input-secret (wrong key on the server) or timeout-or-duplicate.
+    logger.warning("turnstile status=rejected errors=%s", ",".join(result.get("error-codes") or []) or "none")
+    return False
