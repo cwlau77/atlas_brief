@@ -94,8 +94,55 @@ describe('createFollow', () => {
   it('previewed item wins over the pinned one', () => {
     const { targets, set } = setup()
     set({ pinnedItem: 'tension-0', previewItem: 'tension-1' })
+    vi.advanceTimersByTime(250)
     // A one-development item marks that development's point.
+    expect(targets.at(-1)).toEqual(one(1))
+  })
+
+  it('row preview sweep under 250ms never emits', () => {
+    const { targets, set } = setup()
+    set({ previewItem: 'tension-0' })
+    vi.advanceTimersByTime(120)
+    set({ previewItem: 'tension-1' })
+    vi.advanceTimersByTime(120)
+    set({ previewItem: null })
+    vi.advanceTimersByTime(2000)
+    expect(targets).toEqual([])
+  })
+
+  it('row preview held 250ms frames its developments', () => {
+    const { targets, set } = setup()
+    set({ previewItem: 'tension-0' })
+    vi.advanceTimersByTime(249)
+    expect(targets).toEqual([])
+    vi.advanceTimersByTime(1)
+    expect(targets).toEqual([{ points: [{ lat: 15, lng: 44 }, { lat: 51.9, lng: 4.4 }], markerKey: null }])
+  })
+
+  it('pinning from a hovered card frames the pinned row at once', () => {
+    // Clicking a card's connection tag pins a row while the pointer is still on the card.
+    const { targets, set } = setup()
+    set({ hoveredDev: 1 })
+    vi.advanceTimersByTime(300)
+    set({ pinnedItem: 'tension-0' })
+    expect(targets.at(-1)).toEqual({ points: [{ lat: 15, lng: 44 }, { lat: 51.9, lng: 4.4 }], markerKey: null })
+    // The same card does not pull the globe back; a new card does.
+    vi.advanceTimersByTime(1000)
+    expect(targets).toHaveLength(2)
+    set({ hoveredDev: 2 })
+    vi.advanceTimersByTime(250)
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('touch tap then pin frames the pinned row', () => {
+    const { targets, set } = setup()
+    set({ touch: true, tappedDev: 1 })
     expect(targets).toEqual([one(1)])
+    set({ pinnedItem: 'tension-0' })
+    expect(targets.at(-1)).toEqual({ points: [{ lat: 15, lng: 44 }, { lat: 51.9, lng: 4.4 }], markerKey: null })
+    // A fresh tap wins again.
+    set({ tappedDev: 2 })
+    expect(targets.at(-1)).toEqual(one(2))
   })
 
   it('carousel open suppresses targets', () => {

@@ -101,4 +101,29 @@ describe('DevelopmentCard', () => {
     act(() => button('Read background')!.blur())
     expect(onFocusChange).toHaveBeenLastCalledWith(false)
   })
+
+  it('mouse-click focus does not pin the globe; keyboard focus does', () => {
+    const onFocusChange = vi.fn()
+    render({ onFocusChange })
+    const toggle = button('Read background')!
+    // A click: pointerdown lands first, then focus.
+    act(() => {
+      toggle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+      toggle.focus()
+    })
+    expect(onFocusChange).not.toHaveBeenCalledWith(true)
+    act(() => toggle.blur())
+    // Tabbing in: focus with no pointer press.
+    act(() => toggle.focus())
+    expect(onFocusChange).toHaveBeenLastCalledWith(true)
+    act(() => toggle.blur())
+    // Focus moved onto the card itself (scrollToStory) counts even after a click elsewhere.
+    const card = article() as HTMLElement
+    card.setAttribute('tabindex', '-1')
+    act(() => {
+      toggle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+      card.focus()
+    })
+    expect(onFocusChange).toHaveBeenLastCalledWith(true)
+  })
 })

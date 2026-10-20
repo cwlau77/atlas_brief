@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { cardImage } from '../../lib/cardImage'
 import type { ViewDevelopment } from '../../lib/normalize'
 import { formatTime, UNKNOWN_TIME } from '../../lib/time'
@@ -6,6 +6,8 @@ import { ExpandIcon } from '../icons'
 import { CardImage } from './CardImage'
 import { PriorityMark } from './PriorityMark'
 import { SourceChips } from './SourceChips'
+
+const PRESS_FOCUS_MS = 300
 
 export type CardHighlight = 'lit' | 'dim' | null
 
@@ -26,6 +28,10 @@ export function DevelopmentCard({
   onRegionTap?: () => void
 }) {
   const [contextOpen, setContextOpen] = useState(false)
+  // Focus that follows a pointer press is a click, not the reader moving through cards:
+  // it must not hold the globe. Keyboard focus, and focus moved onto the card itself
+  // (jumping to a story), do count.
+  const pressedAt = useRef(-Infinity)
   const titleId = `dev-${index}-title`
   const contextId = `dev-${index}-context`
   const image = cardImage(dev.sources, dev.commonsImage)
@@ -36,7 +42,13 @@ export function DevelopmentCard({
       className={className} id={`dev-${index}`} style={style} aria-labelledby={titleId}
       onMouseEnter={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
-      onFocus={() => onFocusChange?.(true)}
+      onPointerDown={() => { pressedAt.current = performance.now() }}
+      onFocus={(e) => {
+        // A click focuses within the same input task as its press; allow a little slack.
+        const byPointer = performance.now() - pressedAt.current < PRESS_FOCUS_MS
+        pressedAt.current = -Infinity
+        if (!byPointer || e.target === e.currentTarget) onFocusChange?.(true)
+      }}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onFocusChange?.(false) }}
     >
       <CardImage image={image} variant="side" />

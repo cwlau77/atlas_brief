@@ -88,8 +88,10 @@ export function StoryTab() {
   useEffect(() => {
     followRef.current?.update({ hoveredDev, focusedDev, tappedDev, previewItem, pinnedItem: pinned, carouselOpen, touch })
   }, [hoveredDev, focusedDev, tappedDev, previewItem, pinned, carouselOpen, touch, briefing, regions, indexItems])
-  // A tap is a one-off request: opening a carousel forgets it, so closing doesn't jump back.
+  // A tap is a one-off request: opening a carousel, or a newer pin or preview, retires it,
+  // so the latest intent wins and tapping the same card again follows it again.
   useEffect(() => { if (carouselOpen) setTappedDev(null) }, [carouselOpen])
+  useEffect(() => { setTappedDev(null) }, [pinned, previewed])
   const shownDevs = useMemo(
     () => (shown ? shown.stories.map((s) => Number(s.anchorId.replace('dev-', ''))) : []),
     [shown],
@@ -114,7 +116,7 @@ export function StoryTab() {
             arcs={arcs}
             litArcs={litArcs}
             onArcHover={onArcHover}
-            follow={follow}
+            follow={carouselOpen ? null : follow}
             label={`Globe marking ${regions.length} place${regions.length === 1 ? '' : 's'} from this briefing. Select a point to zoom in and browse its stories.`}
           />
           {shown && (

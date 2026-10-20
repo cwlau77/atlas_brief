@@ -180,7 +180,9 @@ export default function GlobeView({
   }, [zoomedTo, zoomable, following, mode, spotsKey, engineVersion])
 
   // The followed marker is lit and the others dimmed, unless a carousel point is open.
-  const followKey = zoomedTo === null ? following?.markerKey ?? null : null
+  // A marker key with no globe point (a region missing from the counts) emphasises nothing.
+  const wantKey = zoomedTo === null ? following?.markerKey ?? null : null
+  const followKey = wantKey !== null && regions.some((r) => pointKey(r) === wantKey) ? wantKey : null
   useEffect(() => {
     const engine = engineRef.current
     if (!engine) return

@@ -1,7 +1,9 @@
 // The globe follows the reader: a pure state machine that turns card hover, focus
 // and taps plus the tension index's preview and pin into one camera target.
-// Timers keep it calm: a card must hold the pointer for the dwell before the globe
-// moves, and stepping down to a weaker source (or the overview) waits out the leave.
+// Timers keep it calm: a card or index row must hold the pointer for the dwell before
+// the globe moves, and stepping down to the pin (or the overview) waits out the leave.
+// The newest intent wins: a pin or preview change retires the card being hovered or
+// tapped at that moment, until the reader moves to (or taps) a card again.
 
 export interface LatLng { lat: number; lng: number }
 export type FollowTarget = { points: LatLng[]; markerKey: string | null } | null
@@ -39,6 +41,13 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
   let input = EMPTY
   let dwelled: number | null = null
   let dwellTimer: ReturnType<typeof setTimeout> | undefined
+  let previewDwelled: string | null = null
+  let previewTimer: ReturnType<typeof setTimeout> | undefined
+  // Cards retired by a later pin or preview; -1 is none.
+  let staleHover = -1
+  let staleTap = -1
+  // A deliberate pin change skips the leave wait once.
+  let fresh = false
   let leaveTimer: ReturnType<typeof setTimeout> | undefined
   let left = false
   // The globe starts on its overview, so an initial null is not news.
@@ -82,17 +91,24 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
       rank = NONE
       return
     }
+    const hovered = input.hoveredDev !== null && input.hoveredDev !== staleHover ? input.hoveredDev : null
+    const tapped = input.tappedDev !== null && input.tappedDev !== staleTap ? input.tappedDev : null
     const card = input.touch
-      ? input.tappedDev
-      : input.focusedDev ?? (input.hoveredDev !== null && dwelled === input.hoveredDev ? input.hoveredDev : null)
+      ? tapped
+      : input.focusedDev ?? (hovered !== null && dwelled === hovered ? hovered : null)
     if (card !== null) {
       clearLeave()
       const r = opts.resolve(card)
-      if (r) emit({ points: [{ lat: r.lat, lng: r.lng }], markerKey: r.markerKey }, CARD)
+      if (r) {
+        fresh = false
+        emit({ points: [{ lat: r.lat, lng: r.lng }], markerKey: r.markerKey }, CARD)
+      }
       return
     }
     // A card still dwelling holds whatever the globe shows now, so sweeping never lurches.
-    if (!input.touch && input.hoveredDev !== null) {
+    // So does an index row still dwelling.
+    const pending = (!input.touch && hovered !== null) || (input.previewItem !== null && previewDwelled !== input.previewItem)
+    if (pending) {
       clearLeave()
       return
     }
@@ -102,7 +118,8 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
       target = itemTarget(input.pinnedItem)
       r = target ? PINNED : NONE
     }
-    if (r < rank && !left) {
+    // A row held for the dwell is a new intent, not a step down, so it moves at once.
+    if (r < rank && r !== PREVIEW && !left && !fresh) {
       if (leaveTimer === undefined) {
         leaveTimer = setTimeout(() => {
           leaveTimer = undefined
@@ -113,6 +130,7 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
       return
     }
     clearLeave()
+    fresh = false
     emit(target, r)
   }
 
@@ -130,12 +148,33 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
           }, dwellMs)
         }
       }
+      if (next.previewItem !== input.previewItem) {
+        clearTimeout(previewTimer)
+        previewDwelled = null
+        const key = next.previewItem
+        if (key !== null) {
+          previewTimer = setTimeout(() => {
+            previewDwelled = key
+            compute()
+          }, dwellMs)
+        }
+      }
+      if (next.hoveredDev !== input.hoveredDev) staleHover = -1
+      if (next.tappedDev !== input.tappedDev) staleTap = -1
+      if (next.pinnedItem !== input.pinnedItem || next.previewItem !== input.previewItem) {
+        staleTap = next.tappedDev ?? -1
+      }
+      if (next.pinnedItem !== input.pinnedItem) {
+        staleHover = next.hoveredDev ?? -1
+        fresh = true
+      }
       input = next
       compute()
     },
     dispose() {
       disposed = true
       clearTimeout(dwellTimer)
+      clearTimeout(previewTimer)
       clearTimeout(leaveTimer)
     },
   }
