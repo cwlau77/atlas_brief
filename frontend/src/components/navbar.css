@@ -1,5 +1,5 @@
 .nav { position: relative; z-index: 20; }
-.nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 20px; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 20px; background: var(--wrap-rule) center bottom / var(--wrap-rule-size); }
 .wordmark {
   display: inline-flex;
   align-items: center;
@@ -17,13 +17,14 @@
 .nav-link {
   text-decoration: none;
   padding: 8px 14px;
-  border-radius: 999px;
   font-size: 0.92rem;
   color: var(--ink-2);
-  transition: background-color var(--dur-quick), color var(--dur-quick);
+  transition: background-color var(--dur-quick), color var(--dur-quick), box-shadow var(--dur-quick);
 }
-.nav-link:hover { color: var(--ink); background: var(--paper-deep); }
+/* Inset rings, not borders, so the cramped phone nav keeps its width. */
+.nav-link:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
 .nav-link.active { color: var(--accent); background: var(--paper-deep); box-shadow: inset 0 0 0 1px var(--rule); }
+.nav-link.active:hover { box-shadow: inset 0 0 0 1px var(--accent); }
 .nav-new { gap: var(--space-2); text-decoration: none; }
 @media (max-width: 640px) {
   .nav-inner { gap: 12px; }

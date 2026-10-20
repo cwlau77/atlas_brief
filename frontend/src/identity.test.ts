@@ -31,3 +31,25 @@ describe('type', () => {
     expect(base).toMatch(/:focus-visible\s*\{[^}]*outline: 2px solid var\(--accent\)/)
   })
 })
+
+describe('geometry', () => {
+  const css = Object.entries(files).filter(([f]) => f.endsWith('.css'))
+  it('squares the radius tokens and drops the lift shadow', () => {
+    expect(tokens).toMatch(/--radius: 0;/)
+    expect(tokens).toMatch(/--radius-sm: 0;/)
+    expect(tokens).not.toContain('--shadow-lift')
+  })
+  it('uses no lift shadow anywhere', () => {
+    expect(css.filter(([, src]) => src.includes('var(--shadow-lift)')).map(([f]) => f)).toEqual([])
+  })
+  it('keeps corners square except dots and pills', () => {
+    const allowed = /^(0|50%|999px|var\(--radius[\w-]*\))$/
+    const offenders = css.flatMap(([f, src]) =>
+      [...src.matchAll(/border-radius:\s*([^;}!]+)/g)]
+        .map((m) => m[1].trim())
+        .filter((v) => !allowed.test(v))
+        .map((v) => `${f}: ${v}`),
+    )
+    expect(offenders).toEqual([])
+  })
+})

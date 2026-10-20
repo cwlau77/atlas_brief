@@ -8,13 +8,14 @@
   background: var(--ink);
   color: var(--paper);
   padding: 10px 14px;
-  border-radius: 8px;
   text-decoration: none;
 }
 .skip-link:focus { top: 12px; }
 
 .page { padding-block: 40px 72px; display: grid; gap: 32px; align-content: start; }
 .page-head { display: grid; gap: 10px; }
+/* Archive and Settings: a hairline closes the page head off from the content cells below. */
+.page > .page-head { padding-bottom: var(--space-5); border-bottom: 1px solid var(--rule); }
 .page-kicker { color: var(--ink-2); }
 .page-title { font-size: clamp(2.2rem, 4.6vw, 3.6rem); letter-spacing: -0.035em; line-height: 1.02; }
 .page-lede { color: var(--ink-2); max-width: 60ch; }

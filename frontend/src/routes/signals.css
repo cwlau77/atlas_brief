@@ -8,24 +8,26 @@
 .stat dd { font-size: clamp(2rem, 3.6vw, 2.9rem); font-weight: 560; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 
 .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 48px 56px; }
+/* Each chart sits in a cell headed by a hairline, so the cells stay ruled however the grid wraps. */
+.viz > * { padding-top: var(--space-4); border-top: 1px solid var(--rule); }
 .viz-title { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 18px; font-size: 1rem; }
 .viz-title .label { color: var(--ink-3); font-weight: 400; }
 .viz-empty { color: var(--ink-3); }
 
-.stack { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; }
+.stack { display: flex; gap: 2px; height: 14px; overflow: hidden; }
 .stack span { display: block; height: 100%; }
 .stack-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 14px; margin-top: 16px; }
 .stack-legend div { display: grid; gap: 2px; }
 .sw { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
-.sw i { width: 10px; height: 10px; border-radius: 2px; }
+.sw i { width: 10px; height: 10px; }
 .pct { font-size: 1.5rem; font-weight: 560; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .stack-legend .n { color: var(--ink-3); }
 
 .rows { list-style: none; display: grid; gap: 11px; }
 .row { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) 3rem; gap: 14px; align-items: center; font-size: 0.94rem; }
 .row-name { overflow-wrap: anywhere; }
-.bar { height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
-.bar i { display: block; height: 100%; border-radius: 3px; background: var(--ink-3); }
+.bar { height: 6px; background: var(--rule); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ink-3); }
 .row:first-child .bar i { background: var(--accent); }
 .row-n { text-align: right; color: var(--ink-2); font-size: 0.8rem; }
 

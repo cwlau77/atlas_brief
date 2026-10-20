@@ -59,7 +59,6 @@ input, select, textarea { font: inherit; color: inherit; }
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: 4px;
 }
 
 ::selection { background: rgba(31, 63, 224, 0.18); color: var(--ink); }
@@ -112,7 +111,7 @@ input, select, textarea { font: inherit; color: inherit; }
   font-weight: 600;
   font-size: 0.95rem;
   padding: 12px 20px;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid transparent;
   text-decoration: none;
   transition: background-color var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out),
@@ -140,6 +139,6 @@ input, select, textarea { font: inherit; color: inherit; }
   html, body { background: #fff; color: #000; }
   body::after { display: none; }
   .nav, .footer, .ask, .tabs, .story-globe, .globe-view, .cur, .toast-host, .skip-link, .chips { display: none !important; }
-  .dev, .link-card, .alert { break-inside: avoid; box-shadow: none !important; border: 1px solid #ccc; }
+  .dev, .link-card, .alert { break-inside: avoid; border: 1px solid #ccc; }
   a { color: #000; }
 }

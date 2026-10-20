@@ -3,11 +3,10 @@
   margin: auto;
   max-width: min(440px, calc(100vw - 2 * var(--space-5)));
   padding: var(--space-5);
-  border: 0;
+  border: 1px solid var(--rule-strong);
   border-radius: var(--radius);
   background: var(--paper);
   color: var(--ink);
-  box-shadow: var(--shadow-lift), inset 0 0 0 1px var(--rule);
 }
 .confirm::backdrop { background: rgba(14, 17, 22, 0.35); }
 .confirm-title { font-size: 1.25rem; margin-bottom: var(--space-2); }

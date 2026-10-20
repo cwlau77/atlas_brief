@@ -33,9 +33,10 @@
   --font-sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-display: var(--font-sans);
 
-  --radius: 14px;
-  --radius-sm: 10px;
-  --shadow-lift: 0 20px 40px -30px rgba(60, 50, 30, 0.45);
+  /* Square geometry: cells are divided by 1px --rule hairlines, never lifted by shadows.
+     Hover and focus change a cell's border: --accent if it is interactive, --rule-strong if not. */
+  --radius: 0;
+  --radius-sm: 0;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-quick: 150ms;
@@ -53,5 +54,9 @@
   --space-9: 96px;
 
   --gutter: clamp(16px, 4vw, 56px);
+  /* A hairline drawn as a background on a .wrap element, so it stops at the content edges
+     (inside the gutter) like the rules drawn inside the container. Pair with background-position. */
+  --wrap-rule: linear-gradient(var(--rule), var(--rule)) no-repeat;
+  --wrap-rule-size: calc(100% - 2 * var(--gutter)) 1px;
   --maxw: 1240px;
 }

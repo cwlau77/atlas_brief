@@ -2,14 +2,20 @@
 .footer-cols {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr);
-  gap: var(--space-5);
+  /* Ruled cells: a hairline across the top and between columns. Each column pads its own
+     share of the old gap, so the text sits where it did. */
+  gap: var(--space-5) 0;
   padding-top: var(--space-7);
+  background: var(--wrap-rule) center top / var(--wrap-rule-size);
 }
+.footer-cols > * { padding-inline: var(--space-3); }
+.footer-cols > * + * { border-left: 1px solid var(--rule); }
+.footer-cols > :first-child { padding-left: 0; }
 .footer-col h2 { color: var(--ink-2); margin-bottom: var(--space-3); }
 .footer-col ul { list-style: none; display: grid; gap: var(--space-2); }
 .footer-col a { color: var(--ink); text-decoration: none; }
 .footer-col a:hover { text-decoration: underline; text-decoration-color: var(--accent); }
-.footer-note { color: var(--ink-2); font-size: 0.92rem; max-width: 34ch; align-self: start; }
+.footer-note { color: var(--ink-2); font-size: 0.92rem; max-width: 34ch; }
 
 .footer-lockup-wrap { position: relative; z-index: 1; padding-top: var(--space-7); }
 .footer-lockup-wrap::before {
@@ -63,7 +69,8 @@
 
 @media (max-width: 760px) {
   .footer-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .footer-note { grid-column: 1 / -1; }
+  .footer-cols > :nth-child(odd) { padding-left: 0; border-left: 0; }
+  .footer-note { grid-column: 1 / -1; padding-left: 0; border-left: 0; }
 }
 @media print {
   .mountain-band { display: none !important; }

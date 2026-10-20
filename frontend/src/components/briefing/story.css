@@ -1,5 +1,18 @@
-.story { display: grid; gap: var(--space-7); padding-top: var(--space-5); }
-.story-lead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: var(--space-6); align-items: start; }
+.story { display: grid; gap: var(--space-6); padding-top: var(--space-5); }
+/* Each section after the lead is a ruled band: a hairline halfway through the old section spacing. */
+.story > * + * { padding-top: var(--space-6); background: var(--wrap-rule) center top / var(--wrap-rule-size); }
+.story-lead { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: var(--space-6); align-items: start; }
+/* Hairline between the lead copy and the globe, centred in the gap. The globe column is 520px wide here. */
+.story-lead::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(var(--gutter) + 520px + var(--space-6) / 2);
+  width: 1px;
+  background: var(--rule);
+  pointer-events: none;
+}
 .story-lead-copy { display: grid; gap: var(--space-4); align-content: start; }
 .story-globe { width: 100%; max-width: 520px; justify-self: end; }
 .story-note { color: var(--ink-3); }
@@ -39,8 +52,8 @@
 /* Centred on the node column: time and lane columns + their gaps + half the node column, minus half the 2px line.
    The lane column is sized for MAX_LANES routes in every briefing, so the spine never moves between briefings. */
 .spine { position: absolute; left: calc(var(--t-time) + var(--t-gap) * 2 + var(--t-lanes) + var(--t-node) / 2 - 1px); width: 2px; pointer-events: none; }
-.spine i { position: absolute; inset: 0; background: var(--rule); border-radius: 2px; }
-.spine b { position: absolute; left: 0; top: 0; width: 2px; height: var(--fill, 0px); background: var(--accent); border-radius: 2px; }
+.spine i { position: absolute; inset: 0; background: var(--rule); }
+.spine b { position: absolute; left: 0; top: 0; width: 2px; height: var(--fill, 0px); background: var(--accent); }
 /* Routes: one vertical line per tension or disagreement in its lane, rings at its stops. */
 .routes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
 .route-seg, .route-conn {
@@ -71,7 +84,7 @@
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--accent), var(--shadow-lift);
+  box-shadow: inset 0 0 0 1px var(--accent);
   font-size: 0.86rem;
   color: var(--ink);
   /* Above the stop, starting at its lane, so it never covers the card it refers to. */
@@ -96,7 +109,6 @@
   max-width: 100%;
   padding: var(--space-1) var(--space-3);
   border: 0;
-  border-radius: 999px;
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--rule);
   font: inherit;
@@ -140,12 +152,13 @@
   border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--rule);
   scroll-margin-top: 24px;
-  transition: box-shadow var(--dur-mid), transform var(--dur-mid) var(--ease-out);
+  transition: box-shadow var(--dur-mid);
 }
-.dev:hover { box-shadow: inset 0 0 0 1px var(--rule-strong), var(--shadow-lift); transform: translateY(-2px); }
+/* Inert cell: hover darkens the rule instead of lifting the card. */
+.dev:hover { box-shadow: inset 0 0 0 1px var(--rule-strong); }
 .dev-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
 .tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; color: var(--ink-3); }
-.tags li { padding: 3px 8px; border-radius: 6px; background: var(--paper-deep); }
+.tags li { padding: 3px 8px; background: var(--paper-deep); }
 .dev-title { font-size: 1.28rem; letter-spacing: -0.015em; line-height: 1.25; }
 .dev-body { color: var(--ink-2); max-width: 64ch; }
 .dev-context {
@@ -202,7 +215,7 @@
 .link-inline { padding: 0; background: none; box-shadow: none; }
 .link-inline.contra .contra-accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
 
-.link-card { display: grid; gap: 6px; padding: 16px 18px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--rule); background: var(--paper-deep); }
+.link-card { display: grid; gap: 6px; padding: 16px 18px; box-shadow: inset 0 0 0 1px var(--rule); background: var(--paper-deep); }
 .link-card.contra { background: var(--accent-wash); box-shadow: none; }
 .link-kind { display: flex; justify-content: space-between; gap: 8px; color: var(--ink-2); }
 .link-title { font-size: 1.02rem; letter-spacing: -0.01em; line-height: 1.3; }
@@ -218,7 +231,6 @@
   align-items: center;
   gap: 6px;
   padding: 4px 9px;
-  border-radius: 999px;
   background: var(--paper-deep);
   color: var(--ink-2);
   font-size: 0.8rem;
@@ -237,12 +249,14 @@
 .reading-meta { color: var(--ink-2); font-size: 0.92rem; }
 .reading-meta .label { color: var(--ink-3); margin-right: 6px; }
 
-.compact .story { gap: var(--space-6); padding-top: var(--space-4); }
+.compact .story { gap: var(--space-5); padding-top: var(--space-4); }
+.compact .story > * + * { padding-top: var(--space-5); }
 .compact .timeline { row-gap: var(--space-3); }
 .compact .dev { padding: var(--space-4); gap: var(--space-2); }
 
 @media (max-width: 980px) {
   .story-lead { grid-template-columns: minmax(0, 1fr); }
+  .story-lead::before { display: none; }
   .story-globe { justify-self: center; max-width: 440px; order: -1; }
   .timeline { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
   .timeline > * { grid-column: 1 !important; grid-row: auto !important; }

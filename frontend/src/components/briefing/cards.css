@@ -10,7 +10,8 @@
   overflow: hidden;
   transition: box-shadow var(--dur-quick) var(--ease-out);
 }
-.story-card:hover, .story-card:focus-within { box-shadow: inset 0 0 0 1px var(--accent), var(--shadow-lift); }
+/* Interactive cell: hover and focus turn the rule ultramarine instead of lifting the card. */
+.story-card:hover, .story-card:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
 .story-card-media { position: relative; aspect-ratio: 16 / 9; background: var(--paper-deep); overflow: hidden; }
 .story-card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .story-card-credit {
@@ -18,7 +19,6 @@
   left: var(--space-2);
   bottom: var(--space-2);
   padding: 2px var(--space-2);
-  border-radius: 999px;
   background: rgba(245, 245, 241, 0.88);
   color: var(--ink-2);
   font-size: 0.68rem;
@@ -105,13 +105,12 @@
 @keyframes carousel-out { to { opacity: 0; transform: translateY(24px); } }
 .carousel:focus { outline: none; }
 /* Keyboard focus on the carousel shows on the card the arrow keys move. */
-.carousel:focus-visible .carousel-track > li[aria-current="true"] .story-card { box-shadow: inset 0 0 0 2px var(--accent), var(--shadow-lift); }
+.carousel:focus-visible .carousel-track > li[aria-current="true"] .story-card { box-shadow: inset 0 0 0 2px var(--accent); }
 .carousel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 0 var(--space-3); }
 .carousel-back {
   all: unset;
   cursor: pointer;
   padding: var(--space-1) var(--space-3);
-  border-radius: 999px;
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--rule);
   color: var(--ink-2);
@@ -127,7 +126,6 @@
   width: 30px;
   height: 30px;
   border: 0;
-  border-radius: 50%;
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--rule);
   color: var(--ink);
@@ -135,6 +133,7 @@
   line-height: 1;
   cursor: pointer;
 }
+.carousel-arrows button:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--accent); }
 .carousel-arrows button:disabled { color: var(--ink-3); opacity: 0.45; cursor: default; }
 .carousel-empty { color: var(--ink-2); padding: 0 var(--space-3); }
 .carousel-track {
@@ -174,10 +173,10 @@
   background: var(--rule-strong);
   transition: width var(--dur-mid) var(--ease-out), background-color var(--dur-mid);
 }
-.carousel-dots button[aria-current="true"]::before { width: 16px; border-radius: 3px; background: var(--accent); }
+.carousel-dots button[aria-current="true"]::before { width: 16px; border-radius: 999px; background: var(--accent); }
 
 /* Compact card (globe carousel, and Top stories beside the globe): square thumbnail beside the text. */
-.story-card-compact { grid-template-rows: none; grid-template-columns: 104px minmax(0, 1fr); box-shadow: inset 0 0 0 1px var(--rule), var(--shadow-lift); }
+.story-card-compact { grid-template-rows: none; grid-template-columns: 104px minmax(0, 1fr); }
 .story-card-compact .story-card-media { aspect-ratio: auto; height: 100%; min-height: 116px; }
 .story-card-compact .story-card-body { gap: var(--space-1); padding: var(--space-3); }
 .story-card-compact .story-card-meta { justify-content: flex-start; }

@@ -5,11 +5,11 @@
   gap: 8px;
   padding: 7px 7px 7px 20px;
   background: var(--paper);
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 1px var(--rule), 0 18px 40px -24px rgba(60, 50, 30, 0.35);
-  transition: box-shadow var(--dur-mid) var(--ease-out);
+  border: 1px solid var(--rule-strong);
+  transition: border-color var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
 }
-.ask-field:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent), 0 18px 40px -22px rgba(60, 50, 30, 0.4); }
+/* Focus: the field's own border goes ultramarine, thickened by an inset ring (no outer shadow). */
+.ask-field:focus-within { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .ask-label { color: var(--ink-2); white-space: nowrap; }
 .ask-field input {
   flex: 1;
@@ -27,7 +27,6 @@
   color: var(--ink-2);
   font-size: 0.86rem;
   padding: 8px;
-  border-radius: 8px;
 }
 .ask-field select:hover { background: var(--paper-deep); }
 .ask-stage { display: flex; align-items: center; gap: 10px; color: var(--ink-2); }
@@ -49,7 +48,7 @@
 .ask-compact .ask-field input { padding: 8px 4px; font-size: 0.95rem; }
 .ask-compact .btn { padding: 9px 16px; }
 @media (max-width: 640px) {
-  .ask-field { flex-wrap: wrap; border-radius: 22px; padding: 12px; }
+  .ask-field { flex-wrap: wrap; padding: 12px; }
   .ask-field input { flex-basis: 100%; order: 2; }
   .ask-field select { order: 3; }
   .ask-field .btn { order: 4; flex: 1; }
