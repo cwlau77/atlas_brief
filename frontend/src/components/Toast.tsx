@@ -12,7 +12,7 @@ export function ToastHost({ toasts, onDismiss }: { toasts: ToastItem[]; onDismis
       {toasts.map((t) => (
         <div key={t.id} className={`toast toast-${t.tone}`}>
           <span>{t.message}</span>
-          <button type="button" className="toast-close" onClick={() => onDismiss(t.id)} aria-label="Dismiss notification" data-cursor="link">
+          <button type="button" className="toast-close" onClick={() => onDismiss(t.id)} aria-label="Dismiss notification">
             ×
           </button>
         </div>

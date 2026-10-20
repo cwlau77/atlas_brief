@@ -36,7 +36,7 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
           <time className="label" dateTime={dev.timestamp}>{formatTime(dev.timestamp, timeZone)}</time>
         </div>
         <h3 className="story-card-title">
-          <button type="button" className="story-card-open" onClick={() => onOpen(`dev-${index}`)} data-cursor="link">
+          <button type="button" className="story-card-open" onClick={() => onOpen(`dev-${index}`)}>
             {dev.title}
           </button>
         </h3>

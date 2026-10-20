@@ -57,14 +57,13 @@ export function AskForm({ id, compact = false, loading, error, onGenerate, onRet
           maxLength={200}
           disabled={loading}
           autoComplete="off"
-          data-cursor="text"
         />
         {!compact && (
           <select aria-label="Briefing cadence" value={frequency} onChange={(e) => setFrequency(e.target.value)} disabled={loading}>
             {FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         )}
-        <button type="submit" className="btn btn-primary" disabled={!valid || loading} data-cursor="link">
+        <button type="submit" className="btn btn-primary" disabled={!valid || loading}>
           {loading ? 'Briefing…' : 'Brief me'}
         </button>
       </div>
@@ -77,7 +76,7 @@ export function AskForm({ id, compact = false, loading, error, onGenerate, onRet
       {error && !loading && (
         <div className="ask-error" role="alert">
           <p>{error}</p>
-          <button type="button" className="btn btn-quiet" onClick={onRetry} data-cursor="link">Try again</button>
+          <button type="button" className="btn btn-quiet" onClick={onRetry}>Try again</button>
         </div>
       )}
     </form>

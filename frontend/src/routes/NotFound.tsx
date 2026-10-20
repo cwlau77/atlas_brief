@@ -8,7 +8,7 @@ export function NotFound() {
       <h1 className="page-title">Page not found</h1>
       <p className="page-lede">That address doesn't match any page in Atlas.</p>
       <div className="actions">
-        <Link className="btn btn-primary" to="/" data-cursor="link">Go to Home</Link>
+        <Link className="btn btn-primary" to="/">Go to Home</Link>
       </div>
     </section>
   )

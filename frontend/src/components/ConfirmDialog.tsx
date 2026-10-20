@@ -37,8 +37,8 @@ export function ConfirmDialog({ open, title, body, confirmLabel, onConfirm, onCa
       <h2 id="confirm-title" className="confirm-title">{title}</h2>
       <p className="confirm-body">{body}</p>
       <div className="confirm-actions">
-        <button type="button" className="btn btn-quiet" onClick={onCancel} data-cursor="link">Cancel</button>
-        <button type="button" className="btn btn-primary" onClick={onConfirm} data-cursor="link">{confirmLabel}</button>
+        <button type="button" className="btn btn-quiet" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn btn-primary" onClick={onConfirm}>{confirmLabel}</button>
       </div>
     </dialog>
   )

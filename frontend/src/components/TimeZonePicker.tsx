@@ -37,7 +37,6 @@ export function TimeZonePicker({ value, onChange }: { value: string; onChange: (
           autoComplete="off"
           aria-describedby="tz-status"
           aria-invalid={error ? true : undefined}
-          data-cursor="text"
           onChange={(e) => {
             setDraft(e.target.value)
             if (zoneSet.has(e.target.value)) commit(e.target.value)
@@ -61,7 +60,6 @@ export function TimeZonePicker({ value, onChange }: { value: string; onChange: (
             setError(null)
             onChange(AUTO_ZONE)
           }}
-          data-cursor="link"
         >
           Use my device's time zone
         </button>

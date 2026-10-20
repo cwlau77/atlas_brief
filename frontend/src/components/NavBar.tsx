@@ -16,7 +16,7 @@ export function NavBar() {
   return (
     <header className="nav">
       <div className="nav-inner wrap">
-        <Link className="wordmark" to="/" aria-label="Atlas home" data-cursor="link">
+        <Link className="wordmark" to="/" aria-label="Atlas home">
           <AtlasMark className="wordmark-mark" />
           <span className="wordmark-text">atlas</span>
         </Link>
@@ -25,14 +25,13 @@ export function NavBar() {
             className={`nav-link ${onBriefing ? 'active' : ''}`}
             to={latest ? `/brief/${latest}` : '/'}
             aria-current={onBriefing ? 'page' : undefined}
-            data-cursor="link"
           >
             Briefing
           </Link>
-          <NavLink className={linkClass} to="/archive" data-cursor="link">Archive</NavLink>
-          <NavLink className={linkClass} to="/settings" data-cursor="link">Settings</NavLink>
+          <NavLink className={linkClass} to="/archive">Archive</NavLink>
+          <NavLink className={linkClass} to="/settings">Settings</NavLink>
         </nav>
-        <Link className="btn btn-primary nav-new" to="/" state={{ focusAsk: true }} data-cursor="link">
+        <Link className="btn btn-primary nav-new" to="/" state={{ focusAsk: true }}>
           <NewBriefIcon size={16} /><span className="nav-new-text">New brief</span>
         </Link>
       </div>

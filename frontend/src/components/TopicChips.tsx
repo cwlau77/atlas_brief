@@ -20,7 +20,7 @@ export function TopicChips({ fallback, onPick, disabled = false }: {
     <div className={`chips ${live ? 'chips-live' : ''}`} role="group" aria-label={live ? 'Trending now' : 'Suggested topics'}>
       {live && <span className="chips-label label" aria-hidden="true">Trending now</span>}
       {topics.map((t) => (
-        <button key={t} type="button" className="chip" onClick={() => onPick(t)} disabled={disabled} data-cursor="link">
+        <button key={t} type="button" className="chip" onClick={() => onPick(t)} disabled={disabled}>
           {t}
         </button>
       ))}

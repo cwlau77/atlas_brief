@@ -27,8 +27,8 @@ export function BriefingLayout() {
           </p>
         </div>
         <nav className="tabs" aria-label="Briefing sections">
-          <NavLink end to={`/brief/${briefing.id}`} className={tabClass} data-cursor="link">Story</NavLink>
-          <NavLink to={`/brief/${briefing.id}/signals`} className={tabClass} data-cursor="link">Signals</NavLink>
+          <NavLink end to={`/brief/${briefing.id}`} className={tabClass}>Story</NavLink>
+          <NavLink to={`/brief/${briefing.id}/signals`} className={tabClass}>Signals</NavLink>
         </nav>
       </header>
       <Outlet context={context} />

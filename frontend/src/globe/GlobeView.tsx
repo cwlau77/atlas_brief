@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
-import { setGlobeReadout } from '../components/cursorBus'
+import { applyReadout } from './readout'
 import { formatTime } from '../lib/time'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { attachDrag } from './controls'
@@ -53,6 +53,7 @@ export default function GlobeView({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const hotRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const readoutRef = useRef<HTMLSpanElement>(null)
   const engineRef = useRef<GlobeEngine | null>(null)
   const size = useRef({ w: 1, h: 1 })
   const live = useRef({ active: null as number | null, pinned: false })
@@ -81,6 +82,7 @@ export default function GlobeView({
   useEffect(() => {
     const canvas = canvasRef.current
     const wrap = wrapRef.current
+    const readoutEl = readoutRef.current
     if (!canvas || !wrap) return
     let engine: GlobeEngine
     try {
@@ -109,7 +111,7 @@ export default function GlobeView({
     wrap.addEventListener('pointerleave', onLeave)
 
     engine.onFrame = ({ hotspots, readout }) => {
-      setGlobeReadout(readout)
+      applyReadout(readoutEl, readout)
       hotspots.forEach((h, i) => {
         const el = hotRefs.current[i]
         if (!el) return
@@ -131,7 +133,7 @@ export default function GlobeView({
     setEngineVersion((v) => v + 1)
 
     return () => {
-      setGlobeReadout(null)
+      applyReadout(readoutEl, null)
       ro.disconnect()
       io.disconnect()
       detach()
@@ -258,6 +260,7 @@ export default function GlobeView({
       onClick={onGlobeClick}
     >
       <canvas ref={canvasRef} className="globe-canvas" role="img" aria-label={label} />
+      <span className="globe-readout" aria-hidden="true" ref={readoutRef} data-visible="false" />
       {mode === 'briefing' && (
         <>
           <div className="globe-hotspots">
@@ -268,7 +271,6 @@ export default function GlobeView({
                 type="button"
                 className={`globe-hotspot ${i < LABELED_COUNT ? 'labeled' : ''} ${pointKey(r) === zoomedTo ? 'zoomed' : ''}`}
                 data-visible="false"
-                data-cursor="link"
                 aria-label={`${r.name}, ${r.count} mention${r.count === 1 ? '' : 's'}. Show stories.`}
                 aria-expanded={active === i}
                 aria-controls="globe-panel"
@@ -314,7 +316,7 @@ export default function GlobeView({
                 <ul>
                   {current.stories.map((s) => (
                     <li key={s.anchorId}>
-                      <button type="button" onClick={() => select(s.anchorId)} data-cursor="link">
+                      <button type="button" onClick={() => select(s.anchorId)}>
                         <span className="gp-title">{s.title}</span>
                         <span className="gp-meta mono">
                           {formatTime(s.timestamp, timeZone)}

@@ -92,11 +92,11 @@ export function ArchivePage() {
     const isStarred = starred.includes(b.id)
     return (
       <div className="bead-actions">
-        <button type="button" className={`star-btn ${isStarred ? 'on' : ''}`} onClick={() => toggleStar(b.id)} aria-label={isStarred ? `Unstar ${beadLabel(b)}` : `Star ${beadLabel(b)}`} aria-pressed={isStarred} data-cursor="link">
+        <button type="button" className={`star-btn ${isStarred ? 'on' : ''}`} onClick={() => toggleStar(b.id)} aria-label={isStarred ? `Unstar ${beadLabel(b)}` : `Star ${beadLabel(b)}`} aria-pressed={isStarred}>
           <StarIcon size={15} filled={isStarred} />
         </button>
-        <button type="button" className="btn btn-quiet" onClick={() => navigate(`/brief/${b.id}?print=1`)} aria-label={`Print ${beadLabel(b)}`} data-cursor="link"><PrintIcon size={14} /></button>
-        <button type="button" className="btn btn-quiet" onClick={() => setPendingDelete(b)} aria-label={`Delete ${beadLabel(b)}`} data-cursor="link"><TrashIcon size={14} /></button>
+        <button type="button" className="btn btn-quiet" onClick={() => navigate(`/brief/${b.id}?print=1`)} aria-label={`Print ${beadLabel(b)}`}><PrintIcon size={14} /></button>
+        <button type="button" className="btn btn-quiet" onClick={() => setPendingDelete(b)} aria-label={`Delete ${beadLabel(b)}`}><TrashIcon size={14} /></button>
       </div>
     )
   }
@@ -113,14 +113,14 @@ export function ArchivePage() {
           <MountainBand height="empty" />
           <h2>No threads yet</h2>
           <p>Generate a briefing and it is saved here automatically. Briefings on the same topic string together into a thread.</p>
-          <Link className="btn btn-primary" to="/" state={{ focusAsk: true }} data-cursor="link">Start a brief</Link>
+          <Link className="btn btn-primary" to="/" state={{ focusAsk: true }}>Start a brief</Link>
         </div>
       ) : (
         <>
           <div className="saved-toolbar">
             <div className="saved-filters" role="group" aria-label="Filter briefings">
-              <button type="button" className={`btn btn-quiet saved-filter ${filter === 'all' ? 'on' : ''}`} aria-pressed={filter === 'all'} onClick={() => setFilter('all')} data-cursor="link">All</button>
-              <button type="button" className={`btn btn-quiet saved-filter ${filter === 'starred' ? 'on' : ''}`} aria-pressed={filter === 'starred'} onClick={() => setFilter('starred')} data-cursor="link">Starred</button>
+              <button type="button" className={`btn btn-quiet saved-filter ${filter === 'all' ? 'on' : ''}`} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All</button>
+              <button type="button" className={`btn btn-quiet saved-filter ${filter === 'starred' ? 'on' : ''}`} aria-pressed={filter === 'starred'} onClick={() => setFilter('starred')}>Starred</button>
             </div>
             <div className="saved-filters">
               <button
@@ -133,7 +133,6 @@ export function ArchivePage() {
                   setComparing(false)
                   setSelected([])
                 }}
-                data-cursor="link"
               >
                 Select
               </button>
@@ -147,7 +146,6 @@ export function ArchivePage() {
                   setSelecting(false)
                   setPicked([])
                 }}
-                data-cursor="link"
               >
                 Compare two
               </button>
@@ -187,7 +185,7 @@ export function ArchivePage() {
                         return (
                           <li key={b.id} className="bead-slot">
                             {selecting ? (
-                              <label className={`${cls} bead-check ${selection.includes(b.id) ? 'picked' : ''}`} style={style} data-cursor="link">
+                              <label className={`${cls} bead-check ${selection.includes(b.id) ? 'picked' : ''}`} style={style}>
                                 <input
                                   type="checkbox"
                                   aria-label={`Select ${beadLabel(b)}`}
@@ -203,10 +201,9 @@ export function ArchivePage() {
                                 aria-pressed={selected.includes(b.id)}
                                 aria-label={`Compare ${beadLabel(b)}`}
                                 onClick={() => toggleSelect(b.id)}
-                                data-cursor="link"
                               />
                             ) : (
-                              <Link className={cls} style={style} to={`/brief/${b.id}`} aria-label={beadLabel(b)} data-cursor="link" />
+                              <Link className={cls} style={style} to={`/brief/${b.id}`} aria-label={beadLabel(b)} />
                             )}
                             <span className="bead-date label" aria-hidden="true">{dayMonth(b.generatedAt, tz)}</span>
                             {!comparing && !selecting && (
@@ -226,7 +223,7 @@ export function ArchivePage() {
                       <ul>
                         {t.briefings.map((b) => (
                           <li key={b.id}>
-                            <Link to={`/brief/${b.id}`} data-cursor="link">{formatDateTime(b.generatedAt, tz)}</Link>
+                            <Link to={`/brief/${b.id}`}>{formatDateTime(b.generatedAt, tz)}</Link>
                             {beadActions(b)}
                           </li>
                         ))}
@@ -241,13 +238,13 @@ export function ArchivePage() {
           {selecting && selection.length > 0 && (
             <div className="select-bar" role="region" aria-label="Selected briefings">
               <span className="label">{selection.length} selected</span>
-              <button type="button" className="btn btn-quiet" onClick={() => setStars(selection, !allStarred)} data-cursor="link">
+              <button type="button" className="btn btn-quiet" onClick={() => setStars(selection, !allStarred)}>
                 <StarIcon size={14} filled={!allStarred} />{allStarred ? `Unstar ${selection.length}` : `Star ${selection.length}`}
               </button>
-              <button type="button" className="btn btn-quiet" onClick={() => setPendingBulk(selection)} data-cursor="link">
+              <button type="button" className="btn btn-quiet" onClick={() => setPendingBulk(selection)}>
                 <TrashIcon size={14} />Delete {selection.length}
               </button>
-              <button type="button" className="btn btn-quiet" onClick={() => setPicked([])} data-cursor="link">Clear</button>
+              <button type="button" className="btn btn-quiet" onClick={() => setPicked([])}>Clear</button>
             </div>
           )}
 

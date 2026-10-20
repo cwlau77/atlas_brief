@@ -41,7 +41,6 @@ export function DevelopmentCard({ dev, index, showContext, style, links, briefin
             aria-expanded={contextOpen}
             aria-controls={contextOpen ? contextId : undefined}
             onClick={() => setContextOpen((o) => !o)}
-            data-cursor="link"
           >
             {contextOpen ? 'Show less' : 'Read background'} <ExpandIcon size={12} open={contextOpen} />
           </button>

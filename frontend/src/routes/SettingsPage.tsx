@@ -95,7 +95,7 @@ export function SettingsPage() {
       <div className="settings-layout">
         <nav className="settings-index" aria-label="Settings sections">
           {SECTIONS.map(({ id, label, Icon }) => (
-            <a key={id} href={`#${id}`} className={current === id ? 'on' : ''} aria-current={current === id ? 'true' : undefined} data-cursor="link">
+            <a key={id} href={`#${id}`} className={current === id ? 'on' : ''} aria-current={current === id ? 'true' : undefined}>
               <Icon size={16} />{label}
             </a>
           ))}
@@ -110,19 +110,19 @@ export function SettingsPage() {
                 <span className="profile-display-name">{name}</span>
                 <span className="profile-display-meta">{profile.fieldOfStudy || 'No field of study'}{profile.emailAddress ? ` · ${profile.emailAddress}` : ''}</span>
               </div>
-              <button type="button" className="btn btn-quiet profile-edit" aria-expanded={editing} onClick={() => setEditing((e) => !e)} data-cursor="link">
+              <button type="button" className="btn btn-quiet profile-edit" aria-expanded={editing} onClick={() => setEditing((e) => !e)}>
                 {editing ? 'Close' : 'Edit profile'}
               </button>
             </div>
             {editing && (
               <>
                 <div className="profile-fields">
-                  <label>First name<input type="text" value={draft.firstName} onChange={field('firstName')} autoComplete="given-name" data-cursor="text" /></label>
-                  <label>Last name<input type="text" value={draft.lastName} onChange={field('lastName')} autoComplete="family-name" data-cursor="text" /></label>
-                  <label>Email<input type="email" value={draft.emailAddress} onChange={field('emailAddress')} autoComplete="email" data-cursor="text" /></label>
-                  <label>Field of study<input type="text" value={draft.fieldOfStudy} onChange={field('fieldOfStudy')} placeholder="e.g. International Relations" data-cursor="text" /></label>
+                  <label>First name<input type="text" value={draft.firstName} onChange={field('firstName')} autoComplete="given-name" /></label>
+                  <label>Last name<input type="text" value={draft.lastName} onChange={field('lastName')} autoComplete="family-name" /></label>
+                  <label>Email<input type="email" value={draft.emailAddress} onChange={field('emailAddress')} autoComplete="email" /></label>
+                  <label>Field of study<input type="text" value={draft.fieldOfStudy} onChange={field('fieldOfStudy')} placeholder="e.g. International Relations" /></label>
                 </div>
-                <button type="button" className="btn btn-primary" onClick={persist} data-cursor="link">{savedFlash ? 'Saved' : 'Save profile'}</button>
+                <button type="button" className="btn btn-primary" onClick={persist}>{savedFlash ? 'Saved' : 'Save profile'}</button>
               </>
             )}
           </section>
@@ -148,7 +148,6 @@ export function SettingsPage() {
                     aria-label={label}
                     className={`switch ${settings[key] ? 'on' : ''}`}
                     onClick={() => updateSettings({ [key]: !settings[key] } as Partial<UserSettings>)}
-                    data-cursor="link"
                   >
                     <span className="switch-knob" />
                   </button>
@@ -165,8 +164,8 @@ export function SettingsPage() {
                 <span className="settings-hint">About {formatBytes(storageSummary().bytes)} in this browser. Nothing is sent to a server.</span>
               </p>
               <div className="data-actions">
-                <button type="button" className="btn btn-quiet" onClick={download} data-cursor="link"><ExportIcon size={15} />Export</button>
-                <button type="button" className="btn btn-quiet" onClick={() => setConfirmClear(true)} disabled={!saved.length && !starred.length} data-cursor="link"><ClearIcon size={15} />Clear archive</button>
+                <button type="button" className="btn btn-quiet" onClick={download}><ExportIcon size={15} />Export</button>
+                <button type="button" className="btn btn-quiet" onClick={() => setConfirmClear(true)} disabled={!saved.length && !starred.length}><ClearIcon size={15} />Clear archive</button>
               </div>
             </div>
           </section>

@@ -236,7 +236,7 @@ export function Timeline({ briefing, timeZone, showContext, reduced, highlight }
               <span>
                 {noteRoute.stops.length} stories share this {noteRoute.kind === 'tension' ? 'tension' : 'disagreement'}: {noteRoute.title}.
               </span>
-              <button type="button" onClick={() => toggle(noteRoute.key)} data-cursor="link">
+              <button type="button" onClick={() => toggle(noteRoute.key)}>
                 {openKeys.has(noteRoute.key) ? 'Close' : 'Open'} ›
               </button>
             </>

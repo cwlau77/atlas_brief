@@ -38,7 +38,6 @@ export function RouteKey({ routes, lit, toggle, setHovered }: {
               onMouseLeave={() => setHovered(null)}
               onFocus={() => setHovered(r.key)}
               onBlur={() => setHovered(null)}
-              data-cursor="link"
             >
               <RouteSwatch route={r} />
               <span className="label">{r.kind === 'tension' ? 'Tension' : 'Sources disagree'}</span>

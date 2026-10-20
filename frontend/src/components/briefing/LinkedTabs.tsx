@@ -44,7 +44,6 @@ export function LinkedTabs({ devIndex, links, briefing, openKeys, onToggleLink, 
               onMouseLeave={() => onHoverLink(null)}
               onFocus={() => onHoverLink(l.key)}
               onBlur={() => onHoverLink(null)}
-              data-cursor="link"
             >
               {color && (
                 <span

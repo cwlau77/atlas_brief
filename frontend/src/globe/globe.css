@@ -101,3 +101,15 @@
   -webkit-mask-image: radial-gradient(closest-side, #000 80%, transparent 100%);
   mask-image: radial-gradient(closest-side, #000 80%, transparent 100%);
 }
+
+.globe-readout {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  pointer-events: none;
+  transition: opacity var(--dur-mid);
+}
+.globe-readout[data-visible="false"] { opacity: 0; }

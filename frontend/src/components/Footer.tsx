@@ -34,7 +34,7 @@ export function Footer() {
             <h2 className="label">{col.title}</h2>
             <ul>
               {col.links.map((l) => (
-                <li key={l.label}><Link to={l.to} state={l.state} data-cursor="link">{l.label}</Link></li>
+                <li key={l.label}><Link to={l.to} state={l.state}>{l.label}</Link></li>
               ))}
             </ul>
           </section>
@@ -42,14 +42,14 @@ export function Footer() {
         <section className="footer-col">
           <h2 className="label">Project</h2>
           <ul>
-            <li><a href="https://github.com/cwlau77/atlas_brief" target="_blank" rel="noopener noreferrer" data-cursor="link">GitHub</a></li>
-            <li><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" data-cursor="link">City data © GeoNames (CC BY 4.0)</a></li>
+            <li><a href="https://github.com/cwlau77/atlas_brief" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+            <li><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">City data © GeoNames (CC BY 4.0)</a></li>
           </ul>
         </section>
         <p className="footer-note">Analysis is model-written. Check it against the cited sources.</p>
       </div>
       <div className="wrap footer-lockup-wrap">
-        <Link className="footer-lockup" to="/" aria-label="Atlas home" data-cursor="link">
+        <Link className="footer-lockup" to="/" aria-label="Atlas home">
           <AtlasMark className="footer-mark" />
           <span aria-hidden="true">atlas</span>
         </Link>
