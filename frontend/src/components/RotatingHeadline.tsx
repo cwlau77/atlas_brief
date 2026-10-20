@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 
-const TOPICS = ['the Red Sea.', 'chip controls.', 'the Sahel.', 'climate finance.', 'Taiwan Strait.', 'Black Sea grain.']
+export const ROTATING_TOPICS = [
+  'Taiwan.', 'the Sahel.', 'Ukraine.', 'lithium.', 'Gaza.', 'Hormuz.', 'tariffs.', 'the Arctic.', 'the Fed.', 'climate.',
+  'Iran.', 'Kashmir.', 'elections.', 'cobalt.', 'NATO.', 'Guyana.', 'Venezuela.', 'data hubs.', 'Sudan.', 'chip bans.',
+]
+const TOPICS = ROTATING_TOPICS
 
 export function RotatingHeadline({ intervalMs = 3200 }: { intervalMs?: number }) {
   const reduced = usePrefersReducedMotion()

@@ -32,12 +32,13 @@
   font-size: clamp(3rem, 7.4vw, 6.6rem);
 }
 .home-title .l1 { display: block; }
-.rot { display: block; position: relative; height: 1.12em; color: var(--accent); }
+.rot { display: block; position: relative; height: 1.12em; max-width: 100%; overflow-x: clip; overflow-y: visible; color: var(--accent); }
 .rot-word { position: absolute; left: 0; top: 0; white-space: nowrap; letter-spacing: -0.02em; }
-.rot-word.in { animation: rot-in 0.75s var(--ease-out) both; }
-.rot-word.out { animation: rot-out 0.45s cubic-bezier(0.5, 0, 0.75, 0) both; }
-@keyframes rot-in { from { opacity: 0; transform: translateY(0.45em); filter: blur(10px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@keyframes rot-out { to { opacity: 0; transform: translateY(-0.35em); filter: blur(8px); } }
+/* Sequential: the old word leaves fully, then the new one enters. No blur. */
+.rot-word.out { animation: rot-out 0.28s ease-in both; }
+.rot-word.in { animation: rot-in 0.42s var(--ease-out) 0.28s both; }
+@keyframes rot-in { from { opacity: 0; transform: translateY(0.3em); } to { opacity: 1; transform: none; } }
+@keyframes rot-out { to { opacity: 0; transform: translateY(-0.3em); } }
 .home-lede { max-width: 34em; font-size: 1.12rem; color: var(--ink-2); text-wrap: pretty; }
 .home-lede em { color: var(--ink); font-style: normal; }
 .home-ask { display: grid; gap: 12px; }
