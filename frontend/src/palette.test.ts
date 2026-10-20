@@ -5,8 +5,6 @@ const files = import.meta.glob(['./**/*.{ts,tsx,css}', '!./**/*.test.*'], { quer
 const tokens = files['./styles/tokens.css']
 
 const RETIRED = /--(oat|celadon|sand|signal|ochre|rule-soft)\b|B4CCBE|5E8A79|3A5F52|2F4E43|EEE8DC|E4DCCB|3358C7|24408F|9C7026|C7B89C|94,\s?138,\s?121/i
-// Still on the old palette until its own task: removed in Task 6 (AtlasMark).
-const EXEMPT = new Set(['./components/AtlasMark.tsx'])
 
 const NEWSPRINT: Record<string, string> = {
   '--paper': '#F5F5F1',
@@ -70,7 +68,7 @@ describe('newsprint palette', () => {
   })
 
   it('leaves no retired colour or token in source', () => {
-    const offenders = Object.entries(files).filter(([f, src]) => !EXEMPT.has(f) && RETIRED.test(src)).map(([f]) => f)
+    const offenders = Object.entries(files).filter(([, src]) => RETIRED.test(src)).map(([f]) => f)
     expect(offenders).toEqual([])
   })
 

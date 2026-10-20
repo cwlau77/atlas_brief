@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 // ?raw imports are typed by vite/client, so this needs no Node types in the app tsconfig.
 import html from '../index.html?raw'
 import fav from '../public/brand/favicon.svg?raw'
+import lockup from '../public/brand/atlas-lockup.svg?raw'
+import lockupRev from '../public/brand/atlas-lockup-reversed.svg?raw'
+import markRev from '../public/brand/atlas-mark-reversed.svg?raw'
 import mark from '../public/brand/atlas-mark.svg?raw'
 
+const lockups = { lockup, lockupRev, markRev }
 const ORIGIN = 'https://atlasbrief-nine.vercel.app'
 
 describe('index.html brand metadata', () => {
@@ -25,15 +29,19 @@ describe('favicon', () => {
   })
   it('switches to the reversed palette on dark tab strips', () => {
     expect(fav).toContain('@media (prefers-color-scheme: dark)')
-    expect(fav).toContain('#F3EEE3')
-    expect(fav).toContain('#D3E2D9')
-    expect(fav).toContain('#8FA9F2')
+    const dark = fav.slice(fav.indexOf('@media (prefers-color-scheme: dark)'))
+    for (const c of ['#D5DCFA', '#8FA2F3', '#5A73EA', '#FF6A4D']) expect(dark).toContain(c)
   })
 })
 
 describe('brand mark', () => {
-  it('is drawn in celadon, not moss', () => {
-    expect(mark).toContain('#5E8A79')
-    expect(mark).not.toContain('#3D5A45')
+  it('is drawn in ultramarine with a red fix', () => {
+    for (const c of ['#AEBBF5', '#5A73EA', '#1F3FE0', '#E2381B']) expect(mark).toContain(c)
+  })
+  it('leaves no celadon or old blue in any brand svg', () => {
+    for (const svg of [mark, fav, ...Object.values(lockups)]) {
+      expect(svg).not.toContain('B4CCBE')
+      expect(svg).not.toContain('3358C7')
+    }
   })
 })

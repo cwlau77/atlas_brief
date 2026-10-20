@@ -1,4 +1,4 @@
-"""Write the Atlas lockup SVGs with "atlas" outlined from Jost 500.
+"""Write the Atlas lockup SVGs with "atlas" outlined from IBM Plex Sans 600.
 
 Usage (from the repo root):
   python3 -m venv /tmp/atlas-brand && /tmp/atlas-brand/bin/pip install fonttools
@@ -14,16 +14,16 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
-# Pinned to the commit that last touched Jost[wght].ttf, so the outline never
-# shifts under us if google/fonts updates the family on main.
-JOST_URL = (
+# Pinned to the commit that last touched IBMPlexSans[wdth,wght].ttf, so the
+# outline never shifts under us if google/fonts updates the family on main.
+PLEX_URL = (
     "https://github.com/google/fonts/raw/"
-    "91b26e2e0231f5aa85f5470a7b23d6d732ab15fc/ofl/jost/Jost%5Bwght%5D.ttf"
+    "8409f033cd7dee08914990602f0df5f5e70e0c14/ofl/ibmplexsans/IBMPlexSans%5Bwdth,wght%5D.ttf"
 )
 OUT = pathlib.Path(__file__).resolve().parents[2] / "public" / "brand"
 MARK = {
-    False: ("#B4CCBE", "#5E8A79", "#3A5F52", "#3358C7", "#3A5F52"),
-    True: ("#F3EEE3", "#D3E2D9", "#A9C6B8", "#8FA9F2", "#F3EEE3"),
+    False: ("#AEBBF5", "#5A73EA", "#1F3FE0", "#E2381B", "#0E1116"),
+    True: ("#D5DCFA", "#8FA2F3", "#5A73EA", "#FF6A4D", "#F5F5F1"),
 }
 FONT_SIZE = 100  # lockup units: mark height 0.92em = 92, gap 0.28em = 28
 
@@ -50,8 +50,8 @@ def word_path(
 
 
 def main() -> None:
-    raw = urllib.request.urlopen(JOST_URL).read()
-    font = instantiateVariableFont(TTFont(io.BytesIO(raw)), {"wght": 500})
+    raw = urllib.request.urlopen(PLEX_URL).read()
+    font = instantiateVariableFont(TTFont(io.BytesIO(raw)), {"wght": 600, "wdth": 100})
     cap = font["OS/2"].sCapHeight / font["head"].unitsPerEm * FONT_SIZE
     xh = font["OS/2"].sxHeight / font["head"].unitsPerEm * FONT_SIZE
     mark_h = 0.92 * FONT_SIZE

@@ -18,19 +18,22 @@ describe('AtlasMark', () => {
 
   const fill = (part: string) => container.querySelector(`[data-part="${part}"]`)?.getAttribute('fill')
 
-  it('draws three celadon folds and a royal blue fix', () => {
+  it('draws three ultramarine folds and a red fix', () => {
     act(() => root.render(<AtlasMark />))
-    expect(fill('left')).toBe('#B4CCBE')
-    expect(fill('centre')).toBe('#5E8A79')
-    expect(fill('right')).toBe('#3A5F52')
-    expect(fill('fix')).toBe('#3358C7')
+    expect(fill('left')).toBe('#AEBBF5')
+    expect(fill('centre')).toBe('#5A73EA')
+    expect(fill('right')).toBe('#1F3FE0')
+    expect(fill('fix')).toBe('#E2381B')
     expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
   })
 
   it('uses the reversed palette on dark grounds', () => {
     act(() => root.render(<AtlasMark reversed />))
     expect(fill('left')).toBe(ATLAS_MARK_PALETTES.reversed.left)
-    expect(fill('fix')).toBe('#8FA9F2')
+    expect(fill('left')).toBe('#D5DCFA')
+    expect(fill('centre')).toBe('#8FA2F3')
+    expect(fill('right')).toBe('#5A73EA')
+    expect(fill('fix')).toBe('#FF6A4D')
   })
 
   it('is announced as an image when given a title', () => {
