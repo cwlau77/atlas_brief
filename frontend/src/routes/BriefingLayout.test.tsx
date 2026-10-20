@@ -31,7 +31,7 @@ describe('BriefingLayout masthead', () => {
 
   it('is a compact title row with meta and tabs, without the ask box or contours', () => {
     const head = container.querySelector('.masthead')!
-    expect(head.querySelector('h1')!.textContent).toBe('red sea shipping')
+    expect(head.querySelector('h1')!.textContent).toBe('Red sea shipping')
     expect(head.querySelector('form')).toBeNull()
     expect(container.querySelector('.masthead-kicker')).toBeNull()
     expect(container.querySelector('canvas, .contours')).toBeNull()

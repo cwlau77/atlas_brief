@@ -19,10 +19,10 @@
 .alert-body { color: var(--ink-2); }
 
 .prio { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-2); }
-.prio svg { flex: none; }
-.prio-high svg { color: var(--hot); }
-.prio-medium svg { color: var(--warm); }
-.prio-low svg { color: var(--ink-3); }
+.prio-square { flex: none; width: 8px; height: 8px; background: currentColor; }
+.prio-high .prio-square { color: var(--hot); }
+.prio-medium .prio-square { color: var(--warm); }
+.prio-low .prio-square { color: var(--ink-3); }
 
 .timeline-wrap { display: grid; gap: 48px; }
 .timeline {

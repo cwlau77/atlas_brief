@@ -25,7 +25,7 @@
   justify-content: space-between;
   gap: 0.28em;
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 600;
   font-size: clamp(120px, 15vw, 260px);
   line-height: 0.78;
   letter-spacing: -0.03em;

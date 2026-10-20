@@ -30,7 +30,7 @@
   border-radius: 8px;
 }
 .ask-field select:hover { background: var(--paper-deep); }
-.ask-stage { display: flex; align-items: center; gap: 10px; color: var(--ink-2); text-transform: none; letter-spacing: 0.02em; }
+.ask-stage { display: flex; align-items: center; gap: 10px; color: var(--ink-2); }
 .ask-beacon { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: ask-pulse 1.4s ease-in-out infinite; }
 @keyframes ask-pulse { 50% { opacity: 0.3; } }
 .ask-error {

@@ -30,9 +30,8 @@
   --route-4: #717985;
   --route-5: #5A73EA;
 
-  --font-sans: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif;
-  --font-display: 'Jost', 'Futura', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --font-sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: var(--font-sans);
 
   --radius: 14px;
   --radius-sm: 10px;

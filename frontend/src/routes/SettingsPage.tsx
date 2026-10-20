@@ -103,7 +103,7 @@ export function SettingsPage() {
 
         <div className="settings-sections">
           <section id="profile" className="settings-card" aria-labelledby="profile-h">
-            <h2 id="profile-h" className="label">Profile</h2>
+            <h2 id="profile-h" className="label label-mark">Profile</h2>
             <div className="profile-row">
               <div className="profile-avatar" aria-hidden="true">{initialsFor(profile)}</div>
               <div className="profile-name-block">
@@ -128,12 +128,12 @@ export function SettingsPage() {
           </section>
 
           <section id="time" className="settings-card" aria-labelledby="time-h">
-            <h2 id="time-h" className="label">Time</h2>
+            <h2 id="time-h" className="label label-mark">Time</h2>
             <TimeZonePicker value={settings.timeZone} onChange={(tz) => updateSettings({ timeZone: tz })} />
           </section>
 
           <section id="reading" className="settings-card" aria-labelledby="reading-h">
-            <h2 id="reading-h" className="label">Reading</h2>
+            <h2 id="reading-h" className="label label-mark">Reading</h2>
             <ul className="settings-list">
               {TOGGLES.map(({ key, label, hint }) => (
                 <li key={key} className="settings-item">
@@ -157,7 +157,7 @@ export function SettingsPage() {
           </section>
 
           <section id="data" className="settings-card" aria-labelledby="data-h">
-            <h2 id="data-h" className="label">Your data</h2>
+            <h2 id="data-h" className="label label-mark">Your data</h2>
             <div className="data-row">
               <p>
                 {plural(saved.length, 'briefing')} · {starred.length} starred

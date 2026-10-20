@@ -8,7 +8,7 @@ export function AlertCallout({ alerts }: { alerts: ViewAlert[] }) {
   if (!alerts.length) return <p className="story-note">No priority alerts in this briefing.</p>
   return (
     <section className="alerts" aria-labelledby="alerts-h">
-      <h2 id="alerts-h" className="section-label label">Priority alerts · read first</h2>
+      <h2 id="alerts-h" className="section-label label label-mark">Priority alerts · read first</h2>
       <ul className="alert-list">
         {alerts.map((a, i) => (
           <li key={`${a.title}-${i}`} className={`alert alert-${a.type}`}>

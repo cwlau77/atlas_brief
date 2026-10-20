@@ -2,13 +2,12 @@
 .masthead { display: grid; gap: var(--space-3); padding-block: var(--space-3) 0; }
 .masthead-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-5); }
 .masthead-title {
-  font-weight: 500;
+  font-weight: 600;
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 4vw, 3rem);
   letter-spacing: -0.03em;
   line-height: 1.05;
 }
-.masthead-title::first-letter { text-transform: uppercase; }
 .masthead-meta { color: var(--ink-3); }
 .tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--rule); }
 .tab {

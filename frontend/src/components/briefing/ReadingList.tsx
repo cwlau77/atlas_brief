@@ -5,7 +5,7 @@ export function ReadingList({ readings }: { readings: ViewReading[] }) {
   if (!readings.length) return null
   return (
     <section className="reading" aria-labelledby="reading-h">
-      <h2 id="reading-h" className="section-label label">Read next</h2>
+      <h2 id="reading-h" className="section-label label label-mark">Read next</h2>
       <ol className="reading-list">
         {readings.map((r, i) => (
           <li key={`${r.link}-${i}`} className="reading-item">

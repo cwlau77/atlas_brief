@@ -1,6 +1,7 @@
 // API briefing -> SavedBriefing, the persisted view-model. Its shape must stay
 // readable by entries already sitting in users' localStorage.
 
+import { upperFirst } from './text'
 import type { ApiBriefing, ApiPlace, Contradiction, SourceCitation } from './types'
 
 export type AlertTone = 'urgent' | 'warning' | 'info'
@@ -112,7 +113,7 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
     },
     alerts: (apiBriefing.priority_alerts || []).map((alert) => ({
       type: alert.severity === 'critical' ? 'urgent' : alert.severity === 'high' ? 'warning' : 'info',
-      label: alert.severity.toUpperCase(),
+      label: upperFirst(alert.severity),
       title: alert.headline,
       description: alert.rationale,
       sources: alert.sources || [],

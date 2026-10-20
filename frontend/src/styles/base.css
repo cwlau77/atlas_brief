@@ -39,8 +39,8 @@ body::after {
 
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1.15;
   color: var(--ink);
   text-wrap: balance;
@@ -72,17 +72,25 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 
 .mono {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
-/* Small uppercase mono label: eyebrows, tags, timestamps. */
+/* Small sentence-case label: eyebrows, tags, timestamps. */
 .label {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  text-transform: none;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+.label-mark::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  margin-right: var(--space-2);
 }
 
 .visually-hidden {

@@ -17,9 +17,9 @@
 .settings-card { display: grid; gap: var(--space-4); padding: var(--space-5); border-radius: var(--radius); background: var(--paper); box-shadow: inset 0 0 0 1px var(--rule); scroll-margin-top: var(--space-5); }
 .settings-card > h2.label { color: var(--ink-2); }
 .profile-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
-.profile-avatar { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--paper); font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
+.profile-avatar { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--paper); font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; }
 .profile-name-block { display: grid; gap: 2px; }
-.profile-display-name { font-family: var(--font-display); font-weight: 500; font-size: 1.25rem; }
+.profile-display-name { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; }
 .profile-display-meta { color: var(--ink-3); font-size: 0.9rem; }
 .profile-edit { margin-left: auto; }
 .profile-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }

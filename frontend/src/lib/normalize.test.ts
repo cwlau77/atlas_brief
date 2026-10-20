@@ -67,7 +67,7 @@ describe('normalizeBriefing', () => {
 
   it('maps severities to legacy tones', () => {
     expect(vm.alerts.map((a) => a.type)).toEqual(['urgent', 'warning', 'info'])
-    expect(vm.alerts[0].label).toBe('CRITICAL')
+    expect(vm.alerts[0].label).toBe('Critical')
   })
 
   it('counts regions across developments', () => {

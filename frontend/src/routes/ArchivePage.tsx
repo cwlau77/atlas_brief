@@ -6,6 +6,7 @@ import { PrintIcon, StarIcon, TrashIcon } from '../components/icons'
 import { groupThreads, hasHighAlert, type TopicThread } from '../lib/archive'
 import type { SavedBriefing } from '../lib/normalize'
 import { plural } from '../lib/plural'
+import { upperFirst } from '../lib/text'
 import { formatDate, formatDateTime } from '../lib/time'
 import { useAppState } from '../state/hooks'
 import './archive.css'
@@ -13,7 +14,7 @@ import './archive.css'
 function CompareColumn({ briefing, timeZone }: { briefing: SavedBriefing; timeZone: string }) {
   return (
     <div className="compare-col">
-      <h3 className="compare-title">{briefing.area}</h3>
+      <h3 className="compare-title">{upperFirst(briefing.area)}</h3>
       <p className="compare-issued label">{formatDateTime(briefing.generatedAt, timeZone)}</p>
       <div className="compare-block">
         <span className="label">Developments</span>
@@ -175,7 +176,7 @@ export function ArchivePage() {
                           onChange={() => togglePick(ids, pickedHere < ids.length)}
                         />
                       )}
-                      <h2 className="thread-title">{t.area}{anyStar && <StarIcon size={14} filled className="thread-star" />}</h2>
+                      <h2 className="thread-title">{upperFirst(t.area)}{anyStar && <StarIcon size={14} filled className="thread-star" />}</h2>
                       <p className="label">{plural(t.briefings.length, 'briefing')} · since {dayMonth(t.briefings[0].generatedAt, tz)}</p>
                     </div>
                     <ol className="thread-string">
@@ -250,7 +251,7 @@ export function ArchivePage() {
 
           {pair.length === 2 && (
             <section className="compare-panel" aria-labelledby="compare-h">
-              <h2 id="compare-h" className="label">Side by side</h2>
+              <h2 id="compare-h" className="label label-mark">Side by side</h2>
               <div className="compare-split">
                 <CompareColumn briefing={pair[0]} timeZone={tz} />
                 <CompareColumn briefing={pair[1]} timeZone={tz} />

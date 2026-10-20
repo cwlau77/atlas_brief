@@ -3,6 +3,7 @@ import { formatDateTime } from '../lib/time'
 import { useAppState } from '../state/hooks'
 import { findBriefing } from '../state/resolveBriefing'
 import { plural } from '../lib/plural'
+import { upperFirst } from '../lib/text'
 import type { BriefingOutletContext } from './briefingContext'
 import { UnsavedBriefing } from './UnsavedBriefing'
 import './briefing-layout.css'
@@ -20,7 +21,7 @@ export function BriefingLayout() {
     <div className={`briefing ${settings.compactMode ? 'compact' : ''}`}>
       <header className="masthead wrap">
         <div className="masthead-row">
-          <h1 className="masthead-title">{briefing.area}</h1>
+          <h1 className="masthead-title">{upperFirst(briefing.area)}</h1>
           <p className="masthead-meta label">
             Issued {formatDateTime(briefing.generatedAt, settings.timeZone)} · {briefing.frequency} ·{' '}
             {plural(briefing.stats.articles, 'article')} · {plural(briefing.stats.sources, 'source')}

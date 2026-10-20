@@ -20,7 +20,6 @@
   box-shadow: inset 0 0 0 1px var(--rule);
 }
 .thread-title { display: flex; align-items: center; gap: var(--space-2); font-size: 1.15rem; letter-spacing: -0.015em; }
-.thread-title::first-letter { text-transform: uppercase; }
 .thread-star { color: var(--accent); flex: none; }
 .thread-name .label { color: var(--ink-3); margin-top: var(--space-1); }
 .thread-count { color: var(--ink-3); text-align: right; }
@@ -129,7 +128,6 @@
 .compare-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
 .compare-col { display: grid; gap: 14px; align-content: start; }
 .compare-title { font-size: 1.15rem; }
-.compare-title::first-letter { text-transform: uppercase; }
 .compare-issued { color: var(--ink-3); }
 .compare-block { display: grid; gap: 6px; }
 .compare-block > .label { color: var(--ink-2); }

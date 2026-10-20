@@ -94,7 +94,7 @@ export function StoryTab() {
       </div>
       {!noAlerts && <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} />}
       <section className="wrap" aria-labelledby="timeline-h">
-        <h2 id="timeline-h" className="section-label label">
+        <h2 id="timeline-h" className="section-label label label-mark">
           Key developments · {count} event{count === 1 ? '' : 's'}
         </h2>
         <Timeline briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced} highlight={highlight} />

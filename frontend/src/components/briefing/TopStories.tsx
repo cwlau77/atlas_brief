@@ -21,7 +21,7 @@ export function TopStories({ briefing, timeZone, onOpen, layout = 'strip' }: {
   if (order.length === 0) return null
   return (
     <section className={stack ? 'top-stories top-stories-stack' : 'top-stories wrap'} aria-labelledby="top-stories-h">
-      <h2 id="top-stories-h" className="section-label label">Top stories</h2>
+      <h2 id="top-stories-h" className="section-label label label-mark">Top stories</h2>
       <ol className={stack ? 'story-stack' : 'story-strip'}>
         {order.map((i) => (
           <li key={i}>

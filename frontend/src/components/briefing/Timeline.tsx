@@ -245,7 +245,7 @@ export function Timeline({ briefing, timeZone, showContext, reduced, highlight }
       </div>
       {unlinked.length > 0 && (
         <section className="also" aria-labelledby="also-h">
-          <h2 id="also-h" className="section-label label">Also in this briefing</h2>
+          <h2 id="also-h" className="section-label label label-mark">Also in this briefing</h2>
           <div className="also-grid">
             {unlinked.map((l) => (l.kind === 'tension'
               ? <TensionCard key={l.key} id={`link-${l.key}`} tension={briefing.emergingTensions[l.i]} />
