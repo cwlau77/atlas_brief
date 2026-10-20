@@ -55,8 +55,8 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 6
     # Cap on new (uncached) briefings across ALL clients: the real bound on API spend,
     # since per-IP limits can be beaten with many addresses. 0 disables a window.
-    briefing_budget_per_hour: int = 10
-    briefing_budget_per_day: int = 30
+    briefing_budget_per_hour: int = 20
+    briefing_budget_per_day: int = 100
     # Cloudflare Turnstile secret. When set, POST /briefing needs a valid X-Turnstile-Token
     # (the frontend gets one when VITE_TURNSTILE_SITE_KEY is set). Unset = no check.
     turnstile_secret_key: Optional[str] = None

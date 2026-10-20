@@ -69,8 +69,8 @@ def test_no_secret_means_no_check(client, monkeypatch):
     assert post(client).status_code == 200
 
 
-def test_budget_defaults_are_tight():
+def test_budget_defaults():
     from backend.config import Settings
     defaults = Settings.model_fields
-    assert defaults["briefing_budget_per_hour"].default == 10
-    assert defaults["briefing_budget_per_day"].default == 30
+    assert defaults["briefing_budget_per_hour"].default == 20
+    assert defaults["briefing_budget_per_day"].default == 100

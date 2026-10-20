@@ -71,7 +71,7 @@ All knobs live in `.env` / `config.py`:
 - `RELEVANCE_SIMILARITY_THRESHOLD` (default 0.30 cosine vs. focus embedding; used only by the fallback ranker when Haiku rerank is off or fails)
 - `HOURS_LOOKBACK` (default 24)
 - `RATE_LIMIT_PER_MINUTE` (default 6): per-client cap on `POST /briefing`, keyed on the right-most `X-Forwarded-For` hop (the one the platform proxy adds; earlier entries are client-controlled)
-- `BRIEFING_BUDGET_PER_HOUR` / `BRIEFING_BUDGET_PER_DAY` (defaults 10 / 30): cap on new, uncached briefings across all clients. This is what bounds API spend; cached briefings don't count. 0 disables a window
+- `BRIEFING_BUDGET_PER_HOUR` / `BRIEFING_BUDGET_PER_DAY` (defaults 20 / 100): cap on new, uncached briefings across all clients. This is what bounds API spend; cached briefings don't count. 0 disables a window
 - `TURNSTILE_SECRET_KEY`: when set, `POST /briefing` requires a Cloudflare Turnstile token in `X-Turnstile-Token` (403 without a valid one; let through if Cloudflare is unreachable). Set the frontend's `VITE_TURNSTILE_SITE_KEY` first
 - `EXPOSE_DOCS` (default false): publish `/docs`, `/redoc` and `/openapi.json`
 
