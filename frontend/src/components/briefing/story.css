@@ -43,8 +43,8 @@
 .index-kind.hot { --kind: var(--hot); }
 .index-kind-sq { flex: none; width: 8px; height: 8px; background: var(--kind); }
 .index-sides { min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
-.index-strip { display: inline-flex; gap: 3px; }
-.index-strip i { width: 10px; height: 10px; box-shadow: inset 0 0 0 1px var(--rule-strong); }
+.index-strip { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; max-width: 96px; }
+.index-strip i { flex: none; width: 10px; height: 10px; box-shadow: inset 0 0 0 1px var(--rule-strong); }
 .index-strip i.on { background: var(--ink); box-shadow: none; }
 .index-item.active .index-strip i.on { background: var(--accent); }
 .index-why {

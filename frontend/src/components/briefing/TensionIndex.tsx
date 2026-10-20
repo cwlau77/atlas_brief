@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { IndexItem } from '../../lib/tensionIndex'
 import type { IndexHighlight } from '../../state/useIndexHighlight'
 
@@ -16,10 +16,19 @@ export function TensionIndex({ items, devCount, order, highlight }: {
   const [showAll, setShowAll] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
 
+  const sectionRef = useRef<HTMLElement>(null)
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') clear() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) clear() }
+    const onPointerDown = (e: Event) => {
+      if (!sectionRef.current?.contains(e.target as Node)) clear()
+    }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onPointerDown)
+    }
   }, [clear])
 
   if (!items.length) return null
@@ -32,7 +41,7 @@ export function TensionIndex({ items, devCount, order, highlight }: {
   })
 
   return (
-    <section className="tension-index" aria-labelledby="tension-index-h">
+    <section ref={sectionRef} className="tension-index" aria-labelledby="tension-index-h">
       <h2 id="tension-index-h" className="section-label label label-mark">Tensions · {items.length}</h2>
       <ul className="index-list">
         {shown.map((item) => {
@@ -44,6 +53,7 @@ export function TensionIndex({ items, devCount, order, highlight }: {
                 type="button"
                 className="index-row"
                 aria-pressed={pinned === item.key}
+                aria-describedby={`index-why-${item.key}`}
                 onClick={() => pin(item.key)}
                 onMouseEnter={() => preview(item.key)}
                 onMouseLeave={() => preview(null)}
@@ -59,8 +69,15 @@ export function TensionIndex({ items, devCount, order, highlight }: {
                   {order.map((d) => <i key={d} className={item.devs.includes(d) ? 'on' : undefined} />)}
                 </span>
               </button>
-              <p className={open ? 'index-why open' : 'index-why'}>{item.why}</p>
-              <button type="button" className="index-more" aria-expanded={open} onClick={() => toggleWhy(item.key)}>
+              <p id={`index-why-${item.key}`} className={open ? 'index-why open' : 'index-why'}>{item.why}</p>
+              <button
+                type="button"
+                className="index-more"
+                aria-expanded={open}
+                aria-controls={`index-why-${item.key}`}
+                aria-label={`${open ? 'Show less' : 'Show full reason'}: ${item.sides}`}
+                onClick={() => toggleWhy(item.key)}
+              >
                 {open ? 'less' : 'more'}
               </button>
             </li>

@@ -63,6 +63,23 @@ describe('TensionIndex', () => {
     expect(rows()[0].getAttribute('aria-pressed')).toBe('false')
   })
 
+  it('pointerdown outside unpins; inside (including Show more) does not', () => {
+    act(() => rows()[0].click())
+    const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Show 1 more')!
+    act(() => { more.dispatchEvent(new Event('pointerdown', { bubbles: true })); more.click() })
+    expect(rows()[0].getAttribute('aria-pressed')).toBe('true')
+    act(() => { document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })) })
+    expect(rows()[0].getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('row is described by its why text and toggle has a contextual label', () => {
+    const id = rows()[0].getAttribute('aria-describedby')!
+    expect(document.getElementById(id)!.textContent).toBe('Carriers reroute.')
+    const toggle = container.querySelector('.index-more')!
+    expect(toggle.getAttribute('aria-label')).toBe('Show full reason: Shipping lines vs Houthis')
+    expect(toggle.getAttribute('aria-controls')).toBe(id)
+  })
+
   it('strip fills linked developments in order', () => {
     const squares = [...rows()[0].querySelectorAll('.index-strip i')]
     expect(squares).toHaveLength(3)
