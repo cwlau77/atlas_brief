@@ -27,3 +27,6 @@
 
 .brand-object { display: block; width: 96px; height: 96px; object-fit: contain; margin-bottom: 8px; }
 
+
+/* Cloudflare Turnstile: invisible unless Cloudflare asks for a click, then shown above everything. */
+.turnstile-slot { position: fixed; left: 50%; bottom: var(--space-5); z-index: 200; transform: translateX(-50%); }

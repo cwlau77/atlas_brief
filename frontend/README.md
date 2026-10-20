@@ -32,6 +32,14 @@ can check stylesheets for stray colours.
 `npm run build:land`. Re-run it only after upgrading `world-atlas`, and
 commit the regenerated file.
 
+## Bot check (Cloudflare Turnstile)
+
+Set `VITE_TURNSTILE_SITE_KEY` (public) in Vercel's environment and redeploy. The
+app then gets a Turnstile token before each `POST /api/briefing` and sends it as
+`X-Turnstile-Token`; the backend checks it once `TURNSTILE_SECRET_KEY` is set on
+Render. Without the site key nothing loads from Cloudflare. For local testing,
+Cloudflare's always-pass test site key is `1x00000000000000000000AA`.
+
 ## Architecture notes
 
 - `src/styles/tokens.css` is the single source of truth for color, type and

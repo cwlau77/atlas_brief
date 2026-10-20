@@ -1,9 +1,18 @@
+import { getTurnstileToken } from './turnstile'
 import type { ApiBriefing } from './types'
 
-export async function requestBriefing(focus: string, signal?: AbortSignal): Promise<ApiBriefing> {
+export async function requestBriefing(
+  focus: string,
+  signal?: AbortSignal,
+  getToken: () => Promise<string | null> = getTurnstileToken,
+): Promise<ApiBriefing> {
+  // The bot check runs first; its failure surfaces as the briefing error.
+  const token = await getToken()
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) headers['X-Turnstile-Token'] = token
   const res = await fetch('/api/briefing', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ focus }),
     signal,
   })

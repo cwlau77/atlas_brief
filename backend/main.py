@@ -4,6 +4,7 @@ import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend import turnstile
 from backend.config import settings
 from backend.ingestion import ingest
 from backend.models import Briefing, BriefingRequest
@@ -97,6 +98,13 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
         raise HTTPException(
             status_code=429,
             detail="Too many briefing requests from this address. Please wait a minute and try again.",
+        )
+
+    # Before any work, cached or not: scripts without a browser can't get a token.
+    if not await turnstile.verify(request.headers.get("x-turnstile-token")):
+        raise HTTPException(
+            status_code=403,
+            detail="We couldn't verify this request came from a person. Reload the page and try again.",
         )
 
     focus = req.focus.strip()
