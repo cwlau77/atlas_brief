@@ -31,7 +31,7 @@
   color: var(--ink);
   pointer-events: none;
 }
-.globe-hotspot-label b { color: var(--hot-ink); font-weight: 500; }
+.globe-hotspot-label b { color: var(--ink-2); font-weight: 500; }
 .globe-hotspot.labeled .globe-hotspot-label,
 .globe-hotspot:hover .globe-hotspot-label,
 .globe-hotspot:focus-visible .globe-hotspot-label,

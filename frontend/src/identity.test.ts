@@ -74,3 +74,13 @@ describe('footer', () => {
     expect(/grayscale\(1\)/.test(rule('.mountain-band img')) || footerTsx.includes('mountains-wash')).toBe(true)
   })
 })
+
+describe('focus and print', () => {
+  it('suppresses the ring on programmatically focused headings only', () => {
+    expect(base).toMatch(/\[tabindex="-1"\]:focus\s*\{\s*outline:\s*none;?\s*\}/)
+    expect(base).toContain(':focus-visible')
+  })
+  it('keeps the retired .cur selector out of print rules', () => {
+    expect(base).not.toMatch(/\.cur\b/)
+  })
+})

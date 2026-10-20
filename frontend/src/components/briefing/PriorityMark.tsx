@@ -1,3 +1,5 @@
+import { upperFirst } from '../../lib/text'
+
 type Priority = 'high' | 'medium' | 'low'
 
 const LABELS: Record<Priority, string> = { high: 'High priority', medium: 'Medium priority', low: 'Low priority' }
@@ -7,7 +9,7 @@ export function PriorityMark({ priority, label }: { priority: Priority; label?: 
   return (
     <span className={`prio prio-${priority} label`}>
       <span className="prio-square" aria-hidden="true" />
-      {label ?? LABELS[priority]}
+      {label ? upperFirst(label.toLowerCase()) : LABELS[priority]}
     </span>
   )
 }

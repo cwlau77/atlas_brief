@@ -61,6 +61,9 @@ input, select, textarea { font: inherit; color: inherit; }
   outline-offset: 3px;
 }
 
+/* Headings take programmatic focus on route change; no ring for those. */
+[tabindex="-1"]:focus { outline: none; }
+
 ::selection { background: rgba(31, 63, 224, 0.18); color: var(--ink); }
 
 .wrap {
@@ -138,7 +141,7 @@ input, select, textarea { font: inherit; color: inherit; }
 @media print {
   html, body { background: #fff; color: #000; }
   body::after { display: none; }
-  .nav, .footer, .ask, .tabs, .story-globe, .globe-view, .cur, .toast-host, .skip-link, .chips { display: none !important; }
+  .nav, .footer, .ask, .tabs, .story-globe, .globe-view, .toast-host, .skip-link, .chips { display: none !important; }
   .dev, .link-card, .alert { break-inside: avoid; border: 1px solid #ccc; }
   a { color: #000; }
 }

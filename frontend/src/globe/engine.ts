@@ -79,6 +79,7 @@ const HOT_VERT = /* glsl */ `
   }`
 
 const HOT_FRAG = /* glsl */ `
+  uniform vec3 uColor;
   varying float vPulse, vFace;
   void main() {
     float d = length(gl_PointCoord - 0.5);
@@ -87,7 +88,7 @@ const HOT_FRAG = /* glsl */ `
     float ring = smoothstep(0.03, 0.0, abs(d - ringR)) * (1.0 - vPulse);
     float a = (core + ring * 0.8) * vFace;
     if (a < 0.01) discard;
-    gl_FragColor = vec4(0.2, 0.345, 0.78, a);
+    gl_FragColor = vec4(uColor, a);
   }`
 
 // Route arcs: fade toward the limb like the land, dashes cut by distance along the arc.
@@ -112,7 +113,8 @@ const ARC_FRAG = /* glsl */ `
     gl_FragColor = vec4(uColor, a);
   }`
 
-const ARC_LIT = 0x1F3FE0
+const ACCENT = 0x1F3FE0
+const ARC_LIT = ACCENT
 const ARC_OPACITY = 0.9
 const ARC_DIM = 0.3
 // Raycast slack for hovering a 1px arc, in globe radii.
@@ -230,7 +232,7 @@ export class GlobeEngine {
     this.hotMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
-      uniforms: { uTime: this.uniforms.uTime, uPR: this.uniforms.uPR, uShow: { value: this.introDone ? 1 : 0 } },
+      uniforms: { uTime: this.uniforms.uTime, uPR: this.uniforms.uPR, uShow: { value: this.introDone ? 1 : 0 }, uColor: { value: rawColor(ACCENT) } },
       vertexShader: HOT_VERT,
       fragmentShader: HOT_FRAG,
     })
@@ -444,7 +446,7 @@ export class GlobeEngine {
         uSize: { value: size },
         uAlpha: { value: alpha },
         uColor: { value: rawColor(color) },
-        uHot: { value: rawColor(0x1F3FE0) },
+        uHot: { value: rawColor(ACCENT) },
       },
     })
     this.disposables.push(geo, mat)

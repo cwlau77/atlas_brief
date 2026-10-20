@@ -33,3 +33,9 @@
   /* Icon-only on phones; the text stays as the accessible name. */
   .nav-new-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+/* Plex Sans 600 is wider than the old display face; tighten so the New brief button clears 375px. */
+@media (max-width: 400px) {
+  .nav-inner { gap: 8px; }
+  .wordmark { font-size: 1.4rem; }
+  .nav-link { padding-inline: 7px; }
+}

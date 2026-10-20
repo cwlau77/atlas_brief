@@ -8,6 +8,7 @@
 - The route palette was implemented in Task 2, not Task 5.
 - The `::first-letter` uppercase rules were replaced with a TSX `upperFirst` helper.
 - The footer wash is stronger than the example filter here: brightness 1.55, contrast 0.5, opacity 0.8, a paper veil at 0.45, and a paper backing behind the base line.
+- Globe hotspot markers are a single `--accent` colour; the §10 ink-at-rest / `--hot` alert-linked split was not built (markers share one shader).
 **Builds on:** the brand identity spec (`2026-10-18-atlas-brand-identity-design.md`) and the Oat redesign (`2026-10-16-oat-redesign-design.md`). Their logo geometry, page structure, components and globe engine stay. This spec supersedes their palette, typography and label rules.
 **Exploration board:** visual companion session `.superpowers/brainstorm/50373-1792471787/content/` (`identity-directions.html` direction C, `footer-treatments.html` option 2, `logo-recolour.html` option B).
 

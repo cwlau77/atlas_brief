@@ -23,7 +23,7 @@ function CompareColumn({ briefing, timeZone }: { briefing: SavedBriefing; timeZo
       <div className="compare-block">
         <span className="label">Alerts</span>
         {briefing.alerts.length
-          ? <ul>{briefing.alerts.map((a, i) => <li key={i}><strong>{a.label}</strong>: {a.title}</li>)}</ul>
+          ? <ul>{briefing.alerts.map((a, i) => <li key={i}><strong>{upperFirst(a.label.toLowerCase())}</strong>: {a.title}</li>)}</ul>
           : <p className="compare-none">None issued.</p>}
       </div>
       <div className="compare-block">
