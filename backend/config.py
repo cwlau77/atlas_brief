@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     allowed_origins: str = "*"
     # Per-client-IP request budget for POST /briefing. 0 disables limiting.
     rate_limit_per_minute: int = 6
+    # Cap on new (uncached) briefings across ALL clients: the real bound on API spend,
+    # since per-IP limits can be beaten with many addresses. 0 disables a window.
+    briefing_budget_per_hour: int = 20
+    briefing_budget_per_day: int = 100
+    # Publish FastAPI's /docs, /redoc and /openapi.json. Keep off in production.
+    expose_docs: bool = False
 
     # Cache a generated briefing for this many minutes (per focus). 0 disables caching.
     cache_ttl_minutes: int = 15

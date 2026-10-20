@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 import backend.main as main
 from backend.config import settings
 from backend.ingestion.registry import IngestResult
-from backend.rate_limit import SlidingWindowLimiter
+from backend.rate_limit import GlobalBudget, SlidingWindowLimiter
 
 
 @pytest.fixture
@@ -23,6 +23,7 @@ def client(monkeypatch, make_article):
     monkeypatch.setattr(settings, "demo_mode", True)
     monkeypatch.setattr(settings, "rate_limit_per_minute", 0)
     monkeypatch.setattr(settings, "cache_ttl_minutes", 0)
+    monkeypatch.setattr(main, "_budget", GlobalBudget(per_hour=0, per_day=0))
     main._briefing_cache.clear()
     return TestClient(main.app)
 
@@ -56,6 +57,38 @@ def test_rate_limit_429(client, monkeypatch):
     codes = [client.post("/briefing", json={"focus": "trade policy"}).status_code for _ in range(3)]
     assert codes[:2] == [200, 200]
     assert codes[2] == 429
+
+
+def test_rate_limit_ignores_a_spoofed_forwarded_for(client, monkeypatch):
+    # The left-most X-Forwarded-For entry is whatever the client sent; only the
+    # right-most hop (appended by the platform's proxy) identifies the caller.
+    monkeypatch.setattr(settings, "rate_limit_per_minute", 2)
+    monkeypatch.setattr(main, "_limiter", SlidingWindowLimiter(2, 60.0))
+    codes = [
+        client.post("/briefing", json={"focus": f"spoof {i}"},
+                    headers={"X-Forwarded-For": f"10.0.0.{i}, 203.0.113.7"}).status_code
+        for i in range(3)
+    ]
+    assert codes == [200, 200, 429]
+
+
+def test_global_budget_caps_new_briefings_but_not_cached_ones(client, monkeypatch):
+    from backend.rate_limit import GlobalBudget
+    monkeypatch.setattr(settings, "cache_ttl_minutes", 15)
+    monkeypatch.setattr(main, "_budget", GlobalBudget(per_hour=1, per_day=10))
+    assert client.post("/briefing", json={"focus": "first topic"}).status_code == 200
+    blocked = client.post("/briefing", json={"focus": "second topic"})
+    assert blocked.status_code == 429
+    assert "briefing limit" in blocked.json()["detail"].lower()
+    # Already-generated briefings are still served from the cache.
+    assert client.post("/briefing", json={"focus": "first topic"}).status_code == 200
+
+
+def test_api_docs_are_not_published_by_default(client):
+    assert settings.expose_docs is False
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 404
+    assert "docs" not in client.get("/").json()
 
 
 def test_cache_serves_second_request(client, monkeypatch):

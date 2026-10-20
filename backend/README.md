@@ -70,6 +70,9 @@ All knobs live in `.env` / `config.py`:
 - `DEDUP_SIMILARITY_THRESHOLD` (default 0.85 cosine)
 - `RELEVANCE_SIMILARITY_THRESHOLD` (default 0.30 cosine vs. focus embedding; used only by the fallback ranker when Haiku rerank is off or fails)
 - `HOURS_LOOKBACK` (default 24)
+- `RATE_LIMIT_PER_MINUTE` (default 6): per-client cap on `POST /briefing`, keyed on the right-most `X-Forwarded-For` hop (the one the platform proxy adds; earlier entries are client-controlled)
+- `BRIEFING_BUDGET_PER_HOUR` / `BRIEFING_BUDGET_PER_DAY` (defaults 20 / 100): cap on new, uncached briefings across all clients. This is what bounds API spend; cached briefings don't count. 0 disables a window
+- `EXPOSE_DOCS` (default false): publish `/docs`, `/redoc` and `/openapi.json`
 
 ## Response shape
 

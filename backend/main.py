@@ -10,7 +10,7 @@ from backend.models import Briefing, BriefingRequest
 from backend.processing import deduplicate, embed_texts
 from backend.processing.rerank import rank_articles
 from backend.processing.urls import dedupe_exact
-from backend.rate_limit import SlidingWindowLimiter
+from backend.rate_limit import GlobalBudget, SlidingWindowLimiter
 from backend.search_plan import plan_search
 from backend.trending import Trending, get_trending
 from backend.synthesis import (
@@ -30,7 +30,14 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-app = FastAPI(title="Atlas Brief API", version="0.2.0")
+app = FastAPI(
+    title="Atlas Brief API",
+    version="0.2.0",
+    # No public API docs in production: they advertise every endpoint and offer a "try it" form.
+    docs_url="/docs" if settings.expose_docs else None,
+    redoc_url="/redoc" if settings.expose_docs else None,
+    openapi_url="/openapi.json" if settings.expose_docs else None,
+)
 
 # Simple in-memory briefing cache: {normalized_focus: (briefing, unix_expiry)}.
 # Valid because the backend runs as a single long-running process (Render);
@@ -38,6 +45,7 @@ app = FastAPI(title="Atlas Brief API", version="0.2.0")
 _briefing_cache: dict[str, tuple[Briefing, float]] = {}
 
 _limiter = SlidingWindowLimiter(settings.rate_limit_per_minute, 60.0)
+_budget = GlobalBudget(settings.briefing_budget_per_hour, settings.briefing_budget_per_day)
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,14 +69,21 @@ async def trending_endpoint() -> Trending:
 
 @app.get("/", include_in_schema=False)
 async def root() -> dict[str, str]:
-    return {"service": "atlas-brief-api", "docs": "/docs", "health": "/health"}
+    info = {"service": "atlas-brief-api", "health": "/health"}
+    if settings.expose_docs:
+        info["docs"] = "/docs"
+    return info
 
 
 def _client_ip(request: Request) -> str:
-    # Render/Vercel sit behind proxies; the first X-Forwarded-For hop is the client.
+    # Proxies append to X-Forwarded-For, so everything left of the last entry is
+    # whatever the client chose to send. Only the right-most hop, added by the
+    # platform proxy in front of this process, can't be forged.
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        hops = [h.strip() for h in forwarded.split(",") if h.strip()]
+        if hops:
+            return hops[-1]
     return request.client.host if request.client else "unknown"
 
 
@@ -92,6 +107,14 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
         if cached and cached[1] > time.time():
             logger.info("cache hit for focus=%r", focus)
             return cached[0]
+
+    # Cached briefings above are free; everything below spends API credit.
+    if not _budget.allow():
+        logger.warning("briefing budget exhausted; refusing focus=%r", focus)
+        raise HTTPException(
+            status_code=429,
+            detail="Atlas has reached its briefing limit for now. Please try again later.",
+        )
 
     started = time.monotonic()
     plan = await plan_search(focus)
