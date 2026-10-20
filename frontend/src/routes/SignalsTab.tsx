@@ -3,7 +3,8 @@ import { plural } from '../lib/plural'
 import { useBriefing } from './briefingContext'
 import './signals.css'
 
-const SEGMENT_COLORS = ['var(--celadon)', 'var(--celadon-light)', 'var(--sand)', 'var(--ochre)', 'var(--ink-3)']
+// The route lane palette doubles as the source mix palette: five distinct, non-heat colours.
+const SEGMENT_COLORS = ['var(--route-1)', 'var(--route-2)', 'var(--route-3)', 'var(--route-4)', 'var(--route-5)']
 
 function RankRows({ rows, emptyText }: { rows: [string, number][]; emptyText: string }) {
   if (!rows.length) return <p className="viz-empty">{emptyText}</p>

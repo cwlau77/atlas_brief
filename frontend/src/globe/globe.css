@@ -18,7 +18,7 @@
   transition: opacity var(--dur-mid);
 }
 .globe-hotspot[data-visible="false"] { opacity: 0; pointer-events: none; }
-.globe-hotspot:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.globe-hotspot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .globe-hotspot-label {
   position: absolute;
   left: 26px;
@@ -31,7 +31,7 @@
   color: var(--ink);
   pointer-events: none;
 }
-.globe-hotspot-label b { color: var(--signal-ink); font-weight: 500; }
+.globe-hotspot-label b { color: var(--hot-ink); font-weight: 500; }
 .globe-hotspot.labeled .globe-hotspot-label,
 .globe-hotspot:hover .globe-hotspot-label,
 .globe-hotspot:focus-visible .globe-hotspot-label,
@@ -50,7 +50,7 @@
   transition: opacity 0.2s;
 }
 .globe-panel[data-visible="false"] { opacity: 0; pointer-events: none; }
-.globe-panel-head { display: flex; justify-content: space-between; gap: 12px; color: var(--signal-ink); margin-bottom: 8px; }
+.globe-panel-head { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-2); margin-bottom: 8px; }
 .globe-panel ul { list-style: none; display: grid; gap: 2px; }
 .globe-panel li button {
   display: grid;
@@ -63,7 +63,7 @@
   text-align: left;
 }
 .globe-panel li button:hover,
-.globe-panel li button:focus-visible { background: var(--oat); }
+.globe-panel li button:focus-visible { background: var(--paper-deep); }
 .gp-title { font-weight: 600; font-size: 0.92rem; line-height: 1.3; color: var(--ink); }
 .gp-meta { font-size: 0.72rem; color: var(--ink-3); }
 .gp-none { font-size: 0.86rem; color: var(--ink-3); }
@@ -75,8 +75,8 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background:
-    radial-gradient(rgba(94, 138, 121, 0.35) 1px, transparent 1.5px) 0 0 / 9px 9px,
-    radial-gradient(circle at 35% 30%, var(--paper), var(--oat-deep) 72%);
+    radial-gradient(rgba(63, 71, 82, 0.35) 1px, transparent 1.5px) 0 0 / 9px 9px,
+    radial-gradient(circle at 35% 30%, var(--paper), var(--paper-deep) 72%);
   box-shadow: inset 0 0 0 1px var(--rule);
 }
 .globe-static-list { list-style: none; display: grid; gap: 14px; }
@@ -87,12 +87,12 @@
   padding: 0;
   text-align: left;
   text-decoration: underline;
-  text-decoration-color: var(--sand);
+  text-decoration-color: var(--rule-strong);
   text-underline-offset: 3px;
 }
 
 /* The point the camera is zoomed to stays marked while its carousel is open. */
-.globe-hotspot.zoomed { box-shadow: 0 0 0 2px var(--signal); }
+.globe-hotspot.zoomed { box-shadow: 0 0 0 2px var(--accent); }
 .globe-hotspot.zoomed .globe-hotspot-label { display: flex; }
 
 /* Briefing globes fade at the canvas edge so the zoomed view has no hard square crop.

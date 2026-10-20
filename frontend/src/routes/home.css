@@ -9,7 +9,7 @@
 }
 .home-copy { display: grid; gap: 28px; position: relative; z-index: 2; align-content: center; }
 .eyebrow { display: flex; flex-wrap: wrap; gap: 10px 18px; color: var(--ink-3); }
-.eyebrow span + span::before { content: '·'; margin-right: 18px; color: var(--sand); }
+.eyebrow span + span::before { content: '·'; margin-right: 18px; color: var(--rule-strong); }
 .home-title {
   font-weight: 400;
   font-family: var(--font-display);
@@ -18,7 +18,7 @@
   font-size: clamp(3rem, 7.4vw, 6.6rem);
 }
 .home-title .l1 { display: block; }
-.rot { display: block; position: relative; height: 1.12em; color: var(--celadon-deep); }
+.rot { display: block; position: relative; height: 1.12em; color: var(--accent); }
 .rot-word { position: absolute; left: 0; top: 0; white-space: nowrap; letter-spacing: -0.02em; }
 .rot-word.in { animation: rot-in 0.75s var(--ease-out) both; }
 .rot-word.out { animation: rot-out 0.45s cubic-bezier(0.5, 0, 0.75, 0) both; }
@@ -28,7 +28,7 @@
 .home-lede em { color: var(--ink); font-style: normal; }
 .home-ask { display: grid; gap: 12px; }
 .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.chips-label { color: var(--celadon-deep); margin-right: var(--space-1); }
+.chips-label { color: var(--ink-2); margin-right: var(--space-1); }
 .chips-live .chip { animation: chip-in var(--dur-mid) var(--ease-out) both; }
 @keyframes chip-in { from { opacity: 0; transform: translateY(4px); } }
 @media (prefers-reduced-motion: reduce) {
@@ -43,7 +43,7 @@
   padding: 7px 13px;
   transition: border-color var(--dur-quick), color var(--dur-quick), background-color var(--dur-quick);
 }
-.chip:hover:not(:disabled) { border-color: var(--celadon); color: var(--ink); background: rgba(248, 244, 235, 0.7); }
+.chip:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }
 .provenance { display: flex; flex-wrap: wrap; gap: 16px; color: var(--ink-3); }
 .home-globe { position: relative; width: 108%; margin-right: -8%; max-width: 700px; justify-self: end; }

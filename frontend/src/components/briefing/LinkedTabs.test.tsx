@@ -27,7 +27,7 @@ describe('LinkedTabs route colours', () => {
     ))
     const [tensionTab, contraTab] = [...container.querySelectorAll<HTMLButtonElement>('.dev-tab')]
     const dot = tensionTab.querySelector<HTMLElement>('.route-dot')
-    expect(dot?.style.getPropertyValue('--route')).toBe('var(--ochre)')
+    expect(dot?.style.getPropertyValue('--route')).toBe('var(--route-1)')
     expect(contraTab.querySelector('.route-dot')).toBeNull()
     expect(tensionTab.classList.contains('lit')).toBe(true)
     expect(contraTab.classList.contains('lit')).toBe(false)

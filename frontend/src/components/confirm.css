@@ -7,9 +7,9 @@
   border-radius: var(--radius);
   background: var(--paper);
   color: var(--ink);
-  box-shadow: var(--shadow-lift), inset 0 0 0 1px var(--rule-soft);
+  box-shadow: var(--shadow-lift), inset 0 0 0 1px var(--rule);
 }
-.confirm::backdrop { background: rgba(28, 35, 31, 0.35); }
+.confirm::backdrop { background: rgba(14, 17, 22, 0.35); }
 .confirm-title { font-size: 1.25rem; margin-bottom: var(--space-2); }
 .confirm-body { color: var(--ink-2); }
 .confirm-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); }

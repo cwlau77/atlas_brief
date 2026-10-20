@@ -29,7 +29,7 @@ describe('buildArcs', () => {
   it('chains the stops in timeline order through each development anchor', () => {
     const b = makeBriefing()
     const [arc] = buildArcs(b, [route([0, 1, 2], { key: 'contradiction-0', dashed: true, color: ROUTE_COLORS[2] })], 48)
-    expect(arc).toMatchObject({ key: 'contradiction-0', color: '#5E8A79', dashed: true })
+    expect(arc).toMatchObject({ key: 'contradiction-0', color: '#0B7FA8', dashed: true })
     const [a0, a2] = [devAnchor(b, 0)!, devAnchor(b, 2)!]
     expect(near(arc.points[0], toVec3(a0.lat, a0.lng))).toBe(true)
     expect(near(arc.points.at(-1)!, toVec3(a2.lat, a2.lng))).toBe(true)

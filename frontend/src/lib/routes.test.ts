@@ -11,14 +11,14 @@ const tension = (description: string) => ({ actors: 'A ↔ B', level: 'medium' a
 const contradiction = (topic: string) => ({ topic, account_a: 'a', account_b: 'b', sources_a: [], sources_b: [] })
 
 describe('ROUTE_COLORS', () => {
-  it('lists the five brand colours in assignment order', () => {
+  it('lists the five route colours in assignment order', () => {
     expect(MAX_LANES).toBe(5)
     expect(ROUTE_COLORS).toEqual([
-      { token: '--ochre', hex: '#9C7026' },
-      { token: '--ink', hex: '#1C231F' },
-      { token: '--celadon', hex: '#5E8A79' },
-      { token: '--sand', hex: '#C7B89C' },
-      { token: '--celadon-deep', hex: '#3A5F52' },
+      { token: '--route-1', hex: '#1F3FE0' },
+      { token: '--route-2', hex: '#0E1116' },
+      { token: '--route-3', hex: '#0B7FA8' },
+      { token: '--route-4', hex: '#717985' },
+      { token: '--route-5', hex: '#5A73EA' },
     ])
   })
 })

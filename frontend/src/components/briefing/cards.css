@@ -6,12 +6,12 @@
   height: 100%;
   background: var(--paper);
   border-radius: var(--radius);
-  box-shadow: inset 0 0 0 1px var(--rule-soft);
+  box-shadow: inset 0 0 0 1px var(--rule);
   overflow: hidden;
   transition: box-shadow var(--dur-quick) var(--ease-out);
 }
-.story-card:hover, .story-card:focus-within { box-shadow: inset 0 0 0 1px var(--celadon), var(--shadow-lift); }
-.story-card-media { position: relative; aspect-ratio: 16 / 9; background: var(--oat-deep); overflow: hidden; }
+.story-card:hover, .story-card:focus-within { box-shadow: inset 0 0 0 1px var(--accent), var(--shadow-lift); }
+.story-card-media { position: relative; aspect-ratio: 16 / 9; background: var(--paper-deep); overflow: hidden; }
 .story-card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .story-card-credit {
   position: absolute;
@@ -19,7 +19,7 @@
   bottom: var(--space-2);
   padding: 2px var(--space-2);
   border-radius: 999px;
-  background: rgba(248, 244, 235, 0.88);
+  background: rgba(245, 245, 241, 0.88);
   color: var(--ink-2);
   font-size: 0.68rem;
 }
@@ -33,9 +33,9 @@
 }
 /* The headline button covers the whole card, so a click anywhere opens it. */
 .story-card-open::after { content: ''; position: absolute; inset: 0; border-radius: var(--radius); }
-.story-card-open:focus-visible::after { outline: 2px solid var(--signal); outline-offset: -2px; }
+.story-card-open:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }
 .story-card-foot { color: var(--ink-3); }
-.story-card-cta { color: var(--celadon-deep); font-size: 0.86rem; }
+.story-card-cta { color: var(--accent); font-size: 0.86rem; }
 
 /* No usable image: a soft gradient in the brand palette under a film grain. */
 .story-card-grain {
@@ -55,11 +55,11 @@
   mix-blend-mode: multiply;
   opacity: 0.42;
 }
-.story-card-grain[data-image-fallback="0"] { --g1: var(--celadon-light); --g2: var(--celadon); --g3: var(--sand); }
-.story-card-grain[data-image-fallback="1"] { --g1: var(--sand); --g2: var(--oat-deep); --g3: var(--celadon-light); }
-.story-card-grain[data-image-fallback="2"] { --g1: var(--celadon); --g2: var(--celadon-deep); --g3: var(--celadon-light); }
-.story-card-grain[data-image-fallback="3"] { --g1: var(--oat-deep); --g2: var(--sand); --g3: var(--celadon); }
-.story-card-grain[data-image-fallback="4"] { --g1: var(--celadon-light); --g2: var(--sand); --g3: var(--celadon-deep); }
+.story-card-grain[data-image-fallback="0"] { --g1: var(--rule); --g2: var(--rule-strong); --g3: var(--paper-deep); }
+.story-card-grain[data-image-fallback="1"] { --g1: var(--paper-deep); --g2: var(--rule); --g3: var(--accent); }
+.story-card-grain[data-image-fallback="2"] { --g1: var(--rule-strong); --g2: var(--ink-3); --g3: var(--rule); }
+.story-card-grain[data-image-fallback="3"] { --g1: var(--paper-deep); --g2: var(--rule-strong); --g3: var(--accent); }
+.story-card-grain[data-image-fallback="4"] { --g1: var(--rule); --g2: var(--ink-3); --g3: var(--paper-deep); }
 
 .top-stories { display: grid; gap: var(--space-4); }
 .top-stories-stack { gap: var(--space-3); }
@@ -97,7 +97,7 @@
   display: grid;
   gap: var(--space-2);
   padding: var(--space-7) 0 var(--space-1);
-  background: linear-gradient(to top, var(--oat) 58%, rgba(238, 232, 220, 0));
+  background: linear-gradient(to top, var(--paper) 58%, rgba(245, 245, 241, 0));
   animation: carousel-in 380ms var(--ease-out) both;
 }
 .carousel.is-closing { animation: carousel-out 220ms ease-in both; pointer-events: none; }
@@ -105,7 +105,7 @@
 @keyframes carousel-out { to { opacity: 0; transform: translateY(24px); } }
 .carousel:focus { outline: none; }
 /* Keyboard focus on the carousel shows on the card the arrow keys move. */
-.carousel:focus-visible .carousel-track > li[aria-current="true"] .story-card { box-shadow: inset 0 0 0 2px var(--signal), var(--shadow-lift); }
+.carousel:focus-visible .carousel-track > li[aria-current="true"] .story-card { box-shadow: inset 0 0 0 2px var(--accent), var(--shadow-lift); }
 .carousel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 0 var(--space-3); }
 .carousel-back {
   all: unset;
@@ -113,13 +113,13 @@
   padding: var(--space-1) var(--space-3);
   border-radius: 999px;
   background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--rule-soft);
-  color: var(--celadon-deep);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  color: var(--ink-2);
   font-size: 0.72rem;
 }
-.carousel-back:hover { box-shadow: inset 0 0 0 1px var(--celadon); }
+.carousel-back:hover { box-shadow: inset 0 0 0 1px var(--accent); }
 .carousel-back:focus-visible, .carousel-arrows button:focus-visible, .carousel-dots button:focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 .carousel-arrows { display: flex; gap: var(--space-1); }
@@ -171,13 +171,13 @@
   height: 6px;
   margin: auto;
   border-radius: 50%;
-  background: var(--sand);
+  background: var(--rule-strong);
   transition: width var(--dur-mid) var(--ease-out), background-color var(--dur-mid);
 }
-.carousel-dots button[aria-current="true"]::before { width: 16px; border-radius: 3px; background: var(--celadon-deep); }
+.carousel-dots button[aria-current="true"]::before { width: 16px; border-radius: 3px; background: var(--accent); }
 
 /* Compact card (globe carousel, and Top stories beside the globe): square thumbnail beside the text. */
-.story-card-compact { grid-template-rows: none; grid-template-columns: 104px minmax(0, 1fr); box-shadow: inset 0 0 0 1px var(--rule-soft), var(--shadow-lift); }
+.story-card-compact { grid-template-rows: none; grid-template-columns: 104px minmax(0, 1fr); box-shadow: inset 0 0 0 1px var(--rule), var(--shadow-lift); }
 .story-card-compact .story-card-media { aspect-ratio: auto; height: 100%; min-height: 116px; }
 .story-card-compact .story-card-body { gap: var(--space-1); padding: var(--space-3); }
 .story-card-compact .story-card-meta { justify-content: flex-start; }

@@ -1,28 +1,34 @@
-/* Atlas design tokens: "Oat" with celadon. Light only. */
+/* Atlas design tokens: Newsprint & Ultramarine. Light only.
+   Ink on cool paper. Ultramarine (--accent) carries interaction: links, hover and
+   focus fills, the active tab, focus rings, selected states. Red and amber are
+   heat only (alert severity, hotspots, errors); --hot and --warm are for
+   graphics, text uses their -ink variants. Two values are darker than the spec:
+   --ink-3 is #636A75 (spec #717985, then #646B76) so meta text passes AA (4.5:1)
+   on --paper-deep too; --warm is #C27400 (spec #E58A00) so heat graphics keep
+   3:1 non-text contrast on --paper. */
 :root {
   color-scheme: light;
 
-  --oat: #EEE8DC;
-  --oat-deep: #E4DCCB;
-  --paper: #F8F4EB;
-  --ink: #1C231F;
-  --ink-2: #48524B;
-  --ink-3: #646A60;
-  --rule: #D6CDBA;
-  --rule-soft: #E2DACA;
-  /* Celadon: brand primary. --celadon is for graphics only (3.55:1 on paper);
-     text, links and button fills use --celadon-deep (6.5:1). */
-  --celadon-light: #B4CCBE;
-  --celadon: #5E8A79;
-  --celadon-deep: #3A5F52;
-  --celadon-press: #2F4E43;
-  --celadon-wash: rgba(94, 138, 121, 0.10);
-  --sand: #C7B89C;
-  /* Royal blue: signal colour only (hotspots, high alerts, focus, active tab, errors, the logo fix). */
-  --signal: #3358C7;
-  --signal-ink: #24408F;
-  --signal-wash: rgba(51, 88, 199, 0.10);
-  --ochre: #9C7026;
+  --paper: #F5F5F1;
+  --paper-deep: #EBEBE6;
+  --ink: #0E1116;
+  --ink-2: #3F4752;
+  --ink-3: #636A75;
+  --rule: #DADBD5;
+  --rule-strong: #B9BBB3;
+  --accent: #1F3FE0;
+  --accent-press: #1832B8;
+  --accent-wash: rgba(31, 63, 224, 0.08);
+  --hot: #E2381B;
+  --hot-ink: #B8280F;
+  --warm: #C27400;
+  --warm-ink: #8F5600;
+  /* Route lanes in assignment order; must match ROUTE_COLORS in lib/routes.ts. */
+  --route-1: #1F3FE0;
+  --route-2: #0E1116;
+  --route-3: #0B7FA8;
+  --route-4: #717985;
+  --route-5: #5A73EA;
 
   --font-sans: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'Jost', 'Futura', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
