@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ICONS } from './icons'
 
 const NAMES = [
-  'StarIcon', 'ExternalIcon', 'TrashIcon', 'PrintIcon', 'NewBriefIcon', 'ExpandIcon', 'TensionIcon', 'DisagreeIcon',
+  'StarIcon', 'ExternalIcon', 'TrashIcon', 'PrintIcon', 'ExpandIcon', 'TensionIcon', 'DisagreeIcon',
   'AlertCriticalIcon', 'AlertHighIcon', 'AlertElevatedIcon', 'ProfileIcon', 'TimeIcon', 'ReadingIcon', 'DataIcon',
   'ExportIcon', 'ClearIcon',
 ]
@@ -22,7 +22,7 @@ describe('icon set', () => {
     container.remove()
   })
 
-  it('exports exactly the seventeen icons', () => {
+  it('exports exactly the sixteen icons', () => {
     expect(Object.keys(ICONS).sort()).toEqual([...NAMES].sort())
   })
 

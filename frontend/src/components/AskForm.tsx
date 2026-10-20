@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { PlusIcon } from './icons'
 import './askform.css'
 
 const FREQUENCIES = ['daily', 'twice-daily', 'weekly'] as const
@@ -71,7 +72,7 @@ export function AskForm({ id, compact = false, loading, error, onGenerate, onRet
           </select>
         )}
         <button type="submit" className="btn btn-primary" disabled={!valid || loading}>
-          {loading ? 'Briefing…' : 'Brief me'}
+          {loading ? 'Briefing…' : <>Brief me<PlusIcon /></>}
         </button>
       </div>
       {loading && (

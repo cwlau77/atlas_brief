@@ -2,7 +2,7 @@ import { Link, NavLink, useLocation } from 'react-router'
 import { useAppState } from '../state/hooks'
 import { latestBriefingId } from '../state/resolveBriefing'
 import { AtlasMark } from './AtlasMark'
-import { NewBriefIcon } from './icons'
+import { PlusIcon } from './icons'
 import './navbar.css'
 
 const linkClass = ({ isActive }: { isActive: boolean }) => `nav-link ${isActive ? 'active' : ''}`
@@ -32,7 +32,7 @@ export function NavBar() {
           <NavLink className={linkClass} to="/settings">Settings</NavLink>
         </nav>
         <Link className="btn btn-primary nav-new" to="/" state={{ focusAsk: true }}>
-          <NewBriefIcon size={16} /><span className="nav-new-text">New brief</span>
+          <span className="nav-new-text">New brief</span><PlusIcon />
         </Link>
       </div>
     </header>

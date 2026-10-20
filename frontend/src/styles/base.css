@@ -121,16 +121,38 @@ input, select, textarea { font: inherit; color: inherit; }
     border-color var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--ink); color: var(--paper); }
-.btn-primary:hover, .btn-primary:focus-visible { background: var(--accent); }
-.btn-primary:active { background: var(--accent-press); }
-.btn-primary:disabled { background: var(--paper-deep); color: var(--ink-3); cursor: not-allowed; }
+.btn-primary {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink);
+}
+/* Ink fill sweeps in from the left behind the label. */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 320ms var(--ease-out), background-color var(--dur-quick);
+}
+.btn-primary:hover:not(:disabled), .btn-primary:focus-visible:not(:disabled) { color: var(--paper); }
+.btn-primary:hover:not(:disabled)::before, .btn-primary:focus-visible:not(:disabled)::before { transform: scaleX(1); }
+.btn-primary:active:not(:disabled)::before { background: var(--ink-2); }
+.btn-primary:disabled { border-color: var(--rule-strong); color: var(--ink-3); cursor: not-allowed; }
+.btn-plus { flex: none; transition: transform 320ms var(--ease-out); }
+.btn-primary:hover:not(:disabled) .btn-plus, .btn-primary:focus-visible:not(:disabled) .btn-plus { transform: rotate(90deg); }
 .btn-quiet { background: transparent; color: var(--ink-2); border-color: var(--rule); }
 .btn-quiet:hover { border-color: var(--accent); color: var(--ink); }
 .btn-quiet:disabled { opacity: 0.5; cursor: not-allowed; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .btn-primary, .btn-primary::before, .btn-plus { transition: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

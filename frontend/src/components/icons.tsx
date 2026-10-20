@@ -64,13 +64,12 @@ export function PrintIcon({ size = 16, className }: IconProps) {
   )
 }
 
-export function NewBriefIcon({ size = 16, className }: IconProps) {
+/** Stroked plus for buttons; deliberately outside the faceted ICONS set. Spins via .btn-plus. */
+export function PlusIcon({ size = 14, className = 'btn-plus' }: IconProps) {
   return (
-    <Svg size={size} className={className}>
-      <F points="5,3 15,3 19,7 19,21 5,21" o={LIGHT} />
-      <F points="15,3 19,7 15,7" o={MID} />
-      <F points="11,9 13,9 13,12 16,12 16,14 13,14 13,17 11,17 11,14 8,14 8,12 11,12" />
-    </Svg>
+    <svg width={size} height={size} viewBox="0 0 14 14" className={className} aria-hidden="true" focusable="false">
+      <path d="M7 1.5v11M1.5 7h11" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    </svg>
   )
 }
 
@@ -193,7 +192,7 @@ export function ClearIcon({ size = 16, className }: IconProps) {
 }
 
 export const ICONS: Record<string, (p: IconProps) => ReactNode> = {
-  StarIcon, ExternalIcon, TrashIcon, PrintIcon, NewBriefIcon, ExpandIcon, TensionIcon, DisagreeIcon,
+  StarIcon, ExternalIcon, TrashIcon, PrintIcon, ExpandIcon, TensionIcon, DisagreeIcon,
   AlertCriticalIcon, AlertHighIcon, AlertElevatedIcon, ProfileIcon, TimeIcon, ReadingIcon, DataIcon,
   ExportIcon, ClearIcon,
 }

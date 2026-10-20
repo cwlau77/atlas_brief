@@ -101,3 +101,18 @@ describe('development cards', () => {
     expect(rule(storyCss, '.tags li')).toMatch(/overflow-wrap:\s*anywhere/)
   })
 })
+
+describe('primary button', () => {
+  const rule = (sel: string) => {
+    const m = base.match(new RegExp(`(?:^|\\})\\s*${sel.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`, 'm'))
+    return m ? m[1] : ''
+  }
+  it('is an outline at rest with an ink fill that sweeps in', () => {
+    expect(rule('.btn-primary')).toMatch(/background:\s*transparent/)
+    expect(rule('.btn-primary::before')).toMatch(/transform:\s*scaleX\(0\)/)
+  })
+  it('turns off the sweep and spin under reduced motion', () => {
+    const block = base.slice(base.indexOf('@media (prefers-reduced-motion: reduce)'))
+    expect(block).toMatch(/\.btn-primary::before[^{]*\{[^}]*transition:\s*none/)
+  })
+})
