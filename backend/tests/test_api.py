@@ -137,3 +137,18 @@ def test_422_names_sources_skipped_for_missing_keys(client, monkeypatch, make_ar
     assert r.status_code == 422
     assert "guardian" in r.json()["detail"] and "tavily" in r.json()["detail"]
     assert "NEWSAPI_KEY" not in r.json()["detail"]
+
+
+def test_pipeline_log_times_each_step(client, caplog):
+    import logging
+    with caplog.at_level(logging.INFO, logger="briefing"):
+        assert client.post("/briefing", json={"focus": "timing probe"}).status_code == 200
+    line = next(r.getMessage() for r in caplog.records if "briefing pipeline" in r.getMessage())
+    for step in ("plan_ms=", "ingest_ms=", "rank_ms=", "synthesis_ms=", "elapsed_ms="):
+        assert step in line
+
+
+def test_search_timeouts_are_tight():
+    from backend.config import Settings
+    assert Settings.model_fields["source_timeout_seconds"].default == 6.0
+    assert Settings.model_fields["ingest_deadline_seconds"].default == 7.0

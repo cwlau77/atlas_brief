@@ -33,9 +33,9 @@ services:
       - key: ALPHAVANTAGE_API_KEY
         sync: false
       - key: SOURCE_TIMEOUT_SECONDS
-        value: "8"
+        value: "6"
       - key: INGEST_DEADLINE_SECONDS
-        value: "15"
+        value: "7"
       - key: SEARCH_PLAN_ENABLED
         value: "true"
       - key: RERANK_ENABLED

@@ -4,6 +4,7 @@ import pytest
 
 from backend.config import settings
 from backend.synthesis.briefing import (
+    SynthesisFailedError,
     SynthesisUnavailableError,
     _fallback_briefing,
     briefing_from_data,
@@ -130,9 +131,10 @@ def test_citations_by_article_number_resolve_server_side(make_article):
 
 
 def test_schema_asks_for_article_numbers_not_urls(make_article):
-    from backend.synthesis.briefing import SCHEMA_INSTRUCTIONS, _build_user_prompt
-    assert '"url"' not in SCHEMA_INSTRUCTIONS
-    assert "article number" in SCHEMA_INSTRUCTIONS.lower()
+    from backend.synthesis.briefing import SECTION_SCHEMAS, _build_user_prompt
+    for schema in SECTION_SCHEMAS.values():
+        assert '"url"' not in schema
+        assert "article number" in schema.lower()
     p = _build_user_prompt("trade", [make_article(url="https://news.google.com/rss/articles/LONG")])
     assert "news.google.com" not in p
 
@@ -151,9 +153,9 @@ def test_citations_carry_the_article_image(make_article):
 
 
 def test_schema_asks_for_a_city_or_null():
-    from backend.synthesis.briefing import SCHEMA_INSTRUCTIONS
-    assert '"city"' in SCHEMA_INSTRUCTIONS
-    assert "Name a city only if the cited articles place the events there; otherwise null" in SCHEMA_INSTRUCTIONS
+    from backend.synthesis.briefing import SECTION_SCHEMAS
+    assert '"city"' in SECTION_SCHEMAS["developments"]
+    assert "Name a city only if the cited articles place the events there; otherwise null" in SECTION_SCHEMAS["developments"]
 
 
 def _dev_with_city(city, regions, make_article):
@@ -174,3 +176,116 @@ def test_unresolvable_or_mismatched_city_is_dropped(city, regions, make_article)
 def test_fallback_briefing_has_no_place(make_article):
     b = _fallback_briefing("Aden port", [make_article(title="Strike near Aden port in Yemen")])
     assert all(dev.place is None for dev in b.key_developments)
+
+
+# --- Split synthesis: three section calls in parallel, context overlapping the slower ones ---
+
+SECTION_REPLIES = {
+    "key_developments": {"key_developments": [{"headline": "H", "summary": "S", "regions": ["Egypt"], "sources": [1]}]},
+    "emerging_tensions": {"emerging_tensions": [{"description": "D", "actors": ["A", "B"], "sources": [1]}],
+                          "contradictions": [{"topic": "T", "account_a": "a", "account_b": "b", "sources_a": [1], "sources_b": [1]}]},
+    "priority_alerts": {"priority_alerts": [{"severity": "high", "headline": "AH", "rationale": "R", "sources": [1]}],
+                        "recommended_readings": [{"article": 1, "why": "primary"}]},
+}
+
+
+def _section_of(prompt: str) -> str:
+    for key in SECTION_REPLIES:
+        if f'"{key}"' in prompt:
+            return key
+    return "context"
+
+
+def _keyed(monkeypatch):
+    monkeypatch.setattr(settings, "anthropic_api_key", "test-key")
+    monkeypatch.setattr(settings, "demo_mode", False)
+
+
+@pytest.mark.asyncio
+async def test_sections_are_written_by_separate_calls_and_merged(monkeypatch, make_article):
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+    seen = []
+
+    async def complete(**kwargs):
+        prompt = kwargs["messages"][0]["content"]
+        section = _section_of(prompt)
+        seen.append(section)
+        if section == "context":
+            return "Background paragraph."
+        # Each call asks for its own section only.
+        others = [k for k in SECTION_REPLIES if k != section]
+        assert all(f'"{k}"' not in prompt for k in others)
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert sorted(set(seen)) == ["context", "emerging_tensions", "key_developments", "priority_alerts"]
+    assert b.key_developments[0].headline == "H"
+    assert b.key_developments[0].historical_context == "Background paragraph."
+    assert b.emerging_tensions[0].description == "D"
+    assert b.contradictions[0].topic == "T"
+    assert b.priority_alerts[0].headline == "AH"
+    assert b.recommended_readings[0].why == "primary"
+
+
+@pytest.mark.asyncio
+async def test_context_runs_while_the_other_sections_are_still_being_written(monkeypatch, make_article):
+    import asyncio
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+    context_started = asyncio.Event()
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            context_started.set()
+            return "Background."
+        if section != "key_developments":
+            # The slower sections only finish once context has begun: a sequential pipeline would hang here.
+            await asyncio.wait_for(context_started.wait(), timeout=2)
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.key_developments[0].historical_context == "Background."
+
+
+@pytest.mark.asyncio
+async def test_a_failed_secondary_section_is_left_empty(monkeypatch, make_article):
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            return ""
+        if section == "emerging_tensions":
+            return "not json"
+        if section == "priority_alerts":
+            raise RuntimeError("upstream 529")
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.key_developments[0].headline == "H"
+    assert b.emerging_tensions == [] and b.contradictions == []
+    assert b.priority_alerts == [] and b.recommended_readings == []
+
+
+@pytest.mark.asyncio
+async def test_failed_developments_still_fail_the_briefing(monkeypatch, make_article):
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        return "not json" if section == "key_developments" else json.dumps(SECTION_REPLIES.get(section, {}))
+
+    monkeypatch.setattr(llm, "complete", complete)
+    with pytest.raises(SynthesisFailedError):
+        await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])

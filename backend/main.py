@@ -18,7 +18,6 @@ from backend.synthesis import (
     SynthesisFailedError,
     SynthesisUnavailableError,
     enforce_url_allowlist,
-    enrich_with_historical_context,
     synthesize_briefing,
 )
 
@@ -125,8 +124,17 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
         )
 
     started = time.monotonic()
+    steps: dict[str, int] = {}
+
+    def lap(step: str, since: float) -> float:
+        now = time.monotonic()
+        steps[step] = int((now - since) * 1000)
+        return now
+
     plan = await plan_search(focus)
+    mark = lap("plan", started)
     ingest_result = await ingest(plan)
+    mark = lap("ingest", mark)
     articles = dedupe_exact(ingest_result.articles)
     merged_count = len(ingest_result.articles)
     if not articles:
@@ -140,16 +148,23 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     deduped_count = len(articles)
     rank_result = await rank_articles(focus, plan, articles, embeddings)
     articles = rank_result.articles
-    logger.info(
-        "briefing pipeline focus=%r plan=%s queries=%s country=%s domains=%s sources=%s skipped=%s "
-        "merged=%d deduped=%d candidates=%d kept=%d reranked=%s elapsed_ms=%d",
-        focus, plan.source, plan.queries, plan.country, plan.domains,
-        {name: f"{s.count}/{s.status}/{s.ms}ms" for name, s in ingest_result.stats.items()},
-        ingest_result.skipped_missing_key,
-        merged_count, deduped_count, rank_result.candidates, len(articles), rank_result.reranked,
-        int((time.monotonic() - started) * 1000),
-    )
+    mark = lap("rank", mark)
+
+    def log_pipeline() -> None:
+        logger.info(
+            "briefing pipeline focus=%r plan=%s queries=%s country=%s domains=%s sources=%s skipped=%s "
+            "merged=%d deduped=%d candidates=%d kept=%d reranked=%s plan_ms=%d ingest_ms=%d rank_ms=%d "
+            "synthesis_ms=%d elapsed_ms=%d",
+            focus, plan.source, plan.queries, plan.country, plan.domains,
+            {name: f"{s.count}/{s.status}/{s.ms}ms" for name, s in ingest_result.stats.items()},
+            ingest_result.skipped_missing_key,
+            merged_count, deduped_count, rank_result.candidates, len(articles), rank_result.reranked,
+            steps["plan"], steps["ingest"], steps["rank"], steps.get("synthesis", 0),
+            int((time.monotonic() - started) * 1000),
+        )
+
     if not articles:
+        log_pipeline()
         hint = _missing_key_hint(ingest_result.skipped_missing_key)
         raise HTTPException(
             status_code=422,
@@ -157,6 +172,7 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
         )
 
     try:
+        # Writes the sections in parallel; historical context is added inside, overlapping them.
         briefing = await synthesize_briefing(focus, articles)
     except SynthesisUnavailableError:
         raise HTTPException(
@@ -170,9 +186,11 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
             detail="The synthesis model returned an unreadable response twice. Please retry in a moment.",
         )
 
+    lap("synthesis", mark)
+    log_pipeline()
+
     # Server-side guarantee that every cited URL came from the ingested articles.
     briefing = enforce_url_allowlist(briefing, {a.url for a in articles})
-    briefing = await enrich_with_historical_context(briefing)
 
     if settings.cache_ttl_minutes > 0:
         _briefing_cache[cache_key] = (briefing, time.time() + settings.cache_ttl_minutes * 60)

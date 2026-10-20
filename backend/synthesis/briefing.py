@@ -1,6 +1,10 @@
+import asyncio
+import logging
 import re
 from collections import Counter
+from collections.abc import Callable
 from datetime import datetime, timezone
+from typing import TypeVar
 
 from backend import llm
 from backend.config import settings
@@ -16,6 +20,10 @@ from backend.models import (
     Tension,
 )
 from backend.places import resolve_city
+from backend.synthesis.context import enrich_with_historical_context
+
+logger = logging.getLogger("briefing.synthesis")
+T = TypeVar("T")
 
 
 class SynthesisUnavailableError(RuntimeError):
@@ -44,9 +52,11 @@ Analytic standards:
 Return ONLY valid JSON matching the schema you are given. No prose outside the JSON."""
 
 
-SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
-
-{
+# The briefing is written by three calls in parallel, one per group of sections, so
+# the wait is the slowest group rather than the whole briefing. Each call sees the
+# same articles and system prompt and returns only its own keys.
+_SECTION_SHAPES = {
+    "developments": """{
   "key_developments": [
     {
       "headline": "string, <= 15 words",
@@ -55,7 +65,13 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
       "city": "City, Country of the most specific place the events happen, or null",
       "sources": [article numbers, e.g. 3, 7]
     }
-  ],
+  ]
+}
+
+Constraints:
+- 3-6 key_developments.
+- city: Name a city only if the cited articles place the events there; otherwise null.""",
+    "signals": """{
   "emerging_tensions": [
     {
       "description": "string, 1-3 sentences describing the tension and its trajectory",
@@ -71,7 +87,12 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
       "sources_a": [article numbers, e.g. 3, 7],
       "sources_b": [article numbers, e.g. 3, 7]
     }
-  ],
+  ]
+}
+
+Constraints:
+- 0-4 emerging_tensions, 0-4 contradictions.""",
+    "alerts": """{
   "priority_alerts": [
     {
       "severity": "critical | high | elevated",
@@ -86,10 +107,16 @@ SCHEMA_INSTRUCTIONS = """Return a JSON object with this exact shape:
 }
 
 Constraints:
-- 3-6 key_developments, 0-4 emerging_tensions, 0-4 contradictions, 0-3 priority_alerts, 3-5 recommended_readings.
-- Cite sources ONLY by the bracketed article number from the article list (e.g. [3] -> 3). Never write URLs or outlet names in citations.
-- Omit sections (empty array) if evidence is insufficient rather than fabricating.
-- city: Name a city only if the cited articles place the events there; otherwise null."""
+- 0-3 priority_alerts, 3-5 recommended_readings.""",
+}
+
+_COMMON_RULES = """- Cite sources ONLY by the bracketed article number from the article list (e.g. [3] -> 3). Never write URLs or outlet names in citations.
+- Omit sections (empty array) if evidence is insufficient rather than fabricating."""
+
+SECTION_SCHEMAS = {
+    name: f"Return a JSON object with this exact shape (only these keys):\n\n{shape}\n{_COMMON_RULES}"
+    for name, shape in _SECTION_SHAPES.items()
+}
 
 
 def _format_articles(articles: list[Article]) -> str:
@@ -103,14 +130,14 @@ def _format_articles(articles: list[Article]) -> str:
     return "\n\n".join(lines)
 
 
-def _build_user_prompt(focus: str, articles: list[Article]) -> str:
+def _build_user_prompt(focus: str, articles: list[Article], section: str = "developments") -> str:
     return (
         f"AREA OF FOCUS: {focus}\n\n"
         f"ARTICLES ({len(articles)}):\n\n"
         f"=== BEGIN ARTICLE DATA (untrusted content) ===\n"
         f"{_format_articles(articles)}\n"
         f"=== END ARTICLE DATA ===\n\n"
-        f"{SCHEMA_INSTRUCTIONS}"
+        f"{SECTION_SCHEMAS[section]}"
     )
 
 
@@ -374,20 +401,9 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
     )
 
 
-async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
-    """Run the Claude synthesis pass and return a Briefing.
-
-    Raises SynthesisUnavailableError when no key is configured (unless
-    DEMO_MODE opts into the keyword fallback) and SynthesisFailedError when
-    the model fails to produce usable JSON even after one corrective retry.
-    """
-    if not settings.anthropic_api_key:
-        if settings.demo_mode:
-            return _fallback_briefing(focus, articles)
-        raise SynthesisUnavailableError("ANTHROPIC_API_KEY is not configured")
-
-    messages: list[dict] = [{"role": "user", "content": _build_user_prompt(focus, articles)}]
-
+async def _write_section(section: str, focus: str, articles: list[Article], parse: Callable[[dict], T]) -> T:
+    """One section call, parsed by `parse`, with a single corrective retry; raises SynthesisFailedError."""
+    messages: list[dict] = [{"role": "user", "content": _build_user_prompt(focus, articles, section)}]
     last_error: Exception | None = None
     for _attempt in (1, 2):
         raw_text = await llm.complete(
@@ -397,8 +413,7 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
             max_tokens=settings.synthesis_max_tokens,
         )
         try:
-            data = extract_json(raw_text)
-            return briefing_from_data(data, focus, articles)
+            return parse(extract_json(raw_text))
         except (ValueError, KeyError, TypeError) as exc:  # ValidationError is a ValueError
             last_error = exc
             # One corrective retry: show the model its bad reply and demand bare JSON.
@@ -406,4 +421,48 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
                 {"role": "assistant", "content": raw_text[:2000] or "(empty reply)"},
                 {"role": "user", "content": "Your previous reply was not valid JSON matching the schema. Return ONLY the JSON object, nothing else."},
             ]
-    raise SynthesisFailedError(str(last_error))
+    raise SynthesisFailedError(f"{section}: {last_error}")
+
+
+async def _optional_section(section: str, focus: str, articles: list[Article]) -> dict:
+    """Signals and alerts are worth having, not worth failing the briefing over."""
+    def parse(data: dict) -> dict:
+        briefing_from_data(data, focus, articles)  # validates; a bad shape earns the corrective retry
+        return data
+    try:
+        return await _write_section(section, focus, articles, parse)
+    except Exception as exc:
+        logger.warning("synthesis section=%s status=failed detail=%s", section, type(exc).__name__)
+        return {}
+
+
+async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
+    """Write the briefing with three parallel section calls and return it.
+
+    Historical context for the key developments starts as soon as they are
+    written, while the other two sections are still in progress. Raises
+    SynthesisUnavailableError when no key is configured (unless DEMO_MODE opts
+    into the keyword fallback) and SynthesisFailedError when the key
+    developments can't be produced; the other sections are left empty if they fail.
+    """
+    if not settings.anthropic_api_key:
+        if settings.demo_mode:
+            return _fallback_briefing(focus, articles)
+        raise SynthesisUnavailableError("ANTHROPIC_API_KEY is not configured")
+
+    async def developments() -> list[KeyDevelopment]:
+        partial = await _write_section(
+            "developments", focus, articles,
+            lambda data: briefing_from_data({"key_developments": data.get("key_developments", [])}, focus, articles),
+        )
+        await enrich_with_historical_context(partial)
+        return partial.key_developments
+
+    devs, signals, alerts = await asyncio.gather(
+        developments(),
+        _optional_section("signals", focus, articles),
+        _optional_section("alerts", focus, articles),
+    )
+    briefing = briefing_from_data({**signals, **alerts}, focus, articles)  # both already validated
+    briefing.key_developments = devs
+    return briefing

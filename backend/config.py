@@ -74,8 +74,9 @@ class Settings(BaseSettings):
     search_plan_timeout_seconds: float = 4.0
 
     # Fan-out timing.
-    source_timeout_seconds: float = 8.0
-    ingest_deadline_seconds: float = 15.0
+    # Tight on purpose: one slow source is skipped rather than holding up the briefing.
+    source_timeout_seconds: float = 6.0
+    ingest_deadline_seconds: float = 7.0
 
     # Per-source daily request budgets (UTC day, in-process). Unlisted sources are unlimited.
     quota_newsapi_per_day: int = 90
