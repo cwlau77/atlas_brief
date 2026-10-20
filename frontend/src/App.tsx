@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import { useEffect } from 'react'
 import { Route, Routes } from 'react-router'
 import { CursorLens } from './components/CursorLens'
@@ -40,6 +41,7 @@ function Shell() {
       <Footer />
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
       <CursorLens />
+      <Analytics />
     </div>
   )
 }
