@@ -289,3 +289,76 @@ async def test_failed_developments_still_fail_the_briefing(monkeypatch, make_art
     monkeypatch.setattr(llm, "complete", complete)
     with pytest.raises(SynthesisFailedError):
         await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+
+
+# --- Commons file photos ---
+
+def _fast_llm(monkeypatch):
+    import json
+    import backend.llm as llm
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            return "Background."
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+
+
+@pytest.mark.asyncio
+async def test_commons_runs_alongside_context(monkeypatch, make_article):
+    import asyncio
+    import time
+    import backend.synthesis.briefing as mod
+    _keyed(monkeypatch)
+    _fast_llm(monkeypatch)
+    monkeypatch.setattr(settings, "commons_images_enabled", True)
+
+    async def slow_enrich(partial):
+        await asyncio.sleep(0.3)
+
+    async def slow_fetch(queries, client, budget_s=1.5):
+        await asyncio.sleep(0.3)
+        return {}
+
+    monkeypatch.setattr(mod, "enrich_with_historical_context", slow_enrich)
+    monkeypatch.setattr(mod, "fetch_candidates", slow_fetch)
+    start = time.monotonic()
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert time.monotonic() - start < 0.5
+
+
+@pytest.mark.asyncio
+async def test_commons_disabled_flag(monkeypatch, make_article):
+    import backend.synthesis.briefing as mod
+    _keyed(monkeypatch)
+    _fast_llm(monkeypatch)
+    monkeypatch.setattr(settings, "commons_images_enabled", False)
+    called = []
+
+    async def fetch(*a, **k):
+        called.append(1)
+        return {}
+
+    monkeypatch.setattr(mod, "fetch_candidates", fetch)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert called == []
+    assert b.key_developments[0].commons_image is None
+
+
+@pytest.mark.asyncio
+async def test_commons_failure_does_not_fail_briefing(monkeypatch, make_article):
+    import backend.synthesis.briefing as mod
+    _keyed(monkeypatch)
+    _fast_llm(monkeypatch)
+    monkeypatch.setattr(settings, "commons_images_enabled", True)
+
+    async def boom(*a, **k):
+        raise RuntimeError("commons down")
+
+    monkeypatch.setattr(mod, "fetch_candidates", boom)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.key_developments[0].headline == "H"
+    assert all(d.commons_image is None for d in b.key_developments)
+    assert all(a.commons_image is None for a in b.priority_alerts)
