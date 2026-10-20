@@ -3,6 +3,9 @@
 Usage (from the repo root):
   python3 -m venv /tmp/atlas-brand && /tmp/atlas-brand/bin/pip install fonttools
   /tmp/atlas-brand/bin/python frontend/scripts/brand/outline_wordmark.py
+
+If urlopen fails with CERTIFICATE_VERIFY_FAILED (python.org builds lack system
+certs on macOS), prefix the run with SSL_CERT_FILE=/etc/ssl/cert.pem.
 """
 import io
 import pathlib
