@@ -36,14 +36,26 @@ def page(title, width=1024, mime="image/jpeg", artist="<a href='x'>Jane Doe</a>"
     }
 
 
-def client_for(pages, calls=None, delay=0.0):
+def client_for(pages, calls=None, delay=0.0, lead=None, lead_page=None):
+    """Mock Wikipedia and Commons. `pages` answers the Commons search; `lead` is the Wikipedia
+    pageimage file name (None: the article has none) and `lead_page` its Commons imageinfo page."""
     async def handler(request):
         if calls is not None:
             calls.append(request)
         if delay:
             await asyncio.sleep(delay)
+        if request.url.host == "en.wikipedia.org":
+            title = request.url.params["titles"]
+            found = {"1": {"pageid": 1, "title": title, "pageimage": lead}} if lead else {"-1": {"title": title, "missing": ""}}
+            return httpx.Response(200, json={"query": {"pages": found}})
+        if "titles" in request.url.params:
+            return httpx.Response(200, json={"query": {"pages": {"1": lead_page} if lead_page else {}}})
         return httpx.Response(200, json={"query": {"pages": {str(i): p for i, p in enumerate(pages)}}})
     return httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+
+def names(images):
+    return [i.page_url.rsplit("/", 1)[-1] for i in images]
 
 
 @pytest.mark.asyncio
@@ -85,20 +97,95 @@ async def test_budget_exceeded_returns_empty():
 @pytest.mark.asyncio
 async def test_cache_hits_second_call():
     calls = []
-    async with client_for([page("File:A.jpg")], calls) as c:
+    async with client_for([page("File:A.jpg")], calls, lead="B.jpg", lead_page=page("File:B.jpg")) as c:
         await commons.fetch_candidates(["Cairo"], c)
+        first = len(calls)
         out = await commons.fetch_candidates(["Cairo"], c)
-    assert len(calls) == 1
-    assert len(out["Cairo"]) == 1
+    assert first == 3  # Wikipedia pageimage, its Commons imageinfo, the Commons search
+    assert len(calls) == first
+    assert names(out["Cairo"]) == ["File:B.jpg", "File:A.jpg"]
 
 
 @pytest.mark.asyncio
 async def test_request_has_user_agent():
     calls = []
-    async with client_for([page("File:A.jpg")], calls) as c:
+    async with client_for([page("File:A.jpg")], calls, lead="B.jpg", lead_page=page("File:B.jpg")) as c:
         await commons.fetch_candidates(["Cairo"], c)
-    assert calls[0].headers["user-agent"] == USER_AGENT
-    assert "filetype:bitmap" in calls[0].url.params["gsrsearch"]
+    assert calls and all(r.headers["user-agent"] == USER_AGENT for r in calls)
+    search = next(r for r in calls if "gsrsearch" in r.url.params)
+    assert "filetype:bitmap" in search.url.params["gsrsearch"]
+
+
+@pytest.mark.asyncio
+async def test_prefers_the_places_wikipedia_lead_image():
+    calls = []
+    lead = page("File:Cairo skyline.jpg")
+    async with client_for([page("File:Church dome mosaic.jpg")], calls, lead="Cairo skyline.jpg", lead_page=lead) as c:
+        out = await commons.fetch_candidates(["Cairo"], c)
+    assert names(out["Cairo"]) == ["File:Cairo skyline.jpg", "File:Church dome mosaic.jpg"]
+    wiki = next(r for r in calls if r.url.host == "en.wikipedia.org")
+    assert str(wiki.url).startswith("https://en.wikipedia.org/w/api.php")
+    assert dict(wiki.url.params) == {
+        "action": "query", "prop": "pageimages", "piprop": "name", "titles": "Cairo",
+        "redirects": "1", "format": "json",
+    }
+    info = next(r for r in calls if r.url.host == "commons.wikimedia.org" and "titles" in r.url.params)
+    assert info.url.params["titles"] == "File:Cairo skyline.jpg"
+    assert info.url.params["prop"] == "imageinfo"
+    assert info.url.params["iiprop"] == "url|extmetadata|mime|size"
+    assert info.url.params["iiurlwidth"] == "800"
+
+
+@pytest.mark.asyncio
+async def test_falls_back_to_a_biased_search_without_a_lead_image():
+    calls = []
+    async with client_for([page("File:Cairo street.jpg")], calls, lead=None) as c:
+        out = await commons.fetch_candidates(["Cairo"], c)
+    assert names(out["Cairo"]) == ["File:Cairo street.jpg"]
+    search = next(r for r in calls if "gsrsearch" in r.url.params)
+    assert search.url.params["gsrsearch"] == "Cairo skyline OR cityscape OR panorama OR street filetype:bitmap"
+
+
+@pytest.mark.asyncio
+async def test_lead_image_goes_through_the_same_filters():
+    async with client_for([page("File:Cairo street.jpg")], lead="Flag of Egypt.jpg", lead_page=page("File:Flag of Egypt.jpg")) as c:
+        out = await commons.fetch_candidates(["Cairo"], c)
+    assert names(out["Cairo"]) == ["File:Cairo street.jpg"]
+    commons._cache.clear()
+    small = page("File:Cairo small.jpg", width=320)
+    async with client_for([], lead="Cairo small.jpg", lead_page=small) as c:
+        out = await commons.fetch_candidates(["Cairo"], c)
+    assert out["Cairo"] == []
+
+
+@pytest.mark.asyncio
+async def test_a_failed_lead_lookup_still_uses_the_search():
+    async def handler(request):
+        if request.url.host == "en.wikipedia.org":
+            return httpx.Response(500)
+        return httpx.Response(200, json={"query": {"pages": {"0": page("File:Cairo street.jpg")}}})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+        out = await commons.fetch_candidates(["Cairo"], c)
+    assert names(out["Cairo"]) == ["File:Cairo street.jpg"]
+
+
+def test_denylist_matches_whole_words_only():
+    titles = [
+        "File:Mapleton main street.jpg", "File:Seal Beach pier.jpg", "File:Chartres cathedral.jpg",
+        "File:Flag of Egypt.jpg", "File:Seal of California.jpg", "File:Egypt map 2020.jpg",
+        "File:Coat_of_arms_Cairo.jpg", "File:Nile_delta_maps.jpg",
+    ]
+    out = commons._parse({"query": {"pages": {str(i): page(t) for i, t in enumerate(titles)}}})
+    assert names(out) == ["File:Mapleton main street.jpg", "File:Seal Beach pier.jpg", "File:Chartres cathedral.jpg"]
+
+
+def test_skips_files_with_overlong_authors():
+    out = commons._parse({"query": {"pages": {
+        "0": page("File:Long.jpg", artist="x" * 121),
+        "1": page("File:Ok.jpg", artist="y" * 120),
+    }}})
+    assert names(out) == ["File:Ok.jpg"]
+    assert out[0].author == "y" * 120  # kept whole, never truncated
 
 
 def img(n):
@@ -134,6 +221,16 @@ def test_query_for():
     assert commons.query_for(d) == "Sinai"
     d.regions = []
     assert commons.query_for(d) is None
+
+
+@pytest.mark.asyncio
+async def test_lead_image_is_not_repeated_within_a_briefing():
+    async with client_for([page("File:Cairo street.jpg")], lead="Cairo skyline.jpg", lead_page=page("File:Cairo skyline.jpg")) as c:
+        cands = await commons.fetch_candidates(["Cairo"], c)
+    d0, d1, d2 = dev("Cairo", "u0"), dev("Cairo", "u1"), dev("Cairo", "u2")
+    commons.assign_images(briefing([d0, d1, d2], []), cands)
+    assert names([d0.commons_image, d1.commons_image]) == ["File:Cairo skyline.jpg", "File:Cairo street.jpg"]
+    assert d2.commons_image is None
 
 
 def test_assign_distinct_and_alert_borrows_place():
