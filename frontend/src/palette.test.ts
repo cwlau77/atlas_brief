@@ -5,8 +5,8 @@ const files = import.meta.glob(['./**/*.{ts,tsx,css}', '!./**/*.test.*'], { quer
 const tokens = files['./styles/tokens.css']
 
 const RETIRED = /--(oat|celadon|sand|signal|ochre|rule-soft)\b|B4CCBE|5E8A79|3A5F52|2F4E43|EEE8DC|E4DCCB|3358C7|24408F|9C7026|C7B89C|94,\s?138,\s?121/i
-// Still on the old palette until their own tasks: removed in Task 5 (engine) and Task 6 (AtlasMark).
-const EXEMPT = new Set(['./components/AtlasMark.tsx', './globe/engine.ts'])
+// Still on the old palette until its own task: removed in Task 6 (AtlasMark).
+const EXEMPT = new Set(['./components/AtlasMark.tsx'])
 
 const NEWSPRINT: Record<string, string> = {
   '--paper': '#F5F5F1',

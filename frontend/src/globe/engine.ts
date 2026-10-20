@@ -112,7 +112,7 @@ const ARC_FRAG = /* glsl */ `
     gl_FragColor = vec4(uColor, a);
   }`
 
-const ARC_LIT = 0x3358C7
+const ARC_LIT = 0x1F3FE0
 const ARC_OPACITY = 0.9
 const ARC_DIM = 0.3
 // Raycast slack for hovering a 1px arc, in globe radii.
@@ -223,9 +223,9 @@ export class GlobeEngine {
     this.globe.add(occluder)
     this.disposables.push(occluderGeo, occluderMat)
 
-    this.globe.add(this.cloud(randomSphere(OCEAN_POINTS), 0xB4CCBE, 1.5, 0.5))
+    this.globe.add(this.cloud(randomSphere(OCEAN_POINTS), 0xC9CCD2, 1.5, 0.55))
     this.land = decodeLandPoints(LAND_POINTS_B64)
-    this.globe.add(this.cloud(this.land, 0x5E8A79, 2.5, 0.92))
+    this.globe.add(this.cloud(this.land, 0x3F4752, 2.5, 0.85))
 
     this.hotMat = new THREE.ShaderMaterial({
       transparent: true,
@@ -444,7 +444,7 @@ export class GlobeEngine {
         uSize: { value: size },
         uAlpha: { value: alpha },
         uColor: { value: rawColor(color) },
-        uHot: { value: rawColor(0x3358C7) },
+        uHot: { value: rawColor(0x1F3FE0) },
       },
     })
     this.disposables.push(geo, mat)
