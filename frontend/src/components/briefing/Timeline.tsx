@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import type { SavedBriefing } from '../../lib/normalize'
 import { connectionLabel, type IndexItem } from '../../lib/tensionIndex'
 import { sortNewestFirst } from '../../lib/timeline'
@@ -6,10 +6,9 @@ import type { IndexHighlight } from '../../state/useIndexHighlight'
 import { DevelopmentCard, type CardHighlight } from './DevelopmentCard'
 
 const READING_LINE = 0.6 // fraction of viewport height
-const INDEX_ID = 'tension-index'
 
 /** Key developments, newest first, on a spine that fills as the reader scrolls past each node. */
-export function Timeline({ briefing, timeZone, showContext, reduced, items, highlight, onCardHover, onCardFocus, onTagTap }: {
+export function Timeline({ briefing, timeZone, showContext, reduced, items, highlight, indexId, onCardHover, onCardFocus, onTagTap }: {
   briefing: SavedBriefing
   timeZone: string
   showContext: boolean
@@ -17,6 +16,8 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
   /** The tension index's items: they name each card's connection tag and light the cards. */
   items: IndexItem[]
   highlight: IndexHighlight
+  /** The tension index's element id: connection tags scroll to it and move focus into it. */
+  indexId: string
   onCardHover: (devIndex: number | null) => void
   onCardFocus: (devIndex: number | null) => void
   /** A card's region tag was tapped. */
@@ -27,12 +28,29 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
   const activeItem = items.find((item) => item.key === highlight.active && item.devs.length > 0) ?? null
   const { pinned, pin } = highlight
 
+  // Focus follows the reader to the pinned row, so keyboard users aren't left on the card,
+  // and the card's focus no longer holds the globe. preventScroll: the tag already scrolled.
+  const focusRow = () =>
+    document.getElementById(indexId)?.querySelector<HTMLElement>('.index-row[aria-pressed="true"]')?.focus({ preventScroll: true })
+  const focusAfterPin = useRef<string | null>(null)
+  useEffect(() => {
+    if (pinned === null || focusAfterPin.current !== pinned) return
+    focusAfterPin.current = null
+    focusRow()
+  })
+
   // Scrolls to the index and pins the busiest item linked to the card. Never unpins.
   const onTag = (devIndex: number) => {
     const first = items.find((item) => item.devs.includes(devIndex))
     if (!first) return
-    document.getElementById(INDEX_ID)?.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
-    if (pinned !== first.key) pin(first.key)
+    document.getElementById(indexId)?.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+    if (pinned === first.key) {
+      focusRow()
+    } else {
+      // The row may only appear (from behind "Show N more") once the pin renders.
+      focusAfterPin.current = first.key
+      pin(first.key)
+    }
   }
 
   const rootRef = useRef<HTMLDivElement>(null)
@@ -102,7 +120,7 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
           <DevelopmentCard
             key={`dev-${entry.index}`}
             dev={entry.dev} index={entry.index} showContext={showContext} timeZone={timeZone} style={{ gridRow: row + 1 }}
-            connection={connectionLabel(items, entry.index)} onTag={() => onTag(entry.index)} highlight={state}
+            connection={connectionLabel(items, entry.index)} indexId={indexId} onTag={() => onTag(entry.index)} highlight={state}
             onHover={(on) => onCardHover(on ? entry.index : null)}
             onFocusChange={(on) => onCardFocus(on ? entry.index : null)}
             onRegionTap={() => onTagTap(entry.index)}

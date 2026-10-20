@@ -68,4 +68,29 @@ describe('StoryTab', () => {
     expect(container.querySelector('#tension-index')).toBeNull()
     expect(container.querySelector('section#key-developments .timeline')).not.toBeNull()
   })
+
+  describe('region tag tap on a touch screen', () => {
+    const tapRegion = (globeTop: number) => {
+      vi.stubGlobal('matchMedia', (q: string) => ({
+        matches: q === '(hover: none)', media: q, addEventListener() {}, removeEventListener() {},
+      }))
+      show(makeBriefing())
+      const globe = container.querySelector<HTMLElement>('.kd-globe')!
+      globe.getBoundingClientRect = () => ({ top: globeTop, bottom: globeTop + 400, left: 0, right: 400, width: 400, height: 400, x: 0, y: globeTop, toJSON() {} })
+      const scroll = vi.fn()
+      globe.scrollIntoView = scroll
+      act(() => container.querySelector<HTMLButtonElement>('#dev-0 .tags button')!.click())
+      return scroll
+    }
+
+    it('brings an offscreen globe into view before it zooms', () => {
+      const scroll = tapRegion(window.innerHeight + 600)
+      expect(scroll).toHaveBeenCalledWith({ behavior: 'smooth', block: 'nearest' })
+    })
+
+    it('leaves a globe already in view alone', () => {
+      const scroll = tapRegion(0)
+      expect(scroll).not.toHaveBeenCalled()
+    })
+  })
 })

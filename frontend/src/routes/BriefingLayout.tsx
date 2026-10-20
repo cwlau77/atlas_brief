@@ -32,7 +32,8 @@ export function BriefingLayout() {
           <NavLink to={`/brief/${briefing.id}/signals`} className={tabClass}>Signals</NavLink>
         </nav>
       </header>
-      <Outlet context={context} />
+      {/* Keyed by briefing: tab state (index pin, Show more, open reasons) never carries over. */}
+      <Outlet key={briefing.id} context={context} />
     </div>
   )
 }

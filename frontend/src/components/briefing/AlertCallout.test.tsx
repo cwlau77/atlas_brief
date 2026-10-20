@@ -28,12 +28,16 @@ describe('AlertCallout (Read first)', () => {
 
   it('read first shows 3 and reveals more', () => {
     act(() => root.render(<AlertCallout alerts={[1, 2, 3, 4, 5].map((i) => alert(i))} />))
-    const titles = () => [...container.querySelectorAll('.alert-title')].map((t) => t.textContent)
+    const titles = () => [...container.querySelectorAll('.alert:not(.is-overflow) .alert-title')].map((t) => t.textContent)
     expect(titles()).toEqual(['Alert 1', 'Alert 2', 'Alert 3'])
+    // Print shows every alert: the extras stay in the DOM, hidden on screen by a class.
+    const extras = [...container.querySelectorAll('.alert.is-overflow .alert-title')].map((t) => t.textContent)
+    expect(extras).toEqual(['Alert 4', 'Alert 5'])
     const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Show 2 more')!
     expect(more).toBeDefined()
     act(() => more.click())
     expect(titles()).toEqual(['Alert 1', 'Alert 2', 'Alert 3', 'Alert 4', 'Alert 5'])
+    expect(container.querySelector('.is-overflow')).toBeNull()
     expect(container.textContent).not.toContain('Show 2 more')
   })
 

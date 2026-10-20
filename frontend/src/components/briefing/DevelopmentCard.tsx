@@ -12,7 +12,7 @@ const PRESS_FOCUS_MS = 300
 export type CardHighlight = 'lit' | 'dim' | null
 
 export function DevelopmentCard({
-  dev, index, showContext, timeZone, style, connection, onTag, highlight = null, onHover, onFocusChange, onRegionTap,
+  dev, index, showContext, timeZone, style, connection, indexId, onTag, highlight = null, onHover, onFocusChange, onRegionTap,
 }: {
   dev: ViewDevelopment
   index: number
@@ -21,6 +21,8 @@ export function DevelopmentCard({
   style?: CSSProperties
   /** The single connection tag's label ("2 tensions"), or null for none. */
   connection: string | null
+  /** The tension index's element id, which the connection tag controls. */
+  indexId: string
   onTag: () => void
   highlight?: CardHighlight
   onHover?: (on: boolean) => void
@@ -38,8 +40,9 @@ export function DevelopmentCard({
   const timed = !Number.isNaN(Date.parse(dev.timestamp))
   const className = ['dev', highlight === 'lit' && 'is-lit', highlight === 'dim' && 'is-dim'].filter(Boolean).join(' ')
   return (
+    // data-index-control: clicks inside a card (Read background, chips) keep the index pin.
     <article
-      className={className} id={`dev-${index}`} style={style} aria-labelledby={titleId}
+      className={className} id={`dev-${index}`} style={style} aria-labelledby={titleId} data-index-control=""
       onMouseEnter={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
       onPointerDown={() => { pressedAt.current = performance.now() }}
@@ -87,7 +90,7 @@ export function DevelopmentCard({
         )}
         <SourceChips sources={dev.sources} />
         {connection && (
-          <button type="button" className="dev-conn label" data-index-control="" aria-controls="tension-index"
+          <button type="button" className="dev-conn label" data-index-control="" aria-controls={indexId}
             aria-label={`Show in tension index: ${connection}`} onClick={onTag}
           >
             {connection}

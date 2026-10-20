@@ -23,7 +23,7 @@ describe('DevelopmentCard', () => {
   const render = (over: Partial<Parameters<typeof DevelopmentCard>[0]> = {}) => act(() => root.render(
     <DevelopmentCard
       dev={briefing.keyDevelopments[0]} index={0} showContext timeZone="UTC"
-      connection="1 tension · 1 contradiction" onTag={() => {}}
+      connection="1 tension · 1 contradiction" indexId="tension-index" onTag={() => {}}
       {...over}
     />,
   ))

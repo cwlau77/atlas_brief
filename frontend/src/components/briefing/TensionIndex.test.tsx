@@ -35,13 +35,31 @@ describe('TensionIndex', () => {
   })
   afterEach(() => { act(() => root.unmount()); container.remove() })
   const rows = () => [...container.querySelectorAll<HTMLButtonElement>('button.index-row')]
+  const visibleRows = () => rows().filter((r) => !r.closest('li')!.classList.contains('is-overflow'))
 
   it('renders top 3 and reveals the rest', () => {
     expect(container.querySelector('h2')!.textContent).toBe('Tensions · 4')
-    expect(rows()).toHaveLength(3)
+    expect(visibleRows()).toHaveLength(3)
     const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Show 1 more')!
     act(() => more.click())
+    expect(visibleRows()).toHaveLength(4)
+  })
+
+  // Print shows every row, so the extras stay in the DOM, hidden on screen by a class.
+  it('keeps rows beyond the top 3 in the DOM behind a class', () => {
     expect(rows()).toHaveLength(4)
+    const extra = container.querySelectorAll('li.index-item')[3]
+    expect(extra.classList.contains('is-overflow')).toBe(true)
+    expect(extra.textContent).toContain('Fourth')
+  })
+
+  it('a click that unpins also ends the row preview', () => {
+    act(() => { rows()[0].dispatchEvent(new MouseEvent('mouseover', { bubbles: true })) })
+    act(() => rows()[0].click())
+    expect(active).toBe('tension-0')
+    act(() => rows()[0].click())
+    expect(active).toBeNull()
+    expect(container.querySelector('li.index-item.active')).toBeNull()
   })
 
   it('hover previews and leave reverts to pinned', () => {
@@ -90,7 +108,7 @@ describe('TensionIndex', () => {
 
   it('shows every row when the pinned item sits below the top 3', () => {
     act(() => { pinFromOutside('tension-2') })
-    expect(rows()).toHaveLength(4)
+    expect(visibleRows()).toHaveLength(4)
     expect(rows()[3].getAttribute('aria-pressed')).toBe('true')
   })
 
@@ -102,8 +120,13 @@ describe('TensionIndex', () => {
     const id = rows()[0].getAttribute('aria-describedby')!
     expect(document.getElementById(id)!.textContent).toBe('Carriers reroute.')
     const toggle = container.querySelector('.index-more')!
-    expect(toggle.getAttribute('aria-label')).toBe('Show full reason: Shipping lines vs Houthis')
+    // Label in name (WCAG 2.5.3): the accessible name contains the visible text.
+    expect(toggle.textContent).toBe('more')
+    expect(toggle.getAttribute('aria-label')).toBe('more: Shipping lines vs Houthis')
     expect(toggle.getAttribute('aria-controls')).toBe(id)
+    act(() => (toggle as HTMLButtonElement).click())
+    expect(toggle.textContent).toBe('less')
+    expect(toggle.getAttribute('aria-label')).toBe('less: Shipping lines vs Houthis')
   })
 
   it('strip fills linked developments in order', () => {
@@ -118,5 +141,43 @@ describe('TensionIndex', () => {
     expect(row.textContent).toContain('Contradiction')
     expect(row.querySelector('.index-kind')!.classList.contains('hot')).toBe(true)
     expect(rows()[0].textContent).toContain('Tension')
+  })
+})
+
+describe('TensionIndex reason toggle', () => {
+  let container: HTMLDivElement
+  let root: Root
+  beforeEach(() => {
+    // Fake layout: a reason clamps at 40px and needs 80px when its text runs past 20 characters.
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get() { return 40 } })
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true, get(this: HTMLElement) { return (this.textContent ?? '').length > 20 ? 80 : 40 },
+    })
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+  })
+  afterEach(() => {
+    act(() => root.unmount())
+    container.remove()
+    // jsdom defines both on Element.prototype; dropping the overrides restores them.
+    delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
+    delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight
+  })
+
+  function Long() {
+    const h = useIndexHighlight()
+    const items: IndexItem[] = [
+      { key: 'a', kind: 'tension', sides: 'Short', why: 'Fits.', devs: [0], color: null },
+      { key: 'b', kind: 'tension', sides: 'Long', why: 'A reason long enough to overflow two lines.', devs: [0], color: null },
+    ]
+    return <TensionIndex items={items} devCount={1} order={[0]} highlight={h} />
+  }
+
+  it('shows "more" only for a reason that overflows its clamp', () => {
+    act(() => root.render(<Long />))
+    const toggles = [...container.querySelectorAll('.index-more')]
+    expect(toggles).toHaveLength(1)
+    expect(toggles[0].getAttribute('aria-label')).toBe('more: Long')
   })
 })

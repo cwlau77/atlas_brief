@@ -18,9 +18,9 @@ function Harness({ briefing, onTagTap = () => {} }: { briefing: SavedBriefing; o
   const items = buildTensionIndex(briefing, order)
   return (
     <>
-      <TensionIndex id="tension-index" items={items} devCount={order.length} order={order.map((e) => e.index)} highlight={highlight} />
+      <TensionIndex id="t-index" items={items} devCount={order.length} order={order.map((e) => e.index)} highlight={highlight} />
       <Timeline
-        briefing={briefing} timeZone="UTC" showContext reduced items={items} highlight={highlight}
+        briefing={briefing} timeZone="UTC" showContext reduced items={items} highlight={highlight} indexId="t-index"
         onCardHover={() => {}} onCardFocus={() => {}} onTagTap={onTagTap}
       />
     </>
@@ -82,7 +82,7 @@ describe('Timeline', () => {
   it('tag click pins first linked item', () => {
     const scroll = vi.fn()
     render()
-    container.querySelector<HTMLElement>('#tension-index')!.scrollIntoView = scroll
+    container.querySelector<HTMLElement>('#t-index')!.scrollIntoView = scroll
     const tag = container.querySelector<HTMLButtonElement>('#dev-0 .dev-conn')!
     act(() => tag.click())
     expect(scroll).toHaveBeenCalled()
@@ -115,11 +115,41 @@ describe('Timeline', () => {
     render()
     const tag = container.querySelector<HTMLButtonElement>('#dev-2 .dev-conn')!
     expect(tag.getAttribute('aria-label')).toBe('Show in tension index: 1 tension')
+    expect(tag.getAttribute('aria-controls')).toBe('t-index')
+  })
+
+  // The tag scrolls to the index; focus goes with it rather than staying on a card the reader left.
+  it('tag click moves focus to the pinned row without scrolling again', () => {
+    render()
+    container.querySelector<HTMLElement>('#t-index')!.scrollIntoView = () => {}
+    const tag = container.querySelector<HTMLButtonElement>('#dev-0 .dev-conn')!
+    tag.focus()
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    act(() => tag.click())
+    const row = container.querySelector<HTMLButtonElement>('#t-index .index-row[aria-pressed="true"]')!
+    expect(document.activeElement).toBe(row)
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    focus.mockRestore()
+    // Already pinned: a second click still brings focus back to the row.
+    tag.focus()
+    act(() => tag.click())
+    expect(document.activeElement).toBe(row)
+  })
+
+  it('a click inside a card keeps the pin; a click elsewhere clears it', () => {
+    render()
+    act(() => current.pin('tension-0'))
+    act(() => container.querySelector<HTMLElement>('#dev-0 .dev-title')!.click())
+    const toggle = container.querySelector<HTMLButtonElement>('.dev-context-toggle')
+    if (toggle) act(() => toggle.click())
+    expect(current.pinned).toBe('tension-0')
+    act(() => document.body.click())
+    expect(current.pinned).toBeNull()
   })
 
   it('region tag tap keeps a pinned index row', () => {
     render()
-    container.querySelector<HTMLElement>('#tension-index')!.scrollIntoView = () => {}
+    container.querySelector<HTMLElement>('#t-index')!.scrollIntoView = () => {}
     act(() => current.pin('tension-0'))
     const region = container.querySelector<HTMLButtonElement>('#dev-0 .tags button')!
     expect(region.hasAttribute('data-index-control')).toBe(true)

@@ -19,6 +19,8 @@ import { useAppState } from '../state/hooks'
 import { useIndexHighlight } from '../state/useIndexHighlight'
 import { useBriefing } from './briefingContext'
 
+const INDEX_ID = 'tension-index'
+
 export function StoryTab() {
   const briefing = useBriefing()
   const { settings } = useAppState()
@@ -91,6 +93,19 @@ export function StoryTab() {
   // so the latest intent wins and tapping the same card again follows it again.
   useEffect(() => { if (carouselOpen) setTappedDev(null) }, [carouselOpen])
   useEffect(() => { setTappedDev(null) }, [pinned, previewed])
+  // On phones the globe sits above the timeline, usually scrolled away: bring it back into
+  // view so the reader sees the zoom their tap asked for.
+  const globeRef = useRef<HTMLDivElement>(null)
+  const onTagTap = useCallback((dev: number) => {
+    const globe = globeRef.current
+    if (touch && globe) {
+      const r = globe.getBoundingClientRect()
+      if (r.bottom <= 0 || r.top >= window.innerHeight) {
+        globe.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' })
+      }
+    }
+    setTappedDev(dev)
+  }, [touch, reduced])
   const shownDevs = useMemo(
     () => (shown ? shown.stories.map((s) => Number(s.anchorId.replace('dev-', ''))) : []),
     [shown],
@@ -105,14 +120,15 @@ export function StoryTab() {
         </h2>
         <div className="kd-cols">
           <div className="kd-main">
-            <TensionIndex id="tension-index" items={indexItems} devCount={count} order={indexOrder} highlight={highlight} />
+            <TensionIndex id={INDEX_ID} items={indexItems} devCount={count} order={indexOrder} highlight={highlight} />
             <Timeline
               briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced}
-              items={indexItems} highlight={highlight} onCardHover={setHoveredDev} onCardFocus={setFocusedDev} onTagTap={setTappedDev}
+              items={indexItems} highlight={highlight} indexId={INDEX_ID}
+              onCardHover={setHoveredDev} onCardFocus={setFocusedDev} onTagTap={onTagTap}
             />
           </div>
           {/* Beside the timeline at 980px and up, sticky so hover-follow stays in view; above it on narrower screens. */}
-          <div className="kd-globe">
+          <div className="kd-globe" ref={globeRef}>
             <div className="kd-globe-sticky story-globe">
               <Globe
                 mode="briefing"
