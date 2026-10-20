@@ -5,6 +5,7 @@ import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { attachDrag } from './controls'
 import type { GlobeArc } from './arcs'
 import { GlobeEngine, type GlobeHotspot } from './engine'
+import type { FollowTarget } from './follow'
 import { pointKey, topRegion, type RegionPoint } from './regions'
 import { StaticGlobe } from './StaticGlobe'
 import './globe.css'
@@ -36,6 +37,12 @@ export interface GlobeViewProps {
   arcs?: GlobeArc[]
   litArcs?: Set<string>
   onArcHover?: (key: string | null) => void
+  /**
+   * Briefing mode: what the reader is on. One point zooms to it and lights markerKey;
+   * several are framed (the overview when spread too wide); null zooms out.
+   * zoomedTo (the open carousel) wins over it.
+   */
+  follow?: FollowTarget
 }
 
 const NO_ARCS: GlobeArc[] = []
@@ -46,7 +53,7 @@ const CLICK_SLOP_PX = 5
 
 export default function GlobeView({
   mode, label, regions = NO_REGIONS, timeZone = 'auto', playIntro = false, scanning = false, onSelectStory,
-  onFocusPoint, zoomedTo = null, arcs = NO_ARCS, litArcs = NOTHING_LIT, onArcHover,
+  onFocusPoint, zoomedTo = null, arcs = NO_ARCS, litArcs = NOTHING_LIT, onArcHover, follow = null,
 }: GlobeViewProps) {
   const reduced = usePrefersReducedMotion()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -159,15 +166,27 @@ export default function GlobeView({
     setFocusedIndex(null)
   }, [spotsKey, engineVersion, mode])
 
-  // Zoom follows zoomedTo. Runs after the hotspot push above, so a zoom wins over its default focus.
+  // Zoom follows zoomedTo, else the reader (follow). Runs after the hotspot push above,
+  // so a zoom wins over its default focus.
   const zoomable = mode === 'briefing' && !!onFocusPoint
+  const following = mode === 'briefing' ? follow : null
   useEffect(() => {
     const engine = engineRef.current
-    if (!engine || !zoomable) return
-    const point = latest.current.regions.find((r) => pointKey(r) === zoomedTo)
+    if (!engine || mode !== 'briefing') return
+    const point = zoomable ? latest.current.regions.find((r) => pointKey(r) === zoomedTo) : undefined
     if (point) engine.zoomTo(point.lat, point.lng)
+    else if (following?.points.length) engine.frame(following.points)
     else if (engine.isZoomed) engine.zoomOut()
-  }, [zoomedTo, zoomable, spotsKey, engineVersion])
+  }, [zoomedTo, zoomable, following, mode, spotsKey, engineVersion])
+
+  // The followed marker is lit and the others dimmed, unless a carousel point is open.
+  const followKey = zoomedTo === null ? following?.markerKey ?? null : null
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+    const i = followKey === null ? -1 : latest.current.regions.findIndex((r) => pointKey(r) === followKey)
+    engine.setEmphasis(i < 0 ? null : i)
+  }, [followKey, spotsKey, engineVersion])
 
   useEffect(() => {
     if (!zoomable || zoomedTo === null) return
@@ -187,10 +206,12 @@ export default function GlobeView({
   }, [onArcHover, engineVersion])
 
   useEffect(() => { engineRef.current?.setScanning(scanning) }, [scanning, engineVersion])
-  // Hold auto-spin while a hotspot is pinned open or a hotspot/the panel has keyboard focus.
+  // Hold auto-spin while a hotspot is pinned open, a hotspot/the panel has keyboard focus,
+  // or the globe is following the reader.
+  const holdForFollow = !!following
   useEffect(() => {
-    engineRef.current?.setHold(pinned || focusedIndex !== null)
-  }, [pinned, focusedIndex, engineVersion])
+    engineRef.current?.setHold(pinned || focusedIndex !== null || holdForFollow)
+  }, [pinned, focusedIndex, holdForFollow, engineVersion])
 
   const open = useCallback((i: number) => {
     window.clearTimeout(closeTimer.current)
@@ -269,7 +290,7 @@ export default function GlobeView({
                 key={pointKey(r)}
                 ref={(el) => { hotRefs.current[i] = el }}
                 type="button"
-                className={`globe-hotspot ${i < LABELED_COUNT ? 'labeled' : ''} ${pointKey(r) === zoomedTo ? 'zoomed' : ''}`}
+                className={`globe-hotspot ${i < LABELED_COUNT ? 'labeled' : ''} ${pointKey(r) === zoomedTo ? 'zoomed' : ''} ${followKey !== null ? (pointKey(r) === followKey ? 'followed' : 'unfollowed') : ''}`}
                 data-visible="false"
                 aria-label={`${r.name}, ${r.count} mention${r.count === 1 ? '' : 's'}. Show stories.`}
                 aria-expanded={active === i}

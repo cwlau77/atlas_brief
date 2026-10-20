@@ -92,6 +92,26 @@ export function devAnchor(b: Pick<SavedBriefing, 'keyDevelopments'>, devIndex: n
   return null
 }
 
+/**
+ * Where the globe goes to follow a development, and which marker to light: its
+ * city, else its first resolvable region (the matching globe point when there is one).
+ */
+export function devFollowPoint(
+  b: Pick<SavedBriefing, 'keyDevelopments'>, points: RegionPoint[], devIndex: number,
+): { lat: number; lng: number; markerKey: string } | null {
+  const d = b.keyDevelopments[devIndex]
+  if (!d) return null
+  if (d.place) return { lat: d.place.lat, lng: d.place.lng, markerKey: pointKey({ kind: 'city', name: d.place.name }) }
+  for (const region of d.regions) {
+    const key = region.trim().toLowerCase()
+    const point = points.find((p) => p.kind === 'region' && p.name.trim().toLowerCase() === key)
+    if (point) return { lat: point.lat, lng: point.lng, markerKey: pointKey(point) }
+    const geo = resolveRegion(region)
+    if (geo) return { lat: geo.lat, lng: geo.lng, markerKey: pointKey({ kind: 'region', name: region }) }
+  }
+  return null
+}
+
 /** Unique per point: a city and a region can share a name (Gaza, Singapore). */
 export function pointKey(p: Pick<RegionPoint, 'kind' | 'name'>): string {
   return `${p.kind}:${p.name}`

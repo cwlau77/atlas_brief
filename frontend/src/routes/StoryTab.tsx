@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCallout } from '../components/briefing/AlertCallout'
 import { ReadingList } from '../components/briefing/ReadingList'
 import { TensionIndex } from '../components/briefing/TensionIndex'
@@ -8,17 +8,16 @@ import { TopStories } from '../components/briefing/TopStories'
 import '../components/briefing/story.css'
 import { Globe } from '../globe/Globe'
 import { buildArcs } from '../globe/arcs'
-import { buildRegionPoints, pointKey, type RegionPoint } from '../globe/regions'
+import { createFollow, type FollowTarget } from '../globe/follow'
+import { buildRegionPoints, devFollowPoint, pointKey, type RegionPoint } from '../globe/regions'
 import { buildRoutes } from '../lib/routes'
 import { buildTensionIndex } from '../lib/tensionIndex'
 import { sortNewestFirst } from '../lib/timeline'
-import { usePrefersReducedMotion } from '../lib/useMediaQuery'
+import { useMediaQuery, usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { usePrintOnLoad } from '../lib/usePrintOnLoad'
 import { useAppState } from '../state/hooks'
 import { useIndexHighlight } from '../state/useIndexHighlight'
 import { useBriefing } from './briefingContext'
-
-const noop = () => {}
 
 export function StoryTab() {
   const briefing = useBriefing()
@@ -41,8 +40,14 @@ export function StoryTab() {
   const indexItems = useMemo(() => buildTensionIndex(briefing, order), [briefing, order])
   const indexOrder = useMemo(() => order.map((e) => e.index), [order])
   const arcs = useMemo(() => buildArcs(briefing, buildRoutes(briefing, order).routes), [briefing, order])
-  const { active, preview } = highlight
+  const { active, preview, previewed, pinned } = highlight
   const litArcs = useMemo(() => new Set(active ? [active] : []), [active])
+  // Hovering an arc on the globe previews its item, but must not move the globe under the pointer.
+  const [arcKey, setArcKey] = useState<string | null>(null)
+  const onArcHover = useCallback((key: string | null) => {
+    setArcKey(key)
+    preview(key)
+  }, [preview])
   // The globe point whose carousel is open; a key that no longer matches (new briefing) reads as closed.
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const focused = regions.find((r) => pointKey(r) === focusedKey) ?? null
@@ -57,6 +62,34 @@ export function StoryTab() {
     if (key) setShownKey(key)
   }, [])
   const closeCarousel = useCallback(() => setFocusedKey(null), [])
+  // The globe follows the reader: card hover (after a dwell), focus, region taps on touch,
+  // then the previewed and pinned index rows. See globe/follow.ts.
+  const touch = useMediaQuery('(hover: none)')
+  const [hoveredDev, setHoveredDev] = useState<number | null>(null)
+  const [focusedDev, setFocusedDev] = useState<number | null>(null)
+  const [tappedDev, setTappedDev] = useState<number | null>(null)
+  const [follow, setFollow] = useState<FollowTarget>(null)
+  const followRef = useRef<ReturnType<typeof createFollow> | null>(null)
+  useEffect(() => {
+    const f = createFollow({
+      resolve: (dev) => devFollowPoint(briefing, regions, dev),
+      itemDevs: (key) => indexItems.find((item) => item.key === key)?.devs ?? [],
+      onTarget: setFollow,
+    })
+    followRef.current = f
+    setFollow(null)
+    return () => {
+      f.dispose()
+      followRef.current = null
+    }
+  }, [briefing, regions, indexItems])
+  const carouselOpen = focused !== null || shown !== null
+  const previewItem = previewed !== null && previewed !== arcKey ? previewed : null
+  useEffect(() => {
+    followRef.current?.update({ hoveredDev, focusedDev, tappedDev, previewItem, pinnedItem: pinned, carouselOpen, touch })
+  }, [hoveredDev, focusedDev, tappedDev, previewItem, pinned, carouselOpen, touch, briefing, regions, indexItems])
+  // A tap is a one-off request: opening a carousel forgets it, so closing doesn't jump back.
+  useEffect(() => { if (carouselOpen) setTappedDev(null) }, [carouselOpen])
   const shownDevs = useMemo(
     () => (shown ? shown.stories.map((s) => Number(s.anchorId.replace('dev-', ''))) : []),
     [shown],
@@ -80,7 +113,8 @@ export function StoryTab() {
             zoomedTo={focused ? focusedKey : null}
             arcs={arcs}
             litArcs={litArcs}
-            onArcHover={preview}
+            onArcHover={onArcHover}
+            follow={follow}
             label={`Globe marking ${regions.length} place${regions.length === 1 ? '' : 's'} from this briefing. Select a point to zoom in and browse its stories.`}
           />
           {shown && (
@@ -104,10 +138,9 @@ export function StoryTab() {
           Key developments · {count} event{count === 1 ? '' : 's'}
         </h2>
         <TensionIndex id="tension-index" items={indexItems} devCount={count} order={indexOrder} highlight={highlight} />
-        {/* Globe follow (card hover, focus and region taps) is wired in a later step. */}
         <Timeline
           briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced}
-          items={indexItems} highlight={highlight} onCardHover={noop} onCardFocus={noop} onTagTap={noop}
+          items={indexItems} highlight={highlight} onCardHover={setHoveredDev} onCardFocus={setFocusedDev} onTagTap={setTappedDev}
         />
       </section>
       <div className="wrap">

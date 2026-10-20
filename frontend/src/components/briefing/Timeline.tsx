@@ -23,7 +23,8 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
   onTagTap: (devIndex: number) => void
 }) {
   const order = useMemo(() => sortNewestFirst(briefing.keyDevelopments), [briefing])
-  const activeItem = items.find((item) => item.key === highlight.active) ?? null
+  // An item linked to no card lights nothing rather than dimming every card.
+  const activeItem = items.find((item) => item.key === highlight.active && item.devs.length > 0) ?? null
   const { pinned, pin } = highlight
 
   // Scrolls to the index and pins the busiest item linked to the card. Never unpins.

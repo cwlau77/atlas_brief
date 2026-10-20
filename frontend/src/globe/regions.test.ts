@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SavedBriefing } from '../lib/normalize'
 import { makeBriefing } from '../test/fixtures'
-import { buildRegionPoints, decodeLandPoints, devAnchor, toVec3, topRegion } from './regions'
+import { buildRegionPoints, decodeLandPoints, devAnchor, devFollowPoint, pointKey, toVec3, topRegion } from './regions'
 
 function withoutPlaces(overrides: Partial<SavedBriefing> = {}): SavedBriefing {
   const b = makeBriefing(overrides)
@@ -90,5 +90,27 @@ describe('devAnchor', () => {
     b.keyDevelopments[2] = { ...b.keyDevelopments[2], regions: ['Atlantis'] }
     expect(devAnchor(b, 2)).toBeNull()
     expect(devAnchor(b, 99)).toBeNull()
+  })
+})
+
+describe('devFollowPoint', () => {
+  const b = makeBriefing()
+  const points = buildRegionPoints(b)
+  it('uses the city and its marker key when the development has a place', () => {
+    expect(devFollowPoint(b, points, 0)).toEqual({ lat: 12.78, lng: 45.04, markerKey: 'city:Aden' })
+  })
+  it('falls back to the first resolvable region and matches its globe point', () => {
+    const t = devFollowPoint(b, points, 1)!
+    const red = points.find((p) => p.kind === 'region' && p.name.toLowerCase() === 'red sea')!
+    expect(t.markerKey).toBe(pointKey(red))
+    expect(t.lat).toBeCloseTo(red.lat)
+  })
+  it('skips regions it cannot place and returns null when none resolve', () => {
+    const odd = makeBriefing()
+    odd.keyDevelopments[2] = { ...odd.keyDevelopments[2], regions: ['Nowhere-land', 'Egypt'] }
+    expect(devFollowPoint(odd, points, 2)?.markerKey).toBe('region:Egypt')
+    odd.keyDevelopments[2] = { ...odd.keyDevelopments[2], regions: ['Nowhere-land'] }
+    expect(devFollowPoint(odd, points, 2)).toBeNull()
+    expect(devFollowPoint(odd, points, 99)).toBeNull()
   })
 })

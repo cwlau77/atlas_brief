@@ -4,6 +4,7 @@
 import * as THREE from 'three'
 import { LAND_POINTS_B64 } from './landPoints'
 import type { GlobeArc } from './arcs'
+import { frameOf, type LatLng } from './follow'
 import { decodeLandPoints, toVec3 } from './regions'
 
 export interface GlobeHotspot { lat: number; lng: number; count: number }
@@ -26,6 +27,8 @@ const IDLE_RESUME_MS = 4000
 const INTRO_MS = 1900
 const OCEAN_POINTS = 5200
 const DEG = Math.PI / 180
+// framing several points: this angular reach (degrees from their centre) needs the whole-globe distance.
+const FRAME_FULL_DEG = 55
 
 const VERT = /* glsl */ `
   attribute vec3 aRand;
@@ -67,14 +70,18 @@ const FRAG = /* glsl */ `
 const HOT_VERT = /* glsl */ `
   attribute float aSeed;
   attribute float aSize;
-  uniform float uTime, uPR, uShow;
+  attribute float aIdx;
+  uniform float uTime, uPR, uShow, uFocus, uEmph;
   varying float vPulse, vFace;
   void main() {
     vec4 wp = modelMatrix * vec4(position, 1.0);
-    vFace = smoothstep(0.0, 0.3, dot(normalize(wp.xyz), normalize(cameraPosition - wp.xyz)));
+    // uFocus names the followed marker (-1 for none); uEmph eases its emphasis in and out.
+    float lit = uFocus >= 0.0 && abs(aIdx - uFocus) < 0.5 ? 1.0 : 0.0;
+    float dim = mix(1.0, mix(0.35, 1.0, lit), uEmph);
+    vFace = smoothstep(0.0, 0.3, dot(normalize(wp.xyz), normalize(cameraPosition - wp.xyz))) * dim;
     vPulse = fract(uTime * 0.45 + aSeed);
     vec4 mv = viewMatrix * wp;
-    gl_PointSize = (22.0 + 26.0 * vPulse) * aSize * uPR * uShow;
+    gl_PointSize = (22.0 + 26.0 * vPulse) * aSize * uPR * uShow * mix(1.0, mix(0.8, 1.4, lit), uEmph);
     gl_Position = projectionMatrix * mv;
   }`
 
@@ -172,6 +179,7 @@ export class GlobeEngine {
   private camZ = CAMERA_Z
   private viewZ = CAMERA_Z
   private camTarget = CAMERA_Z
+  private emphTarget = 0
   private zoomed = false
   private arcs: ArcLine[] = []
   private litArcs = new Set<string>()
@@ -232,7 +240,10 @@ export class GlobeEngine {
     this.hotMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
-      uniforms: { uTime: this.uniforms.uTime, uPR: this.uniforms.uPR, uShow: { value: this.introDone ? 1 : 0 }, uColor: { value: rawColor(ACCENT) } },
+      uniforms: {
+        uTime: this.uniforms.uTime, uPR: this.uniforms.uPR, uShow: { value: this.introDone ? 1 : 0 }, uColor: { value: rawColor(ACCENT) },
+        uFocus: { value: -1 }, uEmph: { value: 0 },
+      },
       vertexShader: HOT_VERT,
       fragmentShader: HOT_FRAG,
     })
@@ -322,6 +333,37 @@ export class GlobeEngine {
     this.hotGeo.setAttribute('position', new THREE.Float32BufferAttribute(this.hotVecs.flatMap((v) => [v.x, v.y, v.z]), 3))
     this.hotGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(list.map((h) => 0.7 + 0.6 * (h.count / max)), 1))
     this.hotGeo.setAttribute('aSeed', new THREE.Float32BufferAttribute(list.map((_, i) => i * 1.7), 1))
+    this.hotGeo.setAttribute('aIdx', new THREE.Float32BufferAttribute(list.map((_, i) => i), 1))
+  }
+
+  /** Light one hotspot (by index) and dim the rest; null restores them all. Eased unless reduced motion. */
+  setEmphasis(index: number | null): void {
+    if (index !== null) (this.hotMat.uniforms.uFocus as THREE.IUniform<number>).value = index
+    this.emphTarget = index === null ? 0 : 1
+    if (this.opts.reducedMotion) this.applyEmphasis(1)
+  }
+
+  private applyEmphasis(k: number): void {
+    const u = this.hotMat.uniforms.uEmph as THREE.IUniform<number>
+    u.value += (this.emphTarget - u.value) * k
+    if (Math.abs(this.emphTarget - u.value) < 0.002) u.value = this.emphTarget
+    if (u.value === 0) (this.hotMat.uniforms.uFocus as THREE.IUniform<number>).value = -1
+  }
+
+  /**
+   * Show several points at once: aim between them and pull back just far enough to
+   * hold them all. Too wide a spread (see frameOf) goes back to the overview instead.
+   * One point is a plain zoomTo. Eased unless reduced motion; from a zoomed view it glides.
+   */
+  frame(points: LatLng[]): void {
+    if (points.length === 1) return this.zoomTo(points[0].lat, points[0].lng)
+    const f = frameOf(points)
+    if (!f) return this.zoomOut()
+    const z = clamp(ZOOM_Z + (f.reach / FRAME_FULL_DEG) * (CAMERA_Z - ZOOM_Z), ZOOM_Z, CAMERA_Z)
+    this.zoomed = true
+    this.camTarget = z
+    if (this.opts.reducedMotion) this.camZ = z
+    this.focusOn(f.lat, f.lng)
   }
 
   get isZoomed(): boolean { return this.zoomed }
@@ -469,6 +511,7 @@ export class GlobeEngine {
     }
     const show = this.hotMat.uniforms.uShow as THREE.IUniform<number>
     show.value += ((u.uIntro.value > 0.85 ? 1 : 0) - show.value) * Math.min(1, dt * 5)
+    this.applyEmphasis(this.opts.reducedMotion ? 1 : Math.min(1, dt * 4))
 
     if (this.camZ !== this.camTarget) {
       this.camZ += (this.camTarget - this.camZ) * Math.min(1, dt * 3.5)

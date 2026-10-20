@@ -93,6 +93,13 @@
 .globe-hotspot.zoomed { box-shadow: 0 0 0 2px var(--accent); }
 .globe-hotspot.zoomed .globe-hotspot-label { display: flex; }
 
+/* The marker of the development being read is named; the others step back. */
+.globe-hotspot.followed .globe-hotspot-label { display: flex; color: var(--accent); }
+.globe-hotspot.unfollowed .globe-hotspot-label { opacity: 0.45; }
+@media (prefers-reduced-motion: no-preference) {
+  .globe-hotspot-label { transition: opacity var(--dur-mid), color var(--dur-mid); }
+}
+
 /* Briefing globes fade at the canvas edge so the zoomed view has no hard square crop.
    The fade starts outside the whole globe's silhouette, so the unzoomed view is untouched. */
 .globe-briefing .globe-canvas {

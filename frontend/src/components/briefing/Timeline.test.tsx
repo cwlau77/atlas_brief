@@ -104,6 +104,29 @@ describe('Timeline', () => {
     expect(container.querySelector('.dev.is-lit, .dev.is-dim')).toBeNull()
   })
 
+  it('an active item with no linked developments dims nothing', () => {
+    // Tension 2 (grain exporters) links no development.
+    render()
+    act(() => current.preview('tension-2'))
+    expect(container.querySelector('.dev.is-lit, .dev.is-dim')).toBeNull()
+  })
+
+  it('connection tag names the index in its label', () => {
+    render()
+    const tag = container.querySelector<HTMLButtonElement>('#dev-2 .dev-conn')!
+    expect(tag.getAttribute('aria-label')).toBe('Show in tension index: 1 tension')
+  })
+
+  it('region tag tap keeps a pinned index row', () => {
+    render()
+    container.querySelector<HTMLElement>('#tension-index')!.scrollIntoView = () => {}
+    act(() => current.pin('tension-0'))
+    const region = container.querySelector<HTMLButtonElement>('#dev-0 .tags button')!
+    expect(region.hasAttribute('data-index-control')).toBe(true)
+    act(() => region.click())
+    expect(current.pinned).toBe('tension-0')
+  })
+
   it('region tag tap reports the development', () => {
     const onTagTap = vi.fn()
     render(makeBriefing(), onTagTap)

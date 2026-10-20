@@ -49,7 +49,7 @@ export function DevelopmentCard({
           {dev.regions.length > 0 && (
             <ul className="tags label" aria-label="Regions">
               {dev.regions.map((r) => (
-                <li key={r}><button type="button" onClick={() => onRegionTap?.()}>{r}</button></li>
+                <li key={r}><button type="button" data-index-control="" onClick={() => onRegionTap?.()}>{r}</button></li>
               ))}
             </ul>
           )}
@@ -75,7 +75,9 @@ export function DevelopmentCard({
         )}
         <SourceChips sources={dev.sources} />
         {connection && (
-          <button type="button" className="dev-conn label" data-index-control="" aria-controls="tension-index" onClick={onTag}>
+          <button type="button" className="dev-conn label" data-index-control="" aria-controls="tension-index"
+            aria-label={`Show in tension index: ${connection}`} onClick={onTag}
+          >
             {connection}
           </button>
         )}
