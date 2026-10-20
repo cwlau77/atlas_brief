@@ -23,7 +23,7 @@ function useStagedMessage(active: boolean): string {
   return ([...STAGES].reverse().find((s) => elapsed >= s.after) ?? STAGES[0]).text
 }
 
-export function AskForm({ id, compact = false, loading, error, onGenerate, onRetry, placeholder = 'about the Strait of Hormuz' }: {
+export function AskForm({ id, compact = false, loading, error, onGenerate, onRetry, placeholder = 'about the Strait of Hormuz', prefill }: {
   id: string
   compact?: boolean
   loading: boolean
@@ -31,8 +31,15 @@ export function AskForm({ id, compact = false, loading, error, onGenerate, onRet
   onGenerate: (focus: string, frequency: string) => void
   onRetry: () => void
   placeholder?: string
+  /** Pushes text into the input from outside; bump `n` to re-apply the same text. */
+  prefill?: { text: string; n: number }
 }) {
   const [focus, setFocus] = useState('')
+  const [appliedPrefill, setAppliedPrefill] = useState(0)
+  if (prefill && prefill.n !== appliedPrefill) {
+    setAppliedPrefill(prefill.n)
+    setFocus(prefill.text)
+  }
   const [frequency, setFrequency] = useState<string>('daily')
   const stage = useStagedMessage(loading)
   const trimmed = focus.trim()

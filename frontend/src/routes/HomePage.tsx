@@ -27,6 +27,7 @@ export function HomePage() {
   const clock = useClock(settings.timeZone, 15_000)
   const { generate, retry, loading, error } = useGenerateBriefing()
   useFocusOnArrival('home-ask')
+  const [prefill, setPrefill] = useState<{ text: string; n: number }>()
   const [intro, setIntro] = useState(() => shouldPlayIntro(reduced))
   const placeholder = useTypewriter(PROMPTS, { enabled: !reduced, pauseWhenFocusedId: 'home-ask' })
 
@@ -59,8 +60,11 @@ export function HomePage() {
             <em>what changed, where it happened,</em> and what to read next.
           </p>
           <div className="home-ask">
-            <AskForm id="home-ask" loading={loading} error={error} onGenerate={generate} onRetry={retry} placeholder={placeholder} />
-            <TopicChips fallback={SUGGESTIONS} onPick={(t) => void generate(t, 'daily')} disabled={loading} />
+            <AskForm id="home-ask" loading={loading} error={error} onGenerate={generate} onRetry={retry} placeholder={placeholder} prefill={prefill} />
+            <TopicChips fallback={SUGGESTIONS} onPick={(t) => {
+              setPrefill((p) => ({ text: t, n: (p?.n ?? 0) + 1 }))
+              void generate(t, 'daily')
+            }} disabled={loading} />
           </div>
           <p className="provenance label">
             <span>Google News</span><span>NewsAPI</span><span>GDELT 2.0</span><span>26 newsroom feeds</span><span>Model-written, source-cited</span>
