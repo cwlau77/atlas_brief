@@ -137,3 +137,36 @@ describe('lead images and places', () => {
     expect(loaded.keyDevelopments[0].title).toBe('Border talks resume')
   })
 })
+
+describe('commons images', () => {
+  const commons = {
+    url: 'https://upload.wikimedia.org/x.jpg',
+    page_url: 'https://commons.wikimedia.org/wiki/File:X.jpg',
+    author: 'Jane Doe',
+    license: 'CC BY-SA 4.0',
+    source: 'commons' as const,
+  }
+
+  it('carries commons_image through for developments and alerts, or null', () => {
+    const api: ApiBriefing = {
+      ...FIXTURE,
+      key_developments: [{ ...FIXTURE.key_developments[0], commons_image: commons }, FIXTURE.key_developments[1]],
+      priority_alerts: [{ ...FIXTURE.priority_alerts[0], commons_image: commons }, FIXTURE.priority_alerts[1]],
+    }
+    const b = normalizeBriefing(api, 'daily')
+    expect(b.keyDevelopments.map((d) => d.commonsImage)).toEqual([commons, null])
+    expect(b.alerts.map((a) => a.commonsImage)).toEqual([commons, null])
+  })
+
+  it('normalizes legacy saved briefing without image fields', () => {
+    const current = normalizeBriefing(FIXTURE, 'daily')
+    const old = JSON.parse(JSON.stringify({
+      ...current,
+      keyDevelopments: current.keyDevelopments.map(({ commonsImage: _c, ...rest }) => rest),
+      alerts: current.alerts.map(({ commonsImage: _c, ...rest }) => rest),
+    })) as SavedBriefing
+    const loaded = withDefaults(old)
+    expect(loaded.keyDevelopments.every((d) => d.commonsImage === null)).toBe(true)
+    expect(loaded.alerts.every((a) => a.commonsImage === null)).toBe(true)
+  })
+})

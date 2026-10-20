@@ -11,6 +11,14 @@ export interface SourceCitation {
   image_outlet?: string | null
 }
 
+export interface CommonsImage {
+  url: string
+  page_url: string
+  author: string
+  license: string
+  source: 'commons'
+}
+
 export interface ApiPlace {
   name: string
   country: string
@@ -25,6 +33,7 @@ export interface KeyDevelopment {
   sources: SourceCitation[]
   historical_context: string | null
   place?: ApiPlace | null
+  commons_image?: CommonsImage | null
 }
 
 export interface Tension {
@@ -48,6 +57,7 @@ export interface PriorityAlert {
   headline: string
   rationale: string
   sources: SourceCitation[]
+  commons_image?: CommonsImage | null
 }
 
 export interface RecommendedReading {
