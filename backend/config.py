@@ -98,6 +98,7 @@ class Settings(BaseSettings):
 
     # Relevance rerank (Haiku scores pre-filtered candidates; keyword + TF-IDF is the fallback).
     rerank_enabled: bool = True
+    commons_images_enabled: bool = True
     rerank_model: str = "claude-haiku-4-5"
     rerank_timeout_seconds: float = 8.0
     rerank_max_candidates: int = 60

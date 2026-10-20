@@ -40,6 +40,14 @@ class Place(BaseModel):
     lng: float
 
 
+class CommonsImage(BaseModel):
+    url: str
+    page_url: str
+    author: str
+    license: str
+    source: Literal["commons"] = "commons"
+
+
 class KeyDevelopment(BaseModel):
     headline: str
     summary: str
@@ -47,6 +55,7 @@ class KeyDevelopment(BaseModel):
     sources: list[SourceCitation]
     historical_context: Optional[str] = None
     place: Optional[Place] = None
+    commons_image: Optional[CommonsImage] = None
 
 
 class Tension(BaseModel):
@@ -68,6 +77,7 @@ class PriorityAlert(BaseModel):
     headline: str
     rationale: str
     sources: list[SourceCitation]
+    commons_image: Optional[CommonsImage] = None
 
 
 class RecommendedReading(BaseModel):
