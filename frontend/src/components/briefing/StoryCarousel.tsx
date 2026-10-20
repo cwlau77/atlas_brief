@@ -120,7 +120,7 @@ export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, o
         {order.map((devIndex, i) => (
           <li key={devIndex} ref={(el) => { itemRefs.current[i] = el }} aria-current={i === current ? 'true' : undefined}>
             <StoryCard
-              dev={devs[devIndex]} index={devIndex} timeZone={timeZone} variant="carousel"
+              dev={devs[devIndex]} index={devIndex} timeZone={timeZone} variant="compact"
               onOpen={(anchorId) => (i === current ? onOpen(anchorId) : centre(i))}
             />
           </li>

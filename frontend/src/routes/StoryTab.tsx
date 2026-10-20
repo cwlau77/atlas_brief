@@ -31,6 +31,7 @@ export function StoryTab() {
     el?.focus({ preventScroll: true })
   }, [reduced])
   const count = briefing.keyDevelopments.length
+  const noAlerts = briefing.alerts.length === 0
   const highlight = useRouteHighlight()
   const arcs = useMemo(
     () => buildArcs(briefing, buildRoutes(briefing, sortDevelopments(briefing.keyDevelopments)).routes),
@@ -60,6 +61,8 @@ export function StoryTab() {
       <div className="story-lead wrap">
         <div className="story-lead-copy">
           <AlertCallout alerts={briefing.alerts} />
+          {/* No alerts: the top stories fill the column beside the globe instead of leaving it empty. */}
+          {noAlerts && <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} layout="stack" />}
         </div>
         <div className="story-globe">
           <Globe
@@ -89,7 +92,7 @@ export function StoryTab() {
           )}
         </div>
       </div>
-      <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} />
+      {!noAlerts && <TopStories briefing={briefing} timeZone={settings.timeZone} onOpen={scrollToStory} />}
       <section className="wrap" aria-labelledby="timeline-h">
         <h2 id="timeline-h" className="section-label label">
           Key developments · {count} event{count === 1 ? '' : 's'}

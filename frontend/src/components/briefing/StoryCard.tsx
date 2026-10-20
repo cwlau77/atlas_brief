@@ -15,7 +15,7 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
   index: number
   timeZone: string
   onOpen: (anchorId: string) => void
-  variant?: 'strip' | 'carousel'
+  variant?: 'strip' | 'compact'
 }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const image = dev.leadImage && dev.leadImage !== failedSrc ? dev.leadImage : null

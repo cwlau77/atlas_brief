@@ -62,4 +62,15 @@ describe('TopStories', () => {
     ))
     expect(container.innerHTML).toBe('')
   })
+
+  it('stacks up to four compact cards beside the globe when used in the lead', () => {
+    const base = makeBriefing()
+    const keyDevelopments = Array.from({ length: 6 }, (_, i) => ({ ...base.keyDevelopments[i % 3], title: `Story ${i}` }))
+    act(() => root.render(<TopStories briefing={{ keyDevelopments }} timeZone="UTC" onOpen={() => {}} layout="stack" />))
+    const section = container.querySelector('section')!
+    expect(section.classList.contains('top-stories-stack')).toBe(true)
+    expect(section.classList.contains('wrap')).toBe(false)
+    expect(section.querySelectorAll('.story-card')).toHaveLength(4)
+    expect(section.querySelectorAll('.story-card-compact')).toHaveLength(4)
+  })
 })
