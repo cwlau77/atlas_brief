@@ -3,9 +3,10 @@
 **Date:** 2026-10-20
 **Status:** Implemented on branch story/briefing-page.
 **Implementation deviations:**
-- Development cards that the highlighted row doesn't touch dim to opacity 0.55, not the ~30% in §5.1. At 30% the text of pinned-state cards was unreadable.
+- Development cards that the highlighted row doesn't touch are not faded with opacity, unlike the ~30% in §5.1 (any whole-card opacity took text below WCAG AA). Only the picture (40% opacity, greyscale), the priority square, the chips and the card rule recede, and the text drops to `--ink-3`, which keeps 4.5:1 on paper.
 - Previewing an index row (hover) also waits for the 250ms dwell before the globe moves, like card hover (§6), so sweeping across the index doesn't lurch the globe.
-- Only keyboard focus (`:focus-visible`) holds the globe on a card. A mouse click that leaves focus on a card does not pin the globe there.
+- Only keyboard focus holds the globe on a card. The code uses a heuristic, not `:focus-visible`: focus that arrives within 300ms of a pointer press on the card counts as a click and does not hold the globe. Focus moved onto the card itself (jumping to a story) still counts.
+- The Commons lookup (§7) tries the place's own English Wikipedia lead image first (`prop=pageimages`, then Commons `imageinfo` for that file, with the same filters). A Commons search biased with `skyline OR cityscape OR panorama OR street` comes after it. The plain top search hit was often unrelated to the place, such as a church-dome mosaic on a war alert. The denylist matches whole words, and files whose author credit is longer than 120 characters are skipped.
 - On touch devices, a region-tag tap is a one-off request. It expires when a row is pinned or previewed, or when a carousel opens, so the latest intent wins.
 - The outside-click unpin listener uses `click`, not `pointerdown`, so a touch scroll that starts outside the index keeps the pin.
 **Roadmap:** project 2 of 4 from the 2026-10-20 design review (see `2026-10-20-newsprint-identity-design.md` §0). Project 1 (Newsprint & Ultramarine identity) has shipped to local `main`. All styling here uses its tokens and rules.
