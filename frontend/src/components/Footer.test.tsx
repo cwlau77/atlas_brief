@@ -47,6 +47,7 @@ describe('Footer', () => {
     const home = container.querySelector('a[aria-label="Atlas home"]')!
     expect(home.querySelector('svg [data-part="fix"]')).not.toBeNull()
     expect(container.textContent).toContain('Analysis is model-written. Check it against the cited sources.')
+    expect(container.textContent).toContain('13 sources · last 24 hours')
     expect(container.querySelector('.mountain-band img')!.getAttribute('alt')).toBe('')
   })
 })

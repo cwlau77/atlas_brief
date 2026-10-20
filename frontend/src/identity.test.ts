@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import html from '../index.html?raw'
 import tokens from './styles/tokens.css?raw'
 import base from './styles/base.css?raw'
+import footerCss from './components/footer.css?raw'
+import footerTsx from './components/Footer.tsx?raw'
 
 const files = import.meta.glob(['./**/*.{ts,tsx,css}', '!./**/*.test.*'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 
@@ -51,5 +53,24 @@ describe('geometry', () => {
         .map((v) => `${f}: ${v}`),
     )
     expect(offenders).toEqual([])
+  })
+})
+
+describe('footer', () => {
+  const rule = (sel: string) => {
+    const m = footerCss.match(new RegExp(`(?:^|\\})\\s*${sel.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`, 'm'))
+    return m ? m[1] : ''
+  }
+  it('lockup keeps its glyph bottoms: line-height >= 0.9 and no negative bottom margin', () => {
+    const lockup = rule('.footer-lockup')
+    expect(lockup).not.toBe('')
+    expect(parseFloat(lockup.match(/line-height:\s*([\d.]+)/)![1])).toBeGreaterThanOrEqual(0.9)
+    expect(lockup).not.toMatch(/margin-bottom:\s*-/)
+  })
+  it('mountain band is paper, not celadon or ink', () => {
+    expect(rule('.mountain-band')).not.toMatch(/background:\s*var\(--(celadon|ink)/)
+  })
+  it('paints the mountains in grayscale', () => {
+    expect(/grayscale\(1\)/.test(rule('.mountain-band img')) || footerTsx.includes('mountains-wash')).toBe(true)
   })
 })
