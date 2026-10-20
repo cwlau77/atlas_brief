@@ -38,10 +38,11 @@
 .settings-item:first-child { border-top: 0; }
 .settings-label { display: block; font-weight: 600; }
 .settings-hint { display: block; font-size: 0.9rem; color: var(--ink-3); }
-.switch { flex: none; position: relative; width: 44px; height: 26px; border-radius: 999px; border: 0; background: var(--rule); transition: background-color var(--dur-mid); }
-.switch.on { background: var(--accent); }
-.switch-knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); box-shadow: inset 0 0 0 1px var(--rule-strong); transition: transform var(--dur-mid) var(--ease-out); }
-.switch.on .switch-knob { transform: translateX(18px); }
+.switch { flex: none; position: relative; width: 44px; height: 26px; border-radius: 0; border: 1px solid var(--rule-strong); background: var(--paper-deep); transition: background-color 220ms var(--ease-out), border-color 220ms var(--ease-out); }
+.switch.on { background: var(--ink); border-color: var(--ink); }
+.switch-knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 0; background: var(--paper); box-shadow: inset 0 0 0 1px var(--rule-strong); transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out); }
+.switch.on .switch-knob { transform: translateX(18px); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .switch, .switch-knob { transition: none; } }
 .data-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-4); }
 .data-row p { font-weight: 600; }
 .data-row .settings-hint { font-weight: 400; }

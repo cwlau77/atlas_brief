@@ -116,3 +116,13 @@ describe('primary button', () => {
     expect(block).toMatch(/\.btn-primary::before[^{]*\{[^}]*transition:\s*none/)
   })
 })
+
+describe('switches', () => {
+  const settingsCss = Object.entries(files).find(([f]) => f.endsWith('settings.css'))![1]
+  it('are rectangular', () => {
+    for (const sel of ['\\.switch', '\\.switch-knob']) {
+      const m = settingsCss.match(new RegExp(`(?:^|\\})\\s*${sel}\\s*\\{([^}]*)\\}`, 'm'))
+      expect(m?.[1]).toMatch(/border-radius:\s*0\s*;/)
+    }
+  })
+})
