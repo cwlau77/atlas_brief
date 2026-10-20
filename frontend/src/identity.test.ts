@@ -4,6 +4,7 @@ import tokens from './styles/tokens.css?raw'
 import base from './styles/base.css?raw'
 import footerCss from './components/footer.css?raw'
 import footerTsx from './components/Footer.tsx?raw'
+import storyCss from './components/briefing/story.css?raw'
 
 const files = import.meta.glob(['./**/*.{ts,tsx,css}', '!./**/*.test.*'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 
@@ -82,5 +83,21 @@ describe('focus and print', () => {
   })
   it('keeps the retired .cur selector out of print rules', () => {
     expect(base).not.toMatch(/\.cur\b/)
+  })
+})
+
+describe('development cards', () => {
+  const rule = (css: string, sel: string) => {
+    const m = css.match(new RegExp(`(?:^|\\})\\s*${sel.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`, 'm'))
+    return m ? m[1] : ''
+  }
+  it('pins the .dev grid to one shrinkable track so long tab titles ellipsize', () => {
+    expect(rule(storyCss, '.dev')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+  })
+  it('lets tab buttons shrink and long chips wrap', () => {
+    expect(rule(storyCss, '.dev-links')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+    expect(rule(storyCss, '.dev-tab')).toMatch(/min-width:\s*0/)
+    expect(rule(storyCss, '.source-chip')).toMatch(/overflow-wrap:\s*anywhere/)
+    expect(rule(storyCss, '.tags li')).toMatch(/overflow-wrap:\s*anywhere/)
   })
 })
