@@ -51,5 +51,5 @@ npx vitest run src/lib/storage.test.ts   # single file
 ## Docs and stale spots
 
 - `docs/BACKLOG.md` is the idea backlog; specs and plans are in `docs/superpowers/`, shipped plans in `docs/archive/`.
-- The brand primary is **celadon** (`--celadon-deep` for text) and the signal colour is **royal blue**. The root README still says "9 regional RSS wires" and "NewsAPI, GDELT" only; `backend/README.md` has the accurate 13-source list. Trust the code and `tokens.css` over READMEs.
+- The identity is **Newsprint & Ultramarine**: paper `#F5F5F1` and ink `#0E1116`, with ultramarine `--accent` (`#1F3FE0`) as the single highlight. Red and amber are reserved for heat (priority, alerts). IBM Plex Sans is the only type family. All tokens live in `frontend/src/styles/tokens.css`. The root README still says "9 regional RSS wires" and "NewsAPI, GDELT" only; `backend/README.md` has the accurate 13-source list. Trust the code and `tokens.css` over READMEs.
 - `.agents/` and `.claude/skills/` hold vendored Higgsfield skills (`skills-lock.json`); they are tooling, not app code.

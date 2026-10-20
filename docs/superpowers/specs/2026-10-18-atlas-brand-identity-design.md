@@ -3,6 +3,7 @@
 **Date:** 2026-10-18
 **Status:** Implemented on branch `brand/atlas-identity`.
 **Amended 2026-10-18:** royal blue (`#3358C7`) replaces terracotta as the signal colour, including the logo fix; tokens renamed `--terra*` → `--signal*`.
+**Superseded 2026-10-20:** the palette, typography and logo colours here are superseded by `2026-10-20-newsprint-identity-design.md` (Newsprint & Ultramarine). Logo geometry still stands.
 **Builds on:** the "Oat" redesign (`2026-10-16-oat-redesign-design.md`); its palette, layout and features stay.
 **Exploration board:** https://claude.ai/artifact/BBsEVi4WNEiGxYiBTakf2A (five rounds; G5 mark and W1 wordmark chosen)
 

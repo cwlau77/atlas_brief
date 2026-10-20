@@ -1,7 +1,13 @@
 # Atlas "Newsprint & Ultramarine" identity refresh: design spec
 
 **Date:** 2026-10-20
-**Status:** Draft, awaiting owner approval.
+**Status:** Implemented on branch `brand/newsprint-identity`.
+**Implementation notes (deviations from this spec):**
+- `--ink-3` is `#636A75`, not `#717985`, to reach AA contrast on paper and paper-deep.
+- `--warm` is `#C27400`, not `#E58A00`, so heat markers get 3:1 against paper.
+- The route palette was implemented in Task 2, not Task 5.
+- The `::first-letter` uppercase rules were replaced with a TSX `upperFirst` helper.
+- The footer wash is stronger than the example filter here: brightness 1.55, contrast 0.5, opacity 0.8, a paper veil at 0.45, and a paper backing behind the base line.
 **Builds on:** the brand identity spec (`2026-10-18-atlas-brand-identity-design.md`) and the Oat redesign (`2026-10-16-oat-redesign-design.md`). Their logo geometry, page structure, components and globe engine stay. This spec supersedes their palette, typography and label rules.
 **Exploration board:** visual companion session `.superpowers/brainstorm/50373-1792471787/content/` (`identity-directions.html` direction C, `footer-treatments.html` option 2, `logo-recolour.html` option B).
 
