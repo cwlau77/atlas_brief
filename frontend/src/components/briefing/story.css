@@ -60,6 +60,7 @@
   overflow: hidden;
 }
 .index-why.open { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
+.index-row, .index-more, .index-show { border: 0; }
 .index-more, .index-show { justify-self: start; align-self: start; padding: 0 0 10px 10px; background: none; color: var(--accent); text-decoration: underline; }
 .index-show { padding: 0; }
 @media (prefers-reduced-motion: no-preference) {
@@ -86,98 +87,20 @@
 .prio-medium .prio-square { color: var(--warm); }
 .prio-low .prio-square { color: var(--ink-3); }
 
-.timeline-wrap { display: grid; gap: 48px; }
 .timeline {
   position: relative;
   display: grid;
-  --t-time: 84px;
-  --t-lanes: calc(5 * 14px);
   --t-node: 28px;
   --t-gap: var(--space-5);
-  grid-template-columns: var(--t-time) var(--t-lanes) var(--t-node) minmax(0, 1fr);
+  grid-template-columns: var(--t-node) minmax(0, 1fr);
   column-gap: var(--t-gap);
   row-gap: var(--space-5);
 }
-/* Centred on the node column: time and lane columns + their gaps + half the node column, minus half the 2px line.
-   The lane column is sized for MAX_LANES routes in every briefing, so the spine never moves between briefings. */
-.spine { position: absolute; left: calc(var(--t-time) + var(--t-gap) * 2 + var(--t-lanes) + var(--t-node) / 2 - 1px); width: 2px; pointer-events: none; }
+/* Centred on the node column, minus half the 2px line. */
+.spine { position: absolute; left: calc(var(--t-node) / 2 - 1px); width: 2px; pointer-events: none; }
 .spine i { position: absolute; inset: 0; background: var(--rule); }
 .spine b { position: absolute; left: 0; top: 0; width: 2px; height: var(--fill, 0px); background: var(--accent); }
-/* Routes: one vertical line per tension or disagreement in its lane, rings at its stops. */
-.routes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
-.route-seg, .route-conn {
-  fill: none;
-  stroke: var(--route);
-  stroke-width: 2;
-  stroke-linecap: butt;
-  transition: stroke-dashoffset 1.1s var(--ease-out), stroke var(--dur-mid), stroke-width var(--dur-mid), opacity var(--dur-mid);
-}
-.route-conn { stroke-width: 1; opacity: 0.55; }
-.route-stop { fill: var(--paper); stroke: var(--route); stroke-width: 2; pointer-events: all; cursor: default; transition: stroke var(--dur-mid), opacity var(--dur-mid); }
-.route-hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
-.route-seg.lit, .route-conn.lit, .route-stop.lit { stroke: var(--accent); }
-.route-seg.lit { stroke-width: 3; }
-.route-conn.lit { stroke-width: 2; opacity: 1; }
-.route-seg.dim, .route-conn.dim, .route-stop.dim { opacity: 0.3; }
-@media (prefers-reduced-motion: reduce) {
-  .route-seg, .route-conn, .route-stop { transition: none; }
-}
-.route-note {
-  position: absolute;
-  z-index: 3;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
-  max-width: 300px;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--accent);
-  font-size: 0.86rem;
-  color: var(--ink);
-  /* Above the stop, starting at its lane, so it never covers the card it refers to. */
-  transform: translate(calc(var(--space-2) * -1), calc(-100% - var(--space-3)));
-}
-.route-note:empty { padding: 0; box-shadow: none; }
-.route-note button {
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-.route-key ul { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.route-key button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  max-width: 100%;
-  padding: var(--space-1) var(--space-3);
-  border: 0;
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--rule);
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-  transition: box-shadow var(--dur-quick);
-}
-.route-key button:hover, .route-key button.lit { box-shadow: inset 0 0 0 2px var(--accent); }
-.route-key .label { color: var(--ink-2); }
-.route-key-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.route-swatch { flex: none; width: 22px; height: 10px; }
-.route-swatch line { stroke: var(--route); stroke-width: 2; }
-.route-swatch circle { fill: var(--paper); stroke: var(--route); stroke-width: 1.6; }
-.route-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--route); }
-.route-dot.dashed { background: transparent; box-shadow: inset 0 0 0 2px var(--route); }
-.dev-tab.lit { box-shadow: inset 0 0 0 2px var(--accent); }
-.t-time { grid-column: 1; padding-top: 24px; text-align: right; color: var(--ink-3); }
-.t-node { grid-column: 3; padding-top: 26px; display: flex; justify-content: center; position: relative; z-index: 1; }
+.t-node { grid-column: 1; padding-top: 26px; display: flex; justify-content: center; position: relative; z-index: 1; }
 .t-node span {
   width: 14px;
   height: 14px;
@@ -189,26 +112,46 @@
 .t-node.on span { background: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 5px var(--accent-wash); }
 
 .dev {
-  grid-column: 4;
+  grid-column: 2;
   position: relative;
   z-index: 1;
   align-self: start;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-content: start;
-  gap: var(--space-3);
+  align-items: start;
+  gap: var(--space-5);
   padding: var(--space-5);
   background: var(--paper);
   border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--rule);
   scroll-margin-top: 24px;
-  transition: box-shadow var(--dur-mid);
 }
+/* With a picture: a fixed 160px image column, the text in a shrinkable track beside it. */
+.dev:has(> .card-img) { grid-template-columns: 160px minmax(0, 1fr); }
 /* Inert cell: hover darkens the rule instead of lifting the card. */
 .dev:hover { box-shadow: inset 0 0 0 1px var(--rule-strong); }
+/* Lit by the tension index: an ultramarine rule and bar. Dim: the cards it does not touch recede. */
+.dev.is-lit { box-shadow: inset 3px 0 0 var(--accent), inset 0 0 0 1px var(--accent); }
+.dev.is-dim { opacity: 0.55; }
+@media (prefers-reduced-motion: no-preference) {
+  .dev { transition: box-shadow var(--dur-mid), opacity var(--dur-mid); }
+}
+.dev-main { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-3); }
 .dev-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.dev-time { color: var(--ink-3); }
 .tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; color: var(--ink-3); }
-.tags li { padding: 3px 8px; background: var(--paper-deep); overflow-wrap: anywhere; }
+.tags button {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 0;
+  background: var(--paper-deep);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.tags button:hover { color: var(--accent); background: var(--accent-wash); }
 .dev-title { font-size: 1.28rem; letter-spacing: -0.015em; line-height: 1.25; }
 .dev-body { color: var(--ink-2); max-width: 64ch; }
 .dev-context {
@@ -237,45 +180,33 @@
   text-underline-offset: 3px;
   cursor: pointer;
 }
-
-.dev-links { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--rule); }
-.dev-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.dev-tab {
-  display: inline-flex;
+/* The one connection tag: a hairline-ruled chip that takes the reader to the tension index. */
+.dev-conn {
+  justify-self: start;
   min-width: 0;
-  align-items: center;
-  gap: var(--space-2);
   max-width: 100%;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-3);
   border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--paper-deep);
-  box-shadow: inset 0 0 0 1px var(--rule);
-  font: inherit;
-  font-size: 0.88rem;
-  color: var(--ink);
+  border-radius: 0;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--rule-strong);
+  color: var(--ink-2);
   text-align: left;
+  overflow-wrap: anywhere;
   cursor: pointer;
-  transition: box-shadow var(--dur-quick), background-color var(--dur-quick);
 }
-.dev-tab svg { flex: none; color: var(--accent); }
-.dev-tab:hover { box-shadow: inset 0 0 0 1px var(--accent); }
-.dev-tab.open { background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
-.dev-tab-kind { color: var(--ink-2); white-space: nowrap; }
-.dev-tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dev-tab-panel { padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); background: var(--paper-deep); }
-.link-inline { padding: 0; background: none; box-shadow: none; }
-.link-inline.contra .contra-accounts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
+.dev-conn:hover, .dev.is-lit .dev-conn { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 
-.link-card { display: grid; gap: 6px; padding: 16px 18px; box-shadow: inset 0 0 0 1px var(--rule); background: var(--paper-deep); }
-.link-card.contra { background: var(--accent-wash); box-shadow: none; }
-.link-kind { display: flex; justify-content: space-between; gap: 8px; color: var(--ink-2); }
-.link-title { font-size: 1.02rem; letter-spacing: -0.01em; line-height: 1.3; }
-.link-body { font-size: 0.92rem; color: var(--ink-2); }
-.contra-accounts { display: grid; gap: 10px; }
-.contra-accounts .label { color: var(--ink-3); }
-
-.also-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+/* Card picture: a fixed-ratio crop with its credit underneath. */
+.card-img { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin: 0; }
+.card-img-frame { position: relative; overflow: hidden; background: var(--paper-deep); }
+.card-img-side .card-img-frame { aspect-ratio: 16 / 11; }
+.card-img-top .card-img-frame { aspect-ratio: 16 / 9; }
+.card-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card-img-label { position: absolute; left: 0; top: 0; padding: 2px 6px; background: var(--paper); color: var(--ink-2); font-size: 0.72rem; }
+.card-img-credit { font-size: 0.72rem; line-height: 1.35; color: var(--ink-3); overflow-wrap: anywhere; }
+.card-img-credit a { color: inherit; text-decoration: none; }
+.card-img-credit a:hover { color: var(--accent); text-decoration: underline; }
 
 .source-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
 .source-chip {
@@ -305,7 +236,8 @@
 .compact .story { gap: var(--space-5); padding-top: var(--space-4); }
 .compact .story > * + * { padding-top: var(--space-5); }
 .compact .timeline { row-gap: var(--space-3); }
-.compact .dev { padding: var(--space-4); gap: var(--space-2); }
+.compact .dev { padding: var(--space-4); gap: var(--space-4); }
+.compact .dev-main { gap: var(--space-2); }
 
 @media (max-width: 980px) {
   .story-lead { grid-template-columns: minmax(0, 1fr); }
@@ -313,18 +245,15 @@
   .story-globe { justify-self: center; max-width: 440px; order: -1; }
   .timeline { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
   .timeline > * { grid-column: 1 !important; grid-row: auto !important; }
-  .spine, .t-node, .routes, .route-note, .route-key { display: none; }
-  .t-time { text-align: left; padding-top: var(--space-3); }
+  .spine, .t-node { display: none; }
 }
 @media (max-width: 640px) {
-  .link-inline.contra .contra-accounts { grid-template-columns: minmax(0, 1fr); }
-  .dev-tab { flex-wrap: wrap; row-gap: var(--space-1); }
-  .dev-tab-title { white-space: normal; }
+  /* Phones: the picture moves on top at 16:9. */
+  .dev:has(> .card-img) { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .card-img-side .card-img-frame { aspect-ratio: 16 / 9; }
 }
 @media print {
   .dev-context-teaser { white-space: normal; overflow: visible; }
-  .dev-context-toggle, .dev-tabs, .routes, .route-note { display: none !important; }
-  .route-key ul { display: block; }
-  .route-key button { padding: 0; box-shadow: none; background: none; }
-  .dev-tab-panel[hidden] { display: block !important; }
+  .dev-context-toggle, .dev-conn { display: none !important; }
+  .dev.is-dim { opacity: 1; }
 }

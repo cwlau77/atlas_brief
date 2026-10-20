@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { makeBriefing } from '../test/fixtures'
 import type { ViewDevelopment } from './normalize'
-import { linkBriefing, linksByDevelopment, mentionsRegion, sortDevelopments } from './timeline'
+import { linkBriefing, mentionsRegion, sortDevelopments, sortNewestFirst } from './timeline'
 
 const dev = (timestamp: string, title = timestamp): ViewDevelopment => ({
   title, content: '', historicalContext: '', priority: 'low', regions: [], sources: [], timestamp, leadImage: null, place: null, commonsImage: null,
@@ -20,6 +20,17 @@ describe('sortDevelopments', () => {
   it('keeps original order for equal times', () => {
     const t = '2026-10-16T06:00:00Z'
     expect(sortDevelopments([dev(t, 'a'), dev(t, 'b')]).map((e) => e.dev.title)).toEqual(['a', 'b'])
+  })
+})
+
+describe('sortNewestFirst', () => {
+  it('orders newest first with untimed entries last in original order', () => {
+    const order = sortNewestFirst([dev(''), dev('2026-10-16T01:00:00Z'), dev('garbage'), dev('2026-10-16T06:00:00Z')])
+    expect(order.map((e) => e.index)).toEqual([3, 1, 0, 2])
+  })
+  it('keeps original order for equal times', () => {
+    const t = '2026-10-16T06:00:00Z'
+    expect(sortNewestFirst([dev(t, 'a'), dev(t, 'b')]).map((e) => e.dev.title)).toEqual(['a', 'b'])
   })
 })
 
@@ -54,14 +65,5 @@ describe('linkBriefing', () => {
     const b = makeBriefing()
     b.emergingTensions[0] = { ...b.emergingTensions[0], description: 'Red Sea escorts strained.' }
     expect(linkBriefing(b).tensions[0]).toEqual([0, 1])
-  })
-})
-
-describe('linksByDevelopment', () => {
-  it('maps each development to its tensions, then contradictions', () => {
-    expect(linksByDevelopment(linkBriefing(makeBriefing()))).toEqual(new Map([
-      [0, [{ kind: 'tension', i: 0, key: 'tension-0' }, { kind: 'contradiction', i: 0, key: 'contradiction-0' }]],
-      [2, [{ kind: 'tension', i: 1, key: 'tension-1' }]],
-    ]))
   })
 })

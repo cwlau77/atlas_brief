@@ -5,7 +5,7 @@ import { buildRoutes, type RouteColor } from './routes'
 import { linkBriefing, type TimelineEntry } from './timeline'
 
 export interface IndexItem {
-  /** 'tension-0' | 'contradiction-2', the same keys as LinkRef. */
+  /** 'tension-0' | 'contradiction-2', the same keys as the route colours. */
   key: string
   kind: 'tension' | 'contradiction'
   /** Tension: actors. Contradiction: topic. */

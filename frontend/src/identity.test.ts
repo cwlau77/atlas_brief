@@ -94,11 +94,20 @@ describe('development cards', () => {
   it('pins the .dev grid to one shrinkable track so long tab titles ellipsize', () => {
     expect(rule(storyCss, '.dev')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/)
   })
-  it('lets tab buttons shrink and long chips wrap', () => {
-    expect(rule(storyCss, '.dev-links')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/)
-    expect(rule(storyCss, '.dev-tab')).toMatch(/min-width:\s*0/)
+  it('keeps the text column shrinkable and long chips wrapping', () => {
+    expect(rule(storyCss, '.dev')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+    expect(storyCss).toMatch(/\.dev:has\(> \.card-img\)\s*\{[^}]*grid-template-columns:\s*160px minmax\(0,\s*1fr\)/)
+    expect(rule(storyCss, '.dev-main')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+    expect(rule(storyCss, '.dev-conn')).toMatch(/min-width:\s*0/)
     expect(rule(storyCss, '.source-chip')).toMatch(/overflow-wrap:\s*anywhere/)
-    expect(rule(storyCss, '.tags li')).toMatch(/overflow-wrap:\s*anywhere/)
+    expect(rule(storyCss, '.tags button')).toMatch(/overflow-wrap:\s*anywhere/)
+  })
+  it('no lanes, route key or linked tabs remain', () => {
+    const offenders = Object.entries(files)
+      .filter(([, src]) => /from '[^']*\/(RouteKey|LinkedTabs|LinkedCards)'/.test(src))
+      .map(([f]) => f)
+    expect(offenders).toEqual([])
+    expect(storyCss).not.toMatch(/\.route-lane|\.dev-tab|\.route-key|\.route-seg|\.link-card/)
   })
 })
 

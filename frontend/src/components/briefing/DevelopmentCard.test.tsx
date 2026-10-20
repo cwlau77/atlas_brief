@@ -1,12 +1,11 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { LinkRef } from '../../lib/timeline'
 import { makeBriefing } from '../../test/fixtures'
 import { DevelopmentCard } from './DevelopmentCard'
 
 const briefing = makeBriefing()
-const LINKS: LinkRef[] = [{ kind: 'tension', i: 0, key: 'tension-0' }, { kind: 'contradiction', i: 0, key: 'contradiction-0' }]
+const COMMONS = { url: 'https://upload.wikimedia.org/a.jpg', page_url: 'https://commons.wikimedia.org/wiki/File:A.jpg', author: 'Jane Doe', license: 'CC BY-SA 4.0', source: 'commons' as const }
 
 describe('DevelopmentCard', () => {
   let container: HTMLDivElement
@@ -23,12 +22,13 @@ describe('DevelopmentCard', () => {
 
   const render = (over: Partial<Parameters<typeof DevelopmentCard>[0]> = {}) => act(() => root.render(
     <DevelopmentCard
-      dev={briefing.keyDevelopments[0]} index={0} showContext briefing={briefing}
-      links={LINKS} openKeys={new Set()} onToggleLink={() => {}} onHoverLink={() => {}}
+      dev={briefing.keyDevelopments[0]} index={0} showContext timeZone="UTC"
+      connection="1 tension · 1 contradiction" onTag={() => {}}
       {...over}
     />,
   ))
   const button = (name: string) => [...container.querySelectorAll('button')].find((b) => b.textContent?.includes(name))
+  const article = () => container.querySelector('article.dev')!
 
   it('folds the background behind Read background', () => {
     render()
@@ -41,32 +41,64 @@ describe('DevelopmentCard', () => {
     expect(container.querySelector('.dev-context-full')!.textContent).toContain('First confirmed hit since June.')
   })
 
-  it('shows a tab per linked item that asks the timeline to toggle it', () => {
-    const onToggleLink = vi.fn()
-    render({ onToggleLink })
-    const tension = button('Tension · High')!
-    expect(button('Sources disagree · 2 accounts')).toBeDefined()
-    expect(tension.getAttribute('aria-expanded')).toBe('false')
-    act(() => tension.click())
-    expect(onToggleLink).toHaveBeenCalledWith('tension-0')
-  })
-
-  it('expands an open disagreement in place with both accounts', () => {
-    render({ openKeys: new Set(['contradiction-0']) })
-    expect(button('Sources disagree')!.getAttribute('aria-expanded')).toBe('true')
-    expect(container.textContent).toContain('Account A')
-    expect(container.textContent).toContain('Hull breach.')
-  })
-
-  it('renders no fold or tab row when there is nothing to show', () => {
-    render({ dev: { ...briefing.keyDevelopments[0], historicalContext: '' }, links: [] })
-    expect(button('Read background')).toBeUndefined()
-    expect(container.querySelector('.dev-links')).toBeNull()
-  })
-
   it('hides background entirely when historical context is turned off', () => {
     render({ showContext: false })
     expect(button('Read background')).toBeUndefined()
     expect(container.querySelector('.dev-context')).toBeNull()
+  })
+
+  it('shows its time in the card', () => {
+    render()
+    expect(container.querySelector('.dev-top time')!.textContent).toBe('02:10 UTC')
+  })
+
+  it('connection tag calls onTag', () => {
+    const onTag = vi.fn()
+    render({ onTag })
+    const tag = container.querySelector<HTMLButtonElement>('.dev-conn')!
+    expect(tag.textContent).toBe('1 tension · 1 contradiction')
+    act(() => tag.click())
+    expect(onTag).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders no tag when nothing connects', () => {
+    render({ connection: null })
+    expect(container.querySelector('.dev-conn')).toBeNull()
+  })
+
+  it('takes the outlet image first and lays out beside it', () => {
+    render()
+    expect(article().firstElementChild!.classList.contains('card-img')).toBe(true)
+    expect(container.querySelector('.card-img img')!.getAttribute('src')).toBe('https://img.r.eu/1.jpg')
+  })
+
+  it('falls back to the Commons photo, then to no image', () => {
+    const plain = briefing.keyDevelopments[1]
+    render({ dev: { ...plain, commonsImage: COMMONS } })
+    expect(container.querySelector('.card-img img')!.getAttribute('src')).toBe(COMMONS.url)
+    render({ dev: plain })
+    expect(container.querySelector('.card-img')).toBeNull()
+  })
+
+  it('applies the highlight state', () => {
+    render({ highlight: 'lit' })
+    expect(article().classList.contains('is-lit')).toBe(true)
+    render({ highlight: 'dim' })
+    expect(article().classList.contains('is-dim')).toBe(true)
+    expect(article().classList.contains('is-lit')).toBe(false)
+  })
+
+  it('reports hover and focus', () => {
+    const onHover = vi.fn()
+    const onFocusChange = vi.fn()
+    render({ onHover, onFocusChange })
+    act(() => { article().dispatchEvent(new MouseEvent('mouseover', { bubbles: true })) })
+    expect(onHover).toHaveBeenLastCalledWith(true)
+    act(() => { article().dispatchEvent(new MouseEvent('mouseout', { bubbles: true })) })
+    expect(onHover).toHaveBeenLastCalledWith(false)
+    act(() => button('Read background')!.focus())
+    expect(onFocusChange).toHaveBeenLastCalledWith(true)
+    act(() => button('Read background')!.blur())
+    expect(onFocusChange).toHaveBeenLastCalledWith(false)
   })
 })

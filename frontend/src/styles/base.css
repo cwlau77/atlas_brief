@@ -164,6 +164,6 @@ input, select, textarea { font: inherit; color: inherit; }
   html, body { background: #fff; color: #000; }
   body::after { display: none; }
   .nav, .footer, .ask, .tabs, .story-globe, .globe-view, .toast-host, .skip-link, .chips { display: none !important; }
-  .dev, .link-card, .alert { break-inside: avoid; border: 1px solid #ccc; }
+  .dev, .alert { break-inside: avoid; border: 1px solid #ccc; }
   a { color: #000; }
 }

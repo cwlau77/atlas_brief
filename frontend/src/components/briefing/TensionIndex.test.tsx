@@ -13,10 +13,13 @@ const ITEMS: IndexItem[] = [
   { key: 'tension-2', kind: 'tension', sides: 'Fourth', why: 'Hidden at first.', devs: [], color: null },
 ]
 
+let pinFromOutside: (key: string) => void = () => {}
+
 function Harness({ onActive }: { onActive: (a: string | null) => void }) {
   const h = useIndexHighlight()
   onActive(h.active)
-  return <TensionIndex items={ITEMS} devCount={3} order={[2, 0, 1]} highlight={h} />
+  pinFromOutside = h.pin
+  return <TensionIndex id="tension-index" items={ITEMS} devCount={3} order={[2, 0, 1]} highlight={h} />
 }
 
 describe('TensionIndex', () => {
@@ -63,13 +66,36 @@ describe('TensionIndex', () => {
     expect(rows()[0].getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('pointerdown outside unpins; inside (including Show more) does not', () => {
+  it('click outside unpins; inside (including Show more) does not', () => {
     act(() => rows()[0].click())
     const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Show 1 more')!
-    act(() => { more.dispatchEvent(new Event('pointerdown', { bubbles: true })); more.click() })
+    act(() => more.click())
     expect(rows()[0].getAttribute('aria-pressed')).toBe('true')
+    // A touch scroll starts with pointerdown and never clicks: the pin stays.
     act(() => { document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })) })
+    expect(rows()[0].getAttribute('aria-pressed')).toBe('true')
+    act(() => { document.body.click() })
     expect(rows()[0].getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('a click on a control marked data-index-control keeps the pin', () => {
+    act(() => rows()[0].click())
+    const control = document.createElement('button')
+    control.dataset.indexControl = ''
+    document.body.appendChild(control)
+    act(() => control.click())
+    expect(rows()[0].getAttribute('aria-pressed')).toBe('true')
+    control.remove()
+  })
+
+  it('shows every row when the pinned item sits below the top 3', () => {
+    act(() => { pinFromOutside('tension-2') })
+    expect(rows()).toHaveLength(4)
+    expect(rows()[3].getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('takes an id for in-page links', () => {
+    expect(container.querySelector('section.tension-index')!.id).toBe('tension-index')
   })
 
   it('row is described by its why text and toggle has a contextual label', () => {

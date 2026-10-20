@@ -5,7 +5,8 @@ import type { IndexHighlight } from '../../state/useIndexHighlight'
 const TOP = 3
 
 /** The tension index: every tension and contradiction, busiest first. Hover previews, click pins, Escape clears. */
-export function TensionIndex({ items, devCount, order, highlight }: {
+export function TensionIndex({ id, items, devCount, order, highlight }: {
+  id?: string
   items: IndexItem[]
   devCount: number
   /** Development indexes in timeline order: one strip square each. */
@@ -20,19 +21,25 @@ export function TensionIndex({ items, devCount, order, highlight }: {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) clear() }
-    const onPointerDown = (e: Event) => {
-      if (!sectionRef.current?.contains(e.target as Node)) clear()
+    // Click, not pointerdown: a touch scroll that starts outside the index keeps the pin.
+    // Controls that pin from elsewhere (a card's connection tag) carry data-index-control.
+    const onClick = (e: Event) => {
+      const target = e.target as Element | null
+      if (sectionRef.current?.contains(target) || target?.closest?.('[data-index-control]')) return
+      clear()
     }
     document.addEventListener('keydown', onKey)
-    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('click', onClick)
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('click', onClick)
     }
   }, [clear])
 
   if (!items.length) return null
-  const shown = showAll ? items : items.slice(0, TOP)
+  // A pin from elsewhere can land below the fold; show everything so the pinned row is visible.
+  const pinnedHidden = pinned !== null && items.findIndex((item) => item.key === pinned) >= TOP
+  const shown = showAll || pinnedHidden ? items : items.slice(0, TOP)
   const hidden = items.length - shown.length
   const toggleWhy = (key: string) => setExpanded((prev) => {
     const next = new Set(prev)
@@ -41,7 +48,7 @@ export function TensionIndex({ items, devCount, order, highlight }: {
   })
 
   return (
-    <section ref={sectionRef} className="tension-index" aria-labelledby="tension-index-h">
+    <section ref={sectionRef} id={id} className="tension-index" aria-labelledby="tension-index-h">
       <h2 id="tension-index-h" className="section-label label label-mark">Tensions · {items.length}</h2>
       <ul className="index-list">
         {shown.map((item) => {
