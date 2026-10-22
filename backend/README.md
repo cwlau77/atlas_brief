@@ -7,7 +7,7 @@ daily intelligence briefing synthesized from NewsAPI, GDELT, and curated RSS fee
 
 1. **Input** — `POST /briefing` with `{"focus": "..."}`.
 2. **Plan** — `search_plan.py` turns the focus into a `SearchPlan` (queries, must-terms, synonyms, coverage country, domains, tickers) with Claude Haiku, falling back to deterministic rules.
-3. **Ingestion** — `ingestion/registry.py` runs every enabled source in parallel (8 s per source, 15 s overall), each guarded by a daily quota: NewsAPI, GDELT, curated RSS (world, US, tech and finance desks), Google News RSS search, The Guardian, GNews, NewsData.io, Brave News, Tavily, Exa, and — for finance topics only — Finnhub, Marketaux and Alpha Vantage.
+3. **Ingestion** — `ingestion/registry.py` runs every enabled source in parallel (6 s per source, 7 s overall; GDELT 4 s), each guarded by a daily quota: NewsAPI, GDELT, curated RSS (world, US, tech and finance desks), Google News RSS search, The Guardian, GNews, NewsData.io, Brave News, Tavily, Exa, and — for finance topics only — Finnhub, Marketaux and Alpha Vantage.
 4. **Processing** — exact URL/title dedupe (`processing/urls.py`), embedding dedupe, a candidate pre-filter, and a Claude Haiku relevance rerank (`processing/rerank.py`) with the keyword + TF-IDF filter as fallback.
 5. **Synthesis** — `synthesis/briefing.py` makes three parallel section calls on the synthesis model
    (Claude Sonnet 4.6): key developments, signals (emerging tensions, contradictions, recommended
