@@ -64,7 +64,7 @@ export function PrintIcon({ size = 16, className }: IconProps) {
   )
 }
 
-/** Stroked plus for buttons; deliberately outside the faceted ICONS set. Spins via .btn-plus. `open` keeps only the horizontal stroke: a minus. */
+/** Stroked plus for buttons; deliberately outside the faceted ICONS set. Spins via .btn-plus (primary buttons) or .text-btn-glyph (text buttons). `open` keeps only the horizontal stroke: a minus. */
 export function PlusIcon({ size = 14, className = 'btn-plus', open = false }: IconProps & { open?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 14 14" className={className} aria-hidden="true" focusable="false">

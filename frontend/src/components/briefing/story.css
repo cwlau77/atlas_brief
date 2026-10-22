@@ -24,6 +24,7 @@
 /* The one quiet control: ink text, a trailing plus that becomes a minus when open. The box hugs its
    label (no side padding), so its left edge lines up with the text above it. */
 .text-btn {
+  justify-self: start; /* hug the label in grid parents */
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -215,8 +216,9 @@
 .dev.is-dim .chip { border-color: var(--rule); color: var(--ink-3); }
 @media (prefers-reduced-motion: no-preference) {
   .dev { transition: box-shadow var(--dur-mid); }
-  .dev img, .dev .prio-square, .dev-title, .dev-body, .dev .chip {
-    transition: opacity var(--dur-mid), filter var(--dur-mid), color var(--dur-mid), border-color var(--dur-mid);
+  .dev img, .dev .prio-square, .dev-title, .dev-body {
+    /* Chips keep .chip's --dur-quick so hover and dim/lit share one control timing. */
+    transition: opacity var(--dur-mid), filter var(--dur-mid), color var(--dur-mid);
   }
 }
 .dev-main { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-3); }

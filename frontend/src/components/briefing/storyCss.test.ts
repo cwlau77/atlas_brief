@@ -58,6 +58,16 @@ describe('story styles', () => {
     expect(ring).toContain('outline-offset: 2px')
   })
 
+  it('makes text buttons hug their label in grid parents', () => {
+    expect(rulesFor(storyCss, '.text-btn').join(';')).toContain('justify-self: start')
+  })
+
+  it('keeps chip hover on the quick timing, not the card timing', () => {
+    const motion = storyCss.slice(storyCss.indexOf('@media (prefers-reduced-motion: no-preference)'))
+    expect(motion).not.toMatch(/\.dev \.chip/)
+    expect(rulesFor(storyCss, '.chip').join(';')).toContain('border-color var(--dur-quick)')
+  })
+
   it('motions text buttons only without reduced-motion', () => {
     const motion = storyCss.slice(storyCss.indexOf('@media (prefers-reduced-motion: no-preference)'))
     expect(motion).toContain('.text-btn')
