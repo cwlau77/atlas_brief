@@ -26,6 +26,7 @@ from backend.models import (
 from backend.places import resolve_city
 from backend.synthesis.commons import assign_images, fetch_candidates, query_for
 from backend.synthesis.context import enrich_with_historical_context
+from backend.synthesis.links import link_signals
 
 logger = logging.getLogger("briefing.synthesis")
 T = TypeVar("T")
@@ -471,23 +472,39 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
             logger.warning("commons lookup failed: %s", type(exc).__name__)
             return {}
 
-    async def developments() -> tuple[list[KeyDevelopment], dict[str, list[CommonsImage]]]:
+    signals_task = asyncio.create_task(_optional_section("signals", focus, articles))
+
+    async def linked_signals(devs: list[KeyDevelopment]):
+        signals = await signals_task
+        parsed = briefing_from_data(signals, focus, articles)  # already validated
+        return await link_signals(devs, parsed.emerging_tensions, parsed.contradictions)
+
+    async def developments():
         partial = await _write_section(
             "developments", focus, articles,
             lambda data: briefing_from_data({"key_developments": data.get("key_developments", [])}, focus, articles),
         )
-        _, candidates = await asyncio.gather(
+        _, candidates, links = await asyncio.gather(
             enrich_with_historical_context(partial),
             commons_candidates(partial.key_developments),
+            linked_signals(partial.key_developments),
         )
-        return partial.key_developments, candidates
+        return partial.key_developments, candidates, links
 
-    (devs, candidates), signals, alerts = await asyncio.gather(
-        developments(),
-        _optional_section("signals", focus, articles),
-        _optional_section("alerts", focus, articles),
-    )
+    try:
+        (devs, candidates, (tension_links, contradiction_links)), signals, alerts = await asyncio.gather(
+            developments(),
+            signals_task,
+            _optional_section("alerts", focus, articles),
+        )
+    except BaseException:
+        signals_task.cancel()
+        raise
     briefing = briefing_from_data({**signals, **alerts}, focus, articles)  # both already validated
+    for tension, related in zip(briefing.emerging_tensions, tension_links):
+        tension.related_developments = related
+    for contradiction, related in zip(briefing.contradictions, contradiction_links):
+        contradiction.related_developments = related
     briefing.key_developments = devs
     try:
         assign_images(briefing, candidates)

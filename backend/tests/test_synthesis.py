@@ -362,3 +362,78 @@ async def test_commons_failure_does_not_fail_briefing(monkeypatch, make_article)
     assert b.key_developments[0].headline == "H"
     assert all(d.commons_image is None for d in b.key_developments)
     assert all(a.commons_image is None for a in b.priority_alerts)
+
+
+# --- Tension linking ---
+
+def _linking_llm(monkeypatch, link_reply=None, link_error=None, context=None):
+    import json
+    import backend.llm as llm
+    from backend.synthesis.links import LINK_SYSTEM_PROMPT
+
+    async def complete(**kwargs):
+        if kwargs["system"] == LINK_SYSTEM_PROMPT:
+            if link_error:
+                raise link_error
+            return link_reply
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            return await context() if context else "Background."
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+
+
+@pytest.mark.asyncio
+async def test_tension_links_reach_the_briefing(monkeypatch, make_article):
+    _keyed(monkeypatch)
+    _linking_llm(monkeypatch, link_reply='{"tensions": [[0]], "contradictions": [[]]}')
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.emerging_tensions[0].related_developments == [0]
+    assert b.contradictions[0].related_developments == []
+
+
+@pytest.mark.asyncio
+async def test_linking_starts_before_context_finishes(monkeypatch, make_article):
+    import asyncio
+    _keyed(monkeypatch)
+    link_started = asyncio.Event()
+
+    async def context():
+        # Context only finishes once the link call has begun: a sequential pipeline would hang here.
+        await asyncio.wait_for(link_started.wait(), timeout=2)
+        return "Background."
+
+    import backend.llm as llm
+    from backend.synthesis.links import LINK_SYSTEM_PROMPT
+    _linking_llm(monkeypatch, link_reply='{"tensions": [[0]], "contradictions": [[0]]}', context=context)
+    inner = llm.complete
+
+    async def complete(**kwargs):
+        if kwargs["system"] == LINK_SYSTEM_PROMPT:
+            link_started.set()
+        return await inner(**kwargs)
+
+    monkeypatch.setattr(llm, "complete", complete)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.key_developments[0].historical_context == "Background."
+    assert b.emerging_tensions[0].related_developments == [0]
+
+
+@pytest.mark.asyncio
+async def test_link_failure_leaves_none_and_briefing_returns(monkeypatch, make_article):
+    _keyed(monkeypatch)
+    _linking_llm(monkeypatch, link_error=RuntimeError("upstream 529"))
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.emerging_tensions and b.contradictions
+    assert all(t.related_developments is None for t in b.emerging_tensions)
+    assert all(c.related_developments is None for c in b.contradictions)
+
+
+@pytest.mark.asyncio
+async def test_fallback_briefing_has_no_links(monkeypatch, make_article):
+    monkeypatch.setattr(settings, "anthropic_api_key", None)
+    monkeypatch.setattr(settings, "demo_mode", True)
+    b = await synthesize_briefing("trade", [make_article(title="Sanction dispute widens")])
+    assert b.emerging_tensions
+    assert all(t.related_developments is None for t in b.emerging_tensions)

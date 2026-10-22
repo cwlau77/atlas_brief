@@ -62,6 +62,7 @@ class Tension(BaseModel):
     description: str
     actors: list[str]
     sources: list[SourceCitation]
+    related_developments: Optional[list[int]] = None  # indexes into key_developments
 
 
 class Contradiction(BaseModel):
@@ -70,6 +71,7 @@ class Contradiction(BaseModel):
     account_b: str
     sources_a: list[SourceCitation]
     sources_b: list[SourceCitation]
+    related_developments: Optional[list[int]] = None  # indexes into key_developments
 
 
 class PriorityAlert(BaseModel):
