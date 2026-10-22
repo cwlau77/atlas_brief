@@ -69,6 +69,20 @@ describe('StoryTab', () => {
     expect(container.querySelector('section#key-developments .timeline')).not.toBeNull()
   })
 
+  it('a story jump removes the tabindex it added once the card loses focus', () => {
+    const briefing = makeBriefing()
+    show(briefing)
+    const open = [...container.querySelectorAll<HTMLButtonElement>('.top-stories .story-card-open')]
+      .find((b) => b.textContent?.includes(briefing.keyDevelopments[0].title))!
+    const card = container.querySelector<HTMLElement>('#dev-0')!
+    card.scrollIntoView = () => {}
+    act(() => open.click())
+    expect(card.getAttribute('tabindex')).toBe('-1')
+    expect(document.activeElement).toBe(card)
+    act(() => open.focus())
+    expect(card.hasAttribute('tabindex')).toBe(false)
+  })
+
   describe('region tag tap on a touch screen', () => {
     const tapRegion = (globeTop: number) => {
       vi.stubGlobal('matchMedia', (q: string) => ({

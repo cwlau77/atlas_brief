@@ -9,7 +9,7 @@ const PLACES: Record<number, { lat: number; lng: number; markerKey: string }> = 
 const ITEMS: Record<string, number[]> = { 'tension-0': [0, 2], 'tension-1': [1], empty: [] }
 
 const IDLE: FollowInput = {
-  hoveredDev: null, focusedDev: null, tappedDev: null, previewItem: null, pinnedItem: null, carouselOpen: false, touch: false,
+  hoveredDev: null, focusedDev: null, request: null, previewItem: null, pinnedItem: null, carouselOpen: false, touch: false,
 }
 
 function setup() {
@@ -136,12 +136,67 @@ describe('createFollow', () => {
 
   it('touch tap then pin frames the pinned row', () => {
     const { targets, set } = setup()
-    set({ touch: true, tappedDev: 1 })
+    set({ touch: true, request: { dev: 1, seq: 1 } })
     expect(targets).toEqual([one(1)])
     set({ pinnedItem: 'tension-0' })
     expect(targets.at(-1)).toEqual({ points: [{ lat: 15, lng: 44 }, { lat: 51.9, lng: 4.4 }], markerKey: null })
     // A fresh tap wins again.
-    set({ tappedDev: 2 })
+    set({ request: { dev: 2, seq: 2 } })
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('a desktop request emits at once and beats focus and hover', () => {
+    const { targets, set } = setup()
+    set({ hoveredDev: 0, focusedDev: 0 })
+    vi.advanceTimersByTime(300)
+    set({ request: { dev: 2, seq: 1 } })
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('leaving the card keeps the request', () => {
+    const { targets, set } = setup()
+    set({ hoveredDev: 2 })
+    set({ request: { dev: 2, seq: 1 } })
+    set({ hoveredDev: null })
+    vi.advanceTimersByTime(2000)
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('hovering a different card retires the request', () => {
+    const { targets, set } = setup()
+    set({ request: { dev: 2, seq: 1 } })
+    set({ hoveredDev: 1 })
+    vi.advanceTimersByTime(250)
+    expect(targets.at(-1)).toEqual(one(1))
+  })
+
+  it('hovering the requested card keeps it', () => {
+    const { targets, set } = setup()
+    set({ hoveredDev: 2, request: { dev: 2, seq: 1 } })
+    vi.advanceTimersByTime(2000)
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('re-requesting the same dev after it was retired emits it again', () => {
+    const { targets, set } = setup()
+    set({ request: { dev: 2, seq: 1 } })
+    set({ hoveredDev: 1 })
+    vi.advanceTimersByTime(250)
+    set({ request: { dev: 2, seq: 2 } })
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('a pin change retires the request', () => {
+    const { targets, set } = setup()
+    set({ request: { dev: 2, seq: 1 } })
+    set({ pinnedItem: 'tension-1' })
+    expect(targets.at(-1)).toEqual(one(1))
+  })
+
+  it('a request that arrives with a pin change wins', () => {
+    const { targets, set } = setup()
+    set({ pinnedItem: 'tension-1' })
+    set({ pinnedItem: null, request: { dev: 2, seq: 1 } })
     expect(targets.at(-1)).toEqual(one(2))
   })
 
@@ -178,7 +233,7 @@ describe('createFollow', () => {
     set({ touch: true, hoveredDev: 0 })
     vi.advanceTimersByTime(1000)
     expect(targets).toEqual([])
-    set({ tappedDev: 2 })
+    set({ request: { dev: 2, seq: 1 } })
     expect(targets).toEqual([one(2)])
   })
 

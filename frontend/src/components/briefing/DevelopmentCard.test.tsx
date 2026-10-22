@@ -116,14 +116,30 @@ describe('DevelopmentCard', () => {
     // Tabbing in: focus with no pointer press.
     act(() => toggle.focus())
     expect(onFocusChange).toHaveBeenLastCalledWith(true)
-    act(() => toggle.blur())
-    // Focus moved onto the card itself (scrollToStory) counts even after a click elsewhere.
+  })
+
+  it('focus moved onto the card itself does not count as reader focus', () => {
+    // scrollToStory focuses the card for accessibility; the jump is a globe request instead.
+    const onFocusChange = vi.fn()
+    render({ onFocusChange })
     const card = article() as HTMLElement
     card.setAttribute('tabindex', '-1')
-    act(() => {
-      toggle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
-      card.focus()
-    })
+    act(() => card.focus())
+    expect(document.activeElement).toBe(card)
+    expect(onFocusChange).not.toHaveBeenCalledWith(true)
+  })
+
+  it('keyboard focus on a chip still counts', () => {
+    const onFocusChange = vi.fn()
+    render({ onFocusChange })
+    act(() => container.querySelector<HTMLButtonElement>('.tags button')!.focus())
     expect(onFocusChange).toHaveBeenLastCalledWith(true)
+  })
+
+  it('region tag click calls onRegionTap on desktop', () => {
+    const onRegionTap = vi.fn()
+    render({ onRegionTap })
+    act(() => container.querySelector<HTMLButtonElement>('.tags button')!.click())
+    expect(onRegionTap).toHaveBeenCalledTimes(1)
   })
 })

@@ -8,7 +8,7 @@ import { TopStories } from '../components/briefing/TopStories'
 import '../components/briefing/story.css'
 import { Globe } from '../globe/Globe'
 import { buildArcs } from '../globe/arcs'
-import { createFollow, type FollowTarget } from '../globe/follow'
+import { createFollow, type FollowRequest, type FollowTarget } from '../globe/follow'
 import { buildRegionPoints, devFollowPoint, pointKey, type RegionPoint } from '../globe/regions'
 import { buildRoutes } from '../lib/routes'
 import { buildTensionIndex } from '../lib/tensionIndex'
@@ -27,14 +27,24 @@ export function StoryTab() {
   const reduced = usePrefersReducedMotion()
   usePrintOnLoad()
   const regions = useMemo(() => buildRegionPoints(briefing), [briefing])
+  // A one-off globe request (a region tag, or a jump to a story). Each carries a new seq,
+  // so asking for the same card again still counts.
+  const [request, setRequest] = useState<FollowRequest>(null)
+  const seqRef = useRef(0)
+  const requestDev = useCallback((dev: number) => setRequest({ dev, seq: ++seqRef.current }), [])
   const scrollToStory = useCallback((anchorId: string) => {
+    const dev = Number(anchorId.replace('dev-', ''))
+    if (Number.isInteger(dev)) requestDev(dev)
     const el = document.getElementById(anchorId)
     el?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
+    // The card takes focus for accessibility; drop the tabindex once focus moves on, so a
+    // later click on the card's text does not focus it again.
     if (el && !el.hasAttribute('tabindex')) {
       el.setAttribute('tabindex', '-1')
+      el.addEventListener('blur', () => el.removeAttribute('tabindex'), { once: true })
     }
     el?.focus({ preventScroll: true })
-  }, [reduced])
+  }, [reduced, requestDev])
   const count = briefing.keyDevelopments.length
   const highlight = useIndexHighlight()
   const order = useMemo(() => sortNewestFirst(briefing.keyDevelopments), [briefing])
@@ -63,12 +73,13 @@ export function StoryTab() {
     if (key) setShownKey(key)
   }, [])
   const closeCarousel = useCallback(() => setFocusedKey(null), [])
-  // The globe follows the reader: card hover (after a dwell), focus, region taps on touch,
-  // then the previewed and pinned index rows. See globe/follow.ts.
+  // The globe follows the reader: a one-off request on any device, then card hover (after a
+  // dwell, not on touch screens) and keyboard focus inside a card, then the previewed and
+  // pinned index rows. A pin or preview change, or hovering another card, retires the
+  // request. See globe/follow.ts.
   const touch = useMediaQuery('(hover: none)')
   const [hoveredDev, setHoveredDev] = useState<number | null>(null)
   const [focusedDev, setFocusedDev] = useState<number | null>(null)
-  const [tappedDev, setTappedDev] = useState<number | null>(null)
   const [follow, setFollow] = useState<FollowTarget>(null)
   const followRef = useRef<ReturnType<typeof createFollow> | null>(null)
   useEffect(() => {
@@ -87,12 +98,10 @@ export function StoryTab() {
   const carouselOpen = focused !== null || shown !== null
   const previewItem = previewed !== null && previewed !== arcKey ? previewed : null
   useEffect(() => {
-    followRef.current?.update({ hoveredDev, focusedDev, tappedDev, previewItem, pinnedItem: pinned, carouselOpen, touch })
-  }, [hoveredDev, focusedDev, tappedDev, previewItem, pinned, carouselOpen, touch, briefing, regions, indexItems])
-  // A tap is a one-off request: opening a carousel, or a newer pin or preview, retires it,
-  // so the latest intent wins and tapping the same card again follows it again.
-  useEffect(() => { if (carouselOpen) setTappedDev(null) }, [carouselOpen])
-  useEffect(() => { setTappedDev(null) }, [pinned, previewed])
+    followRef.current?.update({ hoveredDev, focusedDev, request, previewItem, pinnedItem: pinned, carouselOpen, touch })
+  }, [hoveredDev, focusedDev, request, previewItem, pinned, carouselOpen, touch, briefing, regions, indexItems])
+  // Opening a carousel retires the request; follow.ts retires it on the other newer intents.
+  useEffect(() => { if (carouselOpen) setRequest(null) }, [carouselOpen])
   // On phones the globe sits above the timeline, usually scrolled away: bring it back into
   // view so the reader sees the zoom their tap asked for.
   const globeRef = useRef<HTMLDivElement>(null)
@@ -104,8 +113,8 @@ export function StoryTab() {
         globe.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' })
       }
     }
-    setTappedDev(dev)
-  }, [touch, reduced])
+    requestDev(dev)
+  }, [touch, reduced, requestDev])
   const shownDevs = useMemo(
     () => (shown ? shown.stories.map((s) => Number(s.anchorId.replace('dev-', ''))) : []),
     [shown],

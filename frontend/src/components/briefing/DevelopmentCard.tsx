@@ -30,9 +30,9 @@ export function DevelopmentCard({
   onRegionTap?: () => void
 }) {
   const [contextOpen, setContextOpen] = useState(false)
-  // Focus that follows a pointer press is a click, not the reader moving through cards:
-  // it must not hold the globe. Keyboard focus, and focus moved onto the card itself
-  // (jumping to a story), do count.
+  // Only keyboard focus on something inside the card (a chip or button) holds the globe.
+  // Focus that follows a pointer press is a click, and focus moved onto the card itself
+  // (jumping to a story) is sent to the globe as a one-off request instead.
   const pressedAt = useRef(-Infinity)
   const titleId = `dev-${index}-title`
   const contextId = `dev-${index}-context`
@@ -50,7 +50,7 @@ export function DevelopmentCard({
         // A click focuses within the same input task as its press; allow a little slack.
         const byPointer = performance.now() - pressedAt.current < PRESS_FOCUS_MS
         pressedAt.current = -Infinity
-        if (!byPointer || e.target === e.currentTarget) onFocusChange?.(true)
+        if (!byPointer && e.target !== e.currentTarget) onFocusChange?.(true)
       }}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onFocusChange?.(false) }}
     >

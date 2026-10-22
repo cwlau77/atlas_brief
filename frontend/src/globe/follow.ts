@@ -1,17 +1,21 @@
 // The globe follows the reader: a pure state machine that turns card hover, focus
-// and taps plus the tension index's preview and pin into one camera target.
+// and one-off requests plus the tension index's preview and pin into one camera target.
 // Timers keep it calm: a card or index row must hold the pointer for the dwell before
 // the globe moves, and stepping down to the pin (or the overview) waits out the leave.
-// The newest intent wins: a pin or preview change retires the card being hovered or
-// tapped at that moment, until the reader moves to (or taps) a card again.
+// A request (a card tap or region tag, or a story jump) shows its card at once on every
+// device and beats focus and hover. Each carries a new seq, so asking for the same card
+// again counts. The newest intent wins: a pin or preview change retires the card being
+// hovered or requested at that moment, and on desktop so does hovering a different card.
+// Leaving the card does not retire a request.
 
 export interface LatLng { lat: number; lng: number }
+export type FollowRequest = { dev: number; seq: number } | null
 export type FollowTarget = { points: LatLng[]; markerKey: string | null } | null
 
 export interface FollowInput {
   hoveredDev: number | null
   focusedDev: number | null
-  tappedDev: number | null
+  request: FollowRequest
   previewItem: string | null
   pinnedItem: string | null
   carouselOpen: boolean
@@ -30,7 +34,7 @@ export interface FollowOptions {
 const NONE = 0, PINNED = 1, PREVIEW = 2, CARD = 3
 
 const EMPTY: FollowInput = {
-  hoveredDev: null, focusedDev: null, tappedDev: null, previewItem: null, pinnedItem: null, carouselOpen: false, touch: false,
+  hoveredDev: null, focusedDev: null, request: null, previewItem: null, pinnedItem: null, carouselOpen: false, touch: false,
 }
 
 const keyOf = (t: FollowTarget) => (t ? `${t.markerKey}|${t.points.map((p) => `${p.lat},${p.lng}`).join(';')}` : 'null')
@@ -43,9 +47,9 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
   let dwellTimer: ReturnType<typeof setTimeout> | undefined
   let previewDwelled: string | null = null
   let previewTimer: ReturnType<typeof setTimeout> | undefined
-  // Cards retired by a later pin or preview; -1 is none.
+  // The hovered card and the request seq retired by a newer intent; -1 is none.
   let staleHover = -1
-  let staleTap = -1
+  let staleSeq = -1
   // A deliberate pin change skips the leave wait once.
   let fresh = false
   let leaveTimer: ReturnType<typeof setTimeout> | undefined
@@ -92,10 +96,10 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
       return
     }
     const hovered = input.hoveredDev !== null && input.hoveredDev !== staleHover ? input.hoveredDev : null
-    const tapped = input.tappedDev !== null && input.tappedDev !== staleTap ? input.tappedDev : null
-    const card = input.touch
-      ? tapped
-      : input.focusedDev ?? (hovered !== null && dwelled === hovered ? hovered : null)
+    const request = input.request && input.request.seq !== staleSeq ? input.request.dev : null
+    const card = request ?? (input.touch
+      ? null
+      : input.focusedDev ?? (hovered !== null && dwelled === hovered ? hovered : null))
     if (card !== null) {
       clearLeave()
       const r = opts.resolve(card)
@@ -160,10 +164,13 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
         }
       }
       if (next.hoveredDev !== input.hoveredDev) staleHover = -1
-      if (next.tappedDev !== input.tappedDev) staleTap = -1
-      if (next.pinnedItem !== input.pinnedItem || next.previewItem !== input.previewItem) {
-        staleTap = next.tappedDev ?? -1
-      }
+      // A new seq is never retired by the update that brings it, so a request wins over
+      // a pin cleared in the same batch.
+      const seq = next.request?.seq ?? -1
+      const rowChanged = next.pinnedItem !== input.pinnedItem || next.previewItem !== input.previewItem
+      const otherCard = !next.touch && next.hoveredDev !== input.hoveredDev && next.hoveredDev !== null &&
+        next.hoveredDev !== next.request?.dev
+      if (seq === (input.request?.seq ?? -1) && (rowChanged || otherCard)) staleSeq = seq
       if (next.pinnedItem !== input.pinnedItem) {
         staleHover = next.hoveredDev ?? -1
         fresh = true
