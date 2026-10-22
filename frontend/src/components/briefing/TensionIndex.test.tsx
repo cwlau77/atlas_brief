@@ -1,9 +1,9 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { IndexItem } from '../../lib/tensionIndex'
 import { ROUTE_COLORS } from '../../lib/routes'
-import { useIndexHighlight } from '../../state/useIndexHighlight'
+import { useIndexHighlight, type IndexHighlight } from '../../state/useIndexHighlight'
 import { TensionIndex } from './TensionIndex'
 
 const ITEMS: IndexItem[] = [
@@ -180,5 +180,78 @@ describe('TensionIndex reason toggle', () => {
     const toggles = [...container.querySelectorAll('.index-more')]
     expect(toggles).toHaveLength(1)
     expect(toggles[0].getAttribute('aria-label')).toBe('More: Long')
+  })
+})
+
+describe('TensionIndex rows', () => {
+  let container: HTMLDivElement
+  let root: Root
+  beforeEach(() => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+  })
+  afterEach(() => { act(() => root.unmount()); container.remove() })
+
+  const stub = (pinned: string | null = null): IndexHighlight => ({
+    pinned, previewed: null, active: pinned, pin: vi.fn(), preview: vi.fn(), clear: vi.fn(),
+  })
+  const render = (highlight: IndexHighlight) =>
+    act(() => root.render(<TensionIndex id="t" items={ITEMS} devCount={3} order={[2, 0, 1]} highlight={highlight} />))
+  const li = (i = 0) => container.querySelectorAll<HTMLElement>('li.index-item')[i]
+  const click = (el: Element, detail: number) =>
+    act(() => { el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail })) })
+  // React listens for mouseover/mouseout to synthesize enter and leave.
+  const enter = (el: Element) => act(() => { el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body })) })
+  const leave = (el: Element) => act(() => { el.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body })) })
+
+  it('previews when the pointer enters anywhere on the row', () => {
+    const h = stub()
+    render(h)
+    enter(li())
+    expect(h.preview).toHaveBeenCalledWith('tension-0')
+    leave(li())
+    expect(h.preview).toHaveBeenLastCalledWith(null)
+  })
+
+  it('clicking the reason text pins the row', () => {
+    const h = stub()
+    render(h)
+    click(li().querySelector('.index-why')!, 1)
+    expect(h.pin).toHaveBeenCalledTimes(1)
+    expect(h.pin).toHaveBeenCalledWith('tension-0')
+  })
+
+  it('clicking More does not pin', () => {
+    const h = stub()
+    render(h)
+    click(li().querySelector('.index-more')!, 1)
+    expect(h.pin).not.toHaveBeenCalled()
+  })
+
+  it('ignores the second click of a double-click', () => {
+    const h = stub()
+    render(h)
+    click(li(), 2)
+    expect(h.pin).not.toHaveBeenCalled()
+    click(li(), 1)
+    expect(h.pin).toHaveBeenCalledTimes(1)
+    click(li(), 0)
+    expect(h.pin).toHaveBeenCalledTimes(2)
+  })
+
+  it('marks the pinned row', () => {
+    render(stub('tension-1'))
+    expect(li(2).classList.contains('is-pinned')).toBe(true)
+    expect(li(2).querySelector('.index-row')!.getAttribute('aria-pressed')).toBe('true')
+    expect(li(0).classList.contains('is-pinned')).toBe(false)
+  })
+
+  it('keeps revealed rows after the pin clears', () => {
+    render(stub('tension-2'))
+    expect(container.querySelectorAll('li.is-overflow')).toHaveLength(0)
+    render(stub(null))
+    expect(container.querySelectorAll('li.is-overflow')).toHaveLength(0)
+    expect(container.textContent).not.toContain('Show 1 more')
   })
 })

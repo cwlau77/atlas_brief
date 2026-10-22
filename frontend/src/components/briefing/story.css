@@ -77,15 +77,22 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   border-bottom: 1px solid var(--rule);
+  cursor: pointer;
 }
 .index-item:hover, .index-item.active { background: var(--accent-wash); }
+/* After the wash rule: a previewed other row keeps its wash while the pin stays visible. */
+.index-item.is-pinned { background: var(--paper-deep); box-shadow: inset 3px 0 0 var(--ink); }
+.index-item.is-pinned:hover { background: var(--accent-wash); }
+/* The whole row rings, not just its button. */
+.index-item:has(.index-row:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.index-row:focus-visible { outline: none; }
 .index-row {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
-  padding: 10px 0 4px;
+  padding: 10px 12px 4px;
   text-align: left;
   border-radius: 0;
   background: none;
@@ -101,8 +108,10 @@
 .index-strip i.on { background: var(--ink); box-shadow: none; }
 .index-item.active .index-strip i.on { background: var(--accent); }
 .index-why {
-  grid-column: 1;
+  grid-column: 1 / -1;
   min-width: 0;
+  /* Same left inset as the row's content, so the text keeps one left edge. */
+  padding-inline: 12px;
   /* Margin, not padding: a clamped box shows its next line through any bottom padding. */
   margin-bottom: 10px;
   color: var(--ink-2);
@@ -113,15 +122,17 @@
   line-clamp: 2;
   overflow: hidden;
 }
+.index-why:has(+ .index-more) { margin-bottom: 2px; }
 .index-why.open { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
 .index-row { border: 0; }
-/* Layout only; the look is .text-btn. More sits beside the reason text, Show N more under the list. */
-.index-more { justify-self: start; align-self: start; margin-left: 10px; }
+/* Layout only; the look is .text-btn. More sits under the reason text on its left inset, so it
+   stays put when it turns into Less. Show N more sits under the list. */
+.index-more { grid-column: 1 / -1; margin: 0 0 6px 12px; }
 .index-show, .alerts-show { justify-self: start; }
 /* Rows and alerts past the first 3: hidden on screen until "Show N more", always printed. */
 .index-item.is-overflow, .alert.is-overflow { display: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .index-item, .index-strip i { transition: background-color 120ms ease; }
+  .index-item, .index-strip i { transition: background-color var(--dur-quick), box-shadow var(--dur-quick); }
 }
 
 /* Read first: ruled cells, 3 across, 2 on tablets, 1 on phones. Cells share their hairlines. */

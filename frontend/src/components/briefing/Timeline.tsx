@@ -39,18 +39,19 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
     focusRow()
   })
 
-  // Scrolls to the index and pins the busiest item linked to the card. Never unpins.
+  // Scrolls to the index and pins the busiest item linked to the card; if that row is already
+  // pinned the tag unpins it instead, and focus stays on the tag.
   const onTag = (devIndex: number) => {
     const first = items.find((item) => item.devs.includes(devIndex))
     if (!first) return
-    document.getElementById(indexId)?.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
     if (pinned === first.key) {
-      focusRow()
-    } else {
-      // The row may only appear (from behind "Show N more") once the pin renders.
-      focusAfterPin.current = first.key
       pin(first.key)
+      return
     }
+    document.getElementById(indexId)?.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+    // The row may only appear (from behind "Show N more") once the pin renders.
+    focusAfterPin.current = first.key
+    pin(first.key)
   }
 
   const rootRef = useRef<HTMLDivElement>(null)

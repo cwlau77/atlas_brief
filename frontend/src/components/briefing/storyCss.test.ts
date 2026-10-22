@@ -58,6 +58,14 @@ describe('story styles', () => {
     expect(ring).toContain('outline-offset: 2px')
   })
 
+  it('pins with an ink edge on paper-deep and rings the whole row', () => {
+    const pinned = rulesFor(storyCss, '.index-item.is-pinned').join(';')
+    expect(pinned).toContain('inset 3px 0 0 var(--ink)')
+    expect(pinned).toContain('var(--paper-deep)')
+    const ring = rulesFor(storyCss, '.index-item:has(.index-row:focus-visible)').join(';')
+    expect(ring).toContain('outline: 2px solid var(--accent)')
+  })
+
   it('makes text buttons hug their label in grid parents', () => {
     expect(rulesFor(storyCss, '.text-btn').join(';')).toContain('justify-self: start')
   })

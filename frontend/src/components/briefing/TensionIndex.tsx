@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { IndexItem } from '../../lib/tensionIndex'
 import type { IndexHighlight } from '../../state/useIndexHighlight'
 import { TextButton } from './TextButton'
@@ -58,9 +58,12 @@ export function TensionIndex({ id, items, devCount, order, highlight }: {
     }
   }, [clear])
 
-  if (!items.length) return null
   // A pin from elsewhere can land below the fold; show everything so the pinned row is visible.
   const pinnedHidden = pinned !== null && items.findIndex((item) => item.key === pinned) >= TOP
+  // Latched: clearing the pin must not collapse rows the reader was just shown.
+  useEffect(() => { if (pinnedHidden) setShowAll(true) }, [pinnedHidden])
+
+  if (!items.length) return null
   // Rows past the top 3 stay in the DOM behind .is-overflow, so print shows every row.
   const revealed = showAll || pinnedHidden
   const hidden = revealed ? 0 : Math.max(0, items.length - TOP)
@@ -70,6 +73,14 @@ export function TensionIndex({ id, items, devCount, order, highlight }: {
     return next
   })
 
+  // Pins the row. The second click of a double-click is ignored, so it can't unpin.
+  const onRow = (e: MouseEvent, key: string) => {
+    if (e.detail > 1) return
+    // Unpinning by tap or keyboard: the row stops looking highlighted too.
+    if (pinned === key) preview(null)
+    pin(key)
+  }
+
   return (
     <section ref={sectionRef} id={id} className="tension-index" aria-labelledby="tension-index-h">
       <h2 id="tension-index-h" className="section-label label label-mark">Tensions · {items.length}</h2>
@@ -78,19 +89,24 @@ export function TensionIndex({ id, items, devCount, order, highlight }: {
           const open = expanded.has(item.key)
           const kindStyle = item.color ? ({ '--kind': `var(${item.color.token})` } as CSSProperties) : undefined
           return (
-            <li key={item.key} className={['index-item', active === item.key && 'active', !revealed && i >= TOP && 'is-overflow'].filter(Boolean).join(' ')}>
+            <li
+              key={item.key}
+              className={['index-item', active === item.key && 'active', pinned === item.key && 'is-pinned', !revealed && i >= TOP && 'is-overflow'].filter(Boolean).join(' ')}
+              // The whole row is the target; its own buttons and links keep their jobs.
+              onClick={(e) => {
+                const control = (e.target as Element).closest('button, a')
+                if (control && e.currentTarget.contains(control)) return
+                onRow(e, item.key)
+              }}
+              onMouseEnter={() => preview(item.key)}
+              onMouseLeave={() => preview(null)}
+            >
               <button
                 type="button"
                 className="index-row"
                 aria-pressed={pinned === item.key}
                 aria-describedby={`index-why-${item.key}`}
-                onClick={() => {
-                  // Unpinning by tap or keyboard: the row stops looking highlighted too.
-                  if (pinned === item.key) preview(null)
-                  pin(item.key)
-                }}
-                onMouseEnter={() => preview(item.key)}
-                onMouseLeave={() => preview(null)}
+                onClick={(e) => onRow(e, item.key)}
                 onFocus={() => preview(item.key)}
                 onBlur={() => preview(null)}
               >

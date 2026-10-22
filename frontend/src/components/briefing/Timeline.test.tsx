@@ -88,9 +88,18 @@ describe('Timeline', () => {
     expect(scroll).toHaveBeenCalled()
     // The index sorts tension 0 (one link) before the contradiction (one link): tensions first on ties.
     expect(current.pinned).toBe('tension-0')
-    // A second click keeps the pin rather than toggling it off.
+  })
+
+  it('the connection tag unpins its row when already pinned', () => {
+    render()
+    container.querySelector<HTMLElement>('#t-index')!.scrollIntoView = () => {}
+    act(() => current.pin('tension-0'))
+    const tag = container.querySelector<HTMLButtonElement>('#dev-0 .dev-conn')!
+    tag.focus()
     act(() => tag.click())
-    expect(current.pinned).toBe('tension-0')
+    expect(current.pinned).toBeNull()
+    // Unpinning leaves focus on the tag.
+    expect(document.activeElement).toBe(tag)
   })
 
   it('lit and dim classes follow active item', () => {
@@ -130,10 +139,6 @@ describe('Timeline', () => {
     expect(document.activeElement).toBe(row)
     expect(focus).toHaveBeenCalledWith({ preventScroll: true })
     focus.mockRestore()
-    // Already pinned: a second click still brings focus back to the row.
-    tag.focus()
-    act(() => tag.click())
-    expect(document.activeElement).toBe(row)
   })
 
   it('a click inside a card keeps the pin; a click elsewhere clears it', () => {
