@@ -8,7 +8,13 @@ import { makeBriefing } from '../test/fixtures'
 import { StoryTab } from './StoryTab'
 
 // three.js does not run in jsdom: the globe is a placeholder here.
-vi.mock('../globe/Globe', () => ({ Globe: () => <div className="globe-stub" /> }))
+const globeProps = vi.hoisted(() => ({ follow: null as unknown }))
+vi.mock('../globe/Globe', () => ({
+  Globe: (p: { follow: unknown }) => {
+    globeProps.follow = p.follow
+    return <div className="globe-stub" />
+  },
+}))
 
 describe('StoryTab', () => {
   let container: HTMLDivElement
@@ -81,6 +87,47 @@ describe('StoryTab', () => {
     expect(document.activeElement).toBe(card)
     act(() => open.focus())
     expect(card.hasAttribute('tabindex')).toBe(false)
+  })
+
+  describe('after a story jump', () => {
+    const hover = (el: Element, type: 'mouseover' | 'mousemove') => act(() => { el.dispatchEvent(new MouseEvent(type, { bubbles: true })) })
+    const movePointer = (movementX: number) => act(() => {
+      const e = new MouseEvent('pointermove', { bubbles: true })
+      Object.defineProperty(e, 'movementX', { value: movementX })
+      Object.defineProperty(e, 'movementY', { value: 0 })
+      window.dispatchEvent(e)
+    })
+    const setup = () => {
+      vi.useFakeTimers()
+      const briefing = makeBriefing()
+      show(briefing)
+      for (const c of container.querySelectorAll<HTMLElement>('.dev')) c.scrollIntoView = () => {}
+      const open = [...container.querySelectorAll<HTMLButtonElement>('.top-stories .story-card-open')]
+        .find((b) => b.textContent?.includes(briefing.keyDevelopments[0].title))!
+      act(() => open.click())
+      return container.querySelector<HTMLElement>('#dev-1')!
+    }
+    afterEach(() => vi.useRealTimers())
+
+    it('a card scrolled under a still pointer does not take the globe', () => {
+      globeProps.follow = null
+      const other = setup()
+      const after = globeProps.follow
+      expect(after).not.toBeNull()
+      hover(other, 'mouseover')
+      act(() => { vi.advanceTimersByTime(400) })
+      expect(globeProps.follow).toEqual(after)
+    })
+
+    it('real pointer movement ends the guard, so the card under it registers', () => {
+      const other = setup()
+      const jumped = globeProps.follow
+      hover(other, 'mouseover')
+      movePointer(3)
+      hover(other, 'mousemove')
+      act(() => { vi.advanceTimersByTime(400) })
+      expect(globeProps.follow).not.toEqual(jumped)
+    })
   })
 
   describe('region tag tap on a touch screen', () => {

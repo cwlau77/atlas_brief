@@ -44,6 +44,9 @@ export function DevelopmentCard({
     <article
       className={className} id={`dev-${index}`} style={style} aria-labelledby={titleId} data-index-control=""
       onMouseEnter={() => onHover?.(true)}
+      // Also on movement: a jump holds hover back until the pointer really moves, and the
+      // card already under it must then register without a fresh mouseenter.
+      onMouseMove={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
       onPointerDown={() => { pressedAt.current = performance.now() }}
       onFocus={(e) => {

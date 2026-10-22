@@ -89,6 +89,13 @@ describe('DevelopmentCard', () => {
     expect(article().classList.contains('is-lit')).toBe(false)
   })
 
+  it('reports hover again on mousemove', () => {
+    const onHover = vi.fn()
+    render({ onHover })
+    act(() => { article().dispatchEvent(new MouseEvent('mousemove', { bubbles: true })) })
+    expect(onHover).toHaveBeenLastCalledWith(true)
+  })
+
   it('reports hover and focus', () => {
     const onHover = vi.fn()
     const onFocusChange = vi.fn()

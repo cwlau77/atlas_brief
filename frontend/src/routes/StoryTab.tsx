@@ -32,7 +32,19 @@ export function StoryTab() {
   const [request, setRequest] = useState<FollowRequest>(null)
   const seqRef = useRef(0)
   const requestDev = useCallback((dev: number) => setRequest({ dev, seq: ++seqRef.current }), [])
+  // A jump scrolls cards under a pointer that never moved, and browsers report those as
+  // hovers. Hold card hover back until the pointer really moves (scroll-made moves carry
+  // no movement).
+  const jumpGuard = useRef(false)
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (e.movementX !== 0 || e.movementY !== 0) jumpGuard.current = false
+    }
+    window.addEventListener('pointermove', onMove, true)
+    return () => window.removeEventListener('pointermove', onMove, true)
+  }, [])
   const scrollToStory = useCallback((anchorId: string) => {
+    jumpGuard.current = true
     const m = /^dev-(\d+)$/.exec(anchorId)
     if (m) requestDev(Number(m[1]))
     const el = document.getElementById(anchorId)
@@ -75,10 +87,15 @@ export function StoryTab() {
   const closeCarousel = useCallback(() => setFocusedKey(null), [])
   // The globe follows the reader: a one-off request on any device, then card hover (after a
   // dwell, not on touch screens) and keyboard focus inside a card, then the previewed and
-  // pinned index rows. A pin or preview change, or hovering another card, retires the
-  // request. See globe/follow.ts.
+  // pinned index rows. A pin or preview change, dwelling on another card, or keyboard focus
+  // on another card retires the request; hover right after a jump is ignored until the
+  // pointer moves. See globe/follow.ts.
   const touch = useMediaQuery('(hover: none)')
   const [hoveredDev, setHoveredDev] = useState<number | null>(null)
+  const onCardHover = useCallback((dev: number | null) => {
+    if (dev !== null && jumpGuard.current) return
+    setHoveredDev(dev)
+  }, [])
   const [focusedDev, setFocusedDev] = useState<number | null>(null)
   const [follow, setFollow] = useState<FollowTarget>(null)
   const followRef = useRef<ReturnType<typeof createFollow> | null>(null)
@@ -133,7 +150,7 @@ export function StoryTab() {
             <Timeline
               briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced}
               items={indexItems} highlight={highlight} indexId={INDEX_ID}
-              onCardHover={setHoveredDev} onCardFocus={setFocusedDev} onTagTap={onTagTap}
+              onCardHover={onCardHover} onCardFocus={setFocusedDev} onTagTap={onTagTap}
             />
           </div>
           {/* Beside the timeline at 980px and up, sticky so hover-follow stays in view; above it on narrower screens. */}
