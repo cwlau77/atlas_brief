@@ -9,10 +9,14 @@ daily intelligence briefing synthesized from NewsAPI, GDELT, and curated RSS fee
 2. **Plan** — `search_plan.py` turns the focus into a `SearchPlan` (queries, must-terms, synonyms, coverage country, domains, tickers) with Claude Haiku, falling back to deterministic rules.
 3. **Ingestion** — `ingestion/registry.py` runs every enabled source in parallel (8 s per source, 15 s overall), each guarded by a daily quota: NewsAPI, GDELT, curated RSS (world, US, tech and finance desks), Google News RSS search, The Guardian, GNews, NewsData.io, Brave News, Tavily, Exa, and — for finance topics only — Finnhub, Marketaux and Alpha Vantage.
 4. **Processing** — exact URL/title dedupe (`processing/urls.py`), embedding dedupe, a candidate pre-filter, and a Claude Haiku relevance rerank (`processing/rerank.py`) with the keyword + TF-IDF filter as fallback.
-5. **Synthesis** — `synthesis/briefing.py` calls Claude Sonnet 4.6 once with all filtered articles and
-   returns structured JSON: key developments, emerging tensions, cross-source contradictions,
-   priority alerts, and recommended readings. `synthesis/context.py` then fans out per key
-   development to Claude Haiku 4.5 for short historical-context paragraphs.
+5. **Synthesis** — `synthesis/briefing.py` makes three parallel section calls on the synthesis model
+   (Claude Sonnet 4.6): key developments, signals (emerging tensions, contradictions, recommended
+   readings) and priority alerts. As soon as developments exist, `synthesis/context.py` fans out per
+   key development to Claude Haiku 4.5 for short historical-context paragraphs, and
+   `synthesis/commons.py` attaches Wikimedia Commons file photos. Once developments and signals both
+   exist, one Haiku call (`synthesis/links.py`, 6 s budget) maps each tension and contradiction to the
+   developments it concerns. A failure there leaves `related_developments` null and never fails the
+   briefing.
 6. **Output** — a `Briefing` object (see `models.py`) returned as JSON to the frontend.
 
 ## Setup
@@ -73,17 +77,18 @@ All knobs live in `.env` / `config.py`:
 - `RATE_LIMIT_PER_MINUTE` (default 6): per-client cap on `POST /briefing`, keyed on the right-most `X-Forwarded-For` hop (the one the platform proxy adds; earlier entries are client-controlled)
 - `BRIEFING_BUDGET_PER_HOUR` / `BRIEFING_BUDGET_PER_DAY` (defaults 20 / 100): cap on new, uncached briefings across all clients. This is what bounds API spend; cached briefings don't count. 0 disables a window
 - `TURNSTILE_SECRET_KEY`: when set, `POST /briefing` requires a Cloudflare Turnstile token in `X-Turnstile-Token` (403 without a valid one; let through if Cloudflare is unreachable). Set the frontend's `VITE_TURNSTILE_SITE_KEY` first
+- `COMMONS_IMAGES_ENABLED` (default true): attach Wikimedia Commons file photos to developments and alerts during synthesis (cached 24 h; failures only logged)
 - `EXPOSE_DOCS` (default false): publish `/docs`, `/redoc` and `/openapi.json`
 
 ## Response shape
 
 See `models.Briefing` — the frontend should render:
 
-- `key_developments[]` — headline + analytical summary + sources + `historical_context`, plus an optional `place` (`{name, country, lat, lng}`) when the story names a city
+- `key_developments[]` — headline + analytical summary + sources + `historical_context`, plus an optional `place` (`{name, country, lat, lng}`) when the story names a city and an optional `commons_image` (a Wikimedia Commons file photo with author and license)
 - every source citation may carry an optional `image_url` (https only, from the 8 sources that supply images)
-- `emerging_tensions[]`
-- `contradictions[]` — two competing accounts with separate source lists
-- `priority_alerts[]` — severity `critical | high | elevated` (render red for the first two)
+- `emerging_tensions[]` — each with `related_developments`: zero-based indexes into `key_developments`, or null when the link call failed
+- `contradictions[]` — two competing accounts with separate source lists, plus `related_developments` as above
+- `priority_alerts[]` — severity `critical | high | elevated` (render red for the first two); may carry a `commons_image`
 - `recommended_readings[]`
 - `article_count`, `source_breakdown` — telemetry for the footer
 
