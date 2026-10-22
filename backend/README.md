@@ -64,7 +64,7 @@ curl -s -X POST http://localhost:8000/briefing \
 
 Health check: `GET /health`.
 
-Trending topics for Home: `GET /trending` → `{topics, generated_at}`. Google News top stories grouped by Haiku into up to 6 short topics, cached for `TRENDING_TTL_MINUTES` (default 60). Without an Anthropic key, or on any failure, `topics` is empty and Home keeps its fixed chips.
+Trending topics for Home: `GET /trending` → `{topics, items, generated_at}`. Google News top stories grouped by Haiku into up to 6 short newsroom-style topics; each `items` entry is `{topic, published_at}`, where `published_at` is the newest publish time of the headlines behind the topic (or null), and Home shows them as the "On the wire" list. Cached for `TRENDING_TTL_MINUTES` (default 60). Without an Anthropic key, or on any failure, `topics` is empty and Home keeps its fixed chips.
 
 ## Tuning
 
