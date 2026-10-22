@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AskForm } from '../components/AskForm'
 import { Contours, type ContourCenter } from '../components/Contours'
 import { RotatingHeadline } from '../components/RotatingHeadline'
-import { TopicChips } from '../components/TopicChips'
+import { TopicWire } from '../components/TopicWire'
 import { Globe } from '../globe/Globe'
 import { markIntroPlayed, shouldPlayIntro } from '../lib/intro'
 import { useClock } from '../lib/useClock'
@@ -61,7 +61,7 @@ export function HomePage() {
           </p>
           <div className="home-ask">
             <AskForm id="home-ask" loading={loading} error={error} onGenerate={generate} onRetry={retry} placeholder={placeholder} prefill={prefill} />
-            <TopicChips fallback={SUGGESTIONS} onPick={(t) => {
+            <TopicWire fallback={SUGGESTIONS} timeZone={settings.timeZone} onPick={(t) => {
               setPrefill((p) => ({ text: t, n: (p?.n ?? 0) + 1 }))
               void generate(t, 'daily')
             }} disabled={loading} />

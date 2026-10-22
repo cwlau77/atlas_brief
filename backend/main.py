@@ -63,7 +63,7 @@ async def health() -> dict[str, str]:
 
 @app.get("/trending", response_model=Trending)
 async def trending_endpoint() -> Trending:
-    """Topics for Home's "Trending now" chips; empty when they can't be produced (Home keeps its fixed chips)."""
+    """Timed topics for Home's "On the wire" list; empty when they can't be produced (Home shows its fixed suggestions)."""
     return await get_trending()
 
 
