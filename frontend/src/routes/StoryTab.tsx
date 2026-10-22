@@ -33,8 +33,8 @@ export function StoryTab() {
   const seqRef = useRef(0)
   const requestDev = useCallback((dev: number) => setRequest({ dev, seq: ++seqRef.current }), [])
   const scrollToStory = useCallback((anchorId: string) => {
-    const dev = Number(anchorId.replace('dev-', ''))
-    if (Number.isInteger(dev)) requestDev(dev)
+    const m = /^dev-(\d+)$/.exec(anchorId)
+    if (m) requestDev(Number(m[1]))
     const el = document.getElementById(anchorId)
     el?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
     // The card takes focus for accessibility; drop the tabindex once focus moves on, so a

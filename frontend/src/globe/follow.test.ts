@@ -170,6 +170,42 @@ describe('createFollow', () => {
     expect(targets.at(-1)).toEqual(one(1))
   })
 
+  it('sweeping across another card under 250ms keeps the request', () => {
+    const { targets, set } = setup()
+    set({ request: { dev: 2, seq: 1 } })
+    set({ hoveredDev: 1 })
+    vi.advanceTimersByTime(120)
+    set({ hoveredDev: null })
+    vi.advanceTimersByTime(2000)
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('a request made while another card is dwelling outlasts that dwell', () => {
+    // The pointer rests where it was; the newer intent is the request.
+    const { targets, set } = setup()
+    set({ hoveredDev: 1 })
+    vi.advanceTimersByTime(100)
+    set({ request: { dev: 2, seq: 1 } })
+    vi.advanceTimersByTime(2000)
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
+  it('keyboard focus on a different card retires the request', () => {
+    const { targets, set } = setup()
+    set({ request: { dev: 2, seq: 1 } })
+    set({ focusedDev: 1 })
+    expect(targets.at(-1)).toEqual(one(1))
+  })
+
+  it('focus moving onto the requested card keeps the request', () => {
+    const { targets, set } = setup()
+    set({ request: { dev: 2, seq: 1 } })
+    set({ focusedDev: 2 })
+    set({ focusedDev: null })
+    vi.advanceTimersByTime(2000)
+    expect(targets.at(-1)).toEqual(one(2))
+  })
+
   it('hovering the requested card keeps it', () => {
     const { targets, set } = setup()
     set({ hoveredDev: 2, request: { dev: 2, seq: 1 } })

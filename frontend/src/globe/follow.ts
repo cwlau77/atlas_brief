@@ -5,8 +5,9 @@
 // A request (a card tap or region tag, or a story jump) shows its card at once on every
 // device and beats focus and hover. Each carries a new seq, so asking for the same card
 // again counts. The newest intent wins: a pin or preview change retires the card being
-// hovered or requested at that moment, and on desktop so does hovering a different card.
-// Leaving the card does not retire a request.
+// hovered or requested at that moment. On desktop, so does keyboard focus moving to a
+// different card, or the pointer resting on one for the dwell. Leaving the card, or
+// passing over another without dwelling, does not retire a request.
 
 export interface LatLng { lat: number; lng: number }
 export type FollowRequest = { dev: number; seq: number } | null
@@ -146,7 +147,12 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
         dwelled = null
         const dev = next.hoveredDev
         if (dev !== null && !next.touch) {
+          // Only a card held for the dwell retires a request; passing over one (a sweep, or
+          // the page scrolling under a still pointer after a jump) does not. A request made
+          // after the pointer settled here is newer, so this dwell leaves it alone.
+          const heldSeq = next.request?.seq
           dwellTimer = setTimeout(() => {
+            if (input.request && input.request.seq === heldSeq && input.request.dev !== dev) staleSeq = input.request.seq
             dwelled = dev
             compute()
           }, dwellMs)
@@ -168,9 +174,10 @@ export function createFollow(opts: FollowOptions): { update(input: FollowInput):
       // a pin cleared in the same batch.
       const seq = next.request?.seq ?? -1
       const rowChanged = next.pinnedItem !== input.pinnedItem || next.previewItem !== input.previewItem
-      const otherCard = !next.touch && next.hoveredDev !== input.hoveredDev && next.hoveredDev !== null &&
-        next.hoveredDev !== next.request?.dev
-      if (seq === (input.request?.seq ?? -1) && (rowChanged || otherCard)) staleSeq = seq
+      // On desktop, keyboard focus moving to a different card is a newer intent too.
+      const otherFocus = !next.touch && next.focusedDev !== input.focusedDev && next.focusedDev !== null &&
+        next.focusedDev !== next.request?.dev
+      if (seq === (input.request?.seq ?? -1) && (rowChanged || otherFocus)) staleSeq = seq
       if (next.pinnedItem !== input.pinnedItem) {
         staleHover = next.hoveredDev ?? -1
         fresh = true
