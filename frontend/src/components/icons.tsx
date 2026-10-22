@@ -64,11 +64,11 @@ export function PrintIcon({ size = 16, className }: IconProps) {
   )
 }
 
-/** Stroked plus for buttons; deliberately outside the faceted ICONS set. Spins via .btn-plus. */
-export function PlusIcon({ size = 14, className = 'btn-plus' }: IconProps) {
+/** Stroked plus for buttons; deliberately outside the faceted ICONS set. Spins via .btn-plus. `open` keeps only the horizontal stroke: a minus. */
+export function PlusIcon({ size = 14, className = 'btn-plus', open = false }: IconProps & { open?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 14 14" className={className} aria-hidden="true" focusable="false">
-      <path d="M7 1.5v11M1.5 7h11" stroke="currentColor" strokeWidth="1.5" fill="none" />
+      <path d={open ? 'M1.5 7h11' : 'M7 1.5v11M1.5 7h11'} stroke="currentColor" strokeWidth="1.5" fill="none" />
     </svg>
   )
 }

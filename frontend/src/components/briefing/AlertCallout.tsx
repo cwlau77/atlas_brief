@@ -4,6 +4,7 @@ import type { ViewAlert } from '../../lib/normalize'
 import { CardImage } from './CardImage'
 import { PriorityMark } from './PriorityMark'
 import { SourceChips } from './SourceChips'
+import { TextButton } from './TextButton'
 
 const PRIORITY: Record<ViewAlert['type'], 'high' | 'medium' | 'low'> = { urgent: 'high', warning: 'medium', info: 'low' }
 const TOP = 3
@@ -29,7 +30,7 @@ export function AlertCallout({ alerts }: { alerts: ViewAlert[] }) {
         ))}
       </ul>
       {hidden > 0 && (
-        <button type="button" className="alerts-show" onClick={() => setShowAll(true)}>Show {hidden} more</button>
+        <TextButton className="alerts-show" onClick={() => setShowAll(true)}>Show {hidden} more</TextButton>
       )}
     </section>
   )

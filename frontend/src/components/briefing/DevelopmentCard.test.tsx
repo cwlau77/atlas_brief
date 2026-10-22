@@ -30,9 +30,10 @@ describe('DevelopmentCard', () => {
   const button = (name: string) => [...container.querySelectorAll('button')].find((b) => b.textContent?.includes(name))
   const article = () => container.querySelector('article.dev')!
 
-  it('folds the background behind Read background', () => {
+  it('the archive toggle reads Read background, then Show less', () => {
     render()
     const toggle = button('Read background')!
+    expect(toggle.classList.contains('text-btn')).toBe(true)
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(container.querySelector('.dev-context-full')).toBeNull()
     act(() => toggle.click())

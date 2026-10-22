@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import type { IndexItem } from '../../lib/tensionIndex'
 import type { IndexHighlight } from '../../state/useIndexHighlight'
+import { TextButton } from './TextButton'
 
 const TOP = 3
 
@@ -104,24 +105,24 @@ export function TensionIndex({ id, items, devCount, order, highlight }: {
               </button>
               <p id={`index-why-${item.key}`} data-key={item.key} className={open ? 'index-why open' : 'index-why'}>{item.why}</p>
               {(open || !fits.has(item.key)) && (
-                <button
-                  type="button"
+                <TextButton
                   className="index-more"
+                  open={open}
                   aria-expanded={open}
                   aria-controls={`index-why-${item.key}`}
                   // Label in name (WCAG 2.5.3): the accessible name starts with the visible word.
-                  aria-label={`${open ? 'less' : 'more'}: ${item.sides}`}
+                  aria-label={`${open ? 'Less' : 'More'}: ${item.sides}`}
                   onClick={() => toggleWhy(item.key)}
                 >
-                  {open ? 'less' : 'more'}
-                </button>
+                  {open ? 'Less' : 'More'}
+                </TextButton>
               )}
             </li>
           )
         })}
       </ul>
       {hidden > 0 && (
-        <button type="button" className="index-show" onClick={() => setShowAll(true)}>Show {hidden} more</button>
+        <TextButton className="index-show" onClick={() => setShowAll(true)}>Show {hidden} more</TextButton>
       )}
     </section>
   )

@@ -140,7 +140,7 @@ describe('Timeline', () => {
     render()
     act(() => current.pin('tension-0'))
     act(() => container.querySelector<HTMLElement>('#dev-0 .dev-title')!.click())
-    const toggle = container.querySelector<HTMLButtonElement>('.dev-context-toggle')
+    const toggle = container.querySelector<HTMLButtonElement>('#dev-0 .dev-context .text-btn')
     if (toggle) act(() => toggle.click())
     expect(current.pinned).toBe('tension-0')
     act(() => document.body.click())

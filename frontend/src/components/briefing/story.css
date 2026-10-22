@@ -21,6 +21,54 @@
 /* Two classes: outranks cards.css `.story-globe` in any load order. Sticky or relative, it stays the carousel's containing block. */
 .kd-globe > .kd-globe-sticky { position: sticky; top: var(--space-5); width: 100%; }
 
+/* The one quiet control: ink text, a trailing plus that becomes a minus when open. The box hugs its
+   label (no side padding), so its left edge lines up with the text above it. */
+.text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px; /* WCAG 2.5.8 target size */
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+.text-btn:hover { color: var(--accent); }
+.text-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.text-btn-glyph { flex: none; }
+.text-btn:not([aria-expanded="true"]):hover .text-btn-glyph { transform: rotate(90deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .text-btn { transition: color var(--dur-quick); }
+  .text-btn-glyph { transition: transform 250ms ease; }
+}
+
+/* The one chip: a hairline box, no fill. Source chips, region tags and the connection tag. */
+.chip {
+  min-height: 24px; /* WCAG 2.5.8 target size */
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-align: left;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--ink); color: var(--ink); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .chip { transition: color var(--dur-quick), border-color var(--dur-quick); }
+}
+
 /* Tension index */
 .tension-index { display: grid; gap: var(--space-3); }
 .index-list { list-style: none; display: grid; border-top: 1px solid var(--rule); }
@@ -65,11 +113,10 @@
   overflow: hidden;
 }
 .index-why.open { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
-.index-row, .index-more, .index-show { border: 0; }
-.index-more, .index-show { justify-self: start; align-self: start; padding: 0 0 10px 10px; background: none; color: var(--accent); text-decoration: underline; }
-/* 24px target (WCAG 2.5.8). */
-.index-more { min-height: 24px; }
-.index-show { padding: 0; }
+.index-row { border: 0; }
+/* Layout only; the look is .text-btn. More sits beside the reason text, Show N more under the list. */
+.index-more { justify-self: start; align-self: start; margin-left: 10px; }
+.index-show, .alerts-show { justify-self: start; }
 /* Rows and alerts past the first 3: hidden on screen until "Show N more", always printed. */
 .index-item.is-overflow, .alert.is-overflow { display: none; }
 @media (prefers-reduced-motion: no-preference) {
@@ -101,8 +148,6 @@
 .alert-title { font-size: 1.12rem; }
 .alert-body { color: var(--ink-2); }
 .clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-.alerts-show { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; }
-.alerts-show:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 980px) {
   .alert-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -167,30 +212,18 @@
 .dev.is-dim .card-img img { opacity: 0.4; filter: grayscale(1); }
 .dev.is-dim .prio-square { opacity: 0.4; }
 .dev.is-dim .dev-title, .dev.is-dim .dev-body, .dev.is-dim .prio { color: var(--ink-3); }
-.dev.is-dim .source-chip, .dev.is-dim .tags button { background: none; box-shadow: inset 0 0 0 1px var(--rule); color: var(--ink-3); }
+.dev.is-dim .chip { border-color: var(--rule); color: var(--ink-3); }
 @media (prefers-reduced-motion: no-preference) {
   .dev { transition: box-shadow var(--dur-mid); }
-  .dev img, .dev .prio-square, .dev-title, .dev-body, .source-chip, .tags button {
-    transition: opacity var(--dur-mid), filter var(--dur-mid), color var(--dur-mid), background-color var(--dur-mid);
+  .dev img, .dev .prio-square, .dev-title, .dev-body, .dev .chip {
+    transition: opacity var(--dur-mid), filter var(--dur-mid), color var(--dur-mid), border-color var(--dur-mid);
   }
 }
 .dev-main { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-3); }
 .dev-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
 .dev-time { color: var(--ink-3); }
 .tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; color: var(--ink-3); }
-.tags button {
-  min-height: 24px; /* WCAG 2.5.8 target size */
-  padding: 3px 8px;
-  border: 0;
-  border-radius: 0;
-  background: var(--paper-deep);
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  overflow-wrap: anywhere;
-  cursor: pointer;
-}
-.tags button:hover { color: var(--accent); background: var(--accent-wash); }
+.tags button { text-align: left; overflow-wrap: anywhere; }
 .dev-title { font-size: 1.28rem; letter-spacing: -0.015em; line-height: 1.25; }
 .dev-body { color: var(--ink-2); max-width: 64ch; }
 .dev-context {
@@ -198,43 +231,15 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
   padding-left: var(--space-3);
-  border-left: 2px solid var(--rule-strong);
+  border-left: 2px solid var(--ink);
   color: var(--ink-2);
 }
-.dev-context .label { color: var(--ink-3); }
-.dev-context-teaser { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dev-context .label { color: var(--ink); font-weight: 600; }
+.dev-context-teaser { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .dev-context-full { max-width: 72ch; }
-.dev-context-toggle {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-/* The one connection tag: a hairline-ruled chip that takes the reader to the tension index. */
-.dev-conn {
-  justify-self: start;
-  min-width: 0;
-  max-width: 100%;
-  padding: var(--space-1) var(--space-3);
-  border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--rule-strong);
-  color: var(--ink-2);
-  text-align: left;
-  overflow-wrap: anywhere;
-  cursor: pointer;
-}
-.dev-conn:hover, .dev.is-lit .dev-conn { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* The one connection tag: a chip that takes the reader to the tension index. */
+.dev-conn { justify-self: start; min-width: 0; max-width: 100%; }
+.dev.is-lit .dev-conn { border-color: var(--accent); color: var(--accent); }
 
 /* Card picture: a fixed-ratio crop with its credit underneath. */
 .card-img { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin: 0; }
@@ -248,18 +253,7 @@
 .card-img-credit a:hover { color: var(--accent); text-decoration: underline; }
 
 .source-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
-.source-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 9px;
-  background: var(--paper-deep);
-  color: var(--ink-2);
-  font-size: 0.8rem;
-  text-decoration: none;
-  overflow-wrap: anywhere;
-}
-.source-chip:hover { color: var(--accent); background: var(--accent-wash); }
+.source-chip { display: inline-flex; align-items: center; gap: 6px; overflow-wrap: anywhere; }
 .source-chip-time { font-size: 0.7rem; color: var(--ink-3); }
 .source-chip-ext { opacity: 0.6; }
 
@@ -293,10 +287,9 @@
   .card-img-side .card-img-frame { aspect-ratio: 16 / 9; }
 }
 @media print {
-  .dev-context-teaser { white-space: normal; overflow: visible; }
-  .dev-context-toggle, .dev-conn { display: none !important; }
+  .dev-context-teaser { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
+  .text-btn, .dev-conn { display: none !important; }
   /* Every alert and index row prints, in full, without the screen-only reveal controls. */
   .index-item.is-overflow, .alert.is-overflow { display: grid; }
   .clamp-2, .index-why { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
-  .index-more, .index-show, .alerts-show { display: none !important; }
 }

@@ -34,7 +34,7 @@ describe('AlertCallout (Read first)', () => {
     const extras = [...container.querySelectorAll('.alert.is-overflow .alert-title')].map((t) => t.textContent)
     expect(extras).toEqual(['Alert 4', 'Alert 5'])
     const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Show 2 more')!
-    expect(more).toBeDefined()
+    expect(more.classList.contains('text-btn')).toBe(true)
     act(() => more.click())
     expect(titles()).toEqual(['Alert 1', 'Alert 2', 'Alert 3', 'Alert 4', 'Alert 5'])
     expect(container.querySelector('.is-overflow')).toBeNull()

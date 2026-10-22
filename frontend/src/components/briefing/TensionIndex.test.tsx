@@ -41,6 +41,7 @@ describe('TensionIndex', () => {
     expect(container.querySelector('h2')!.textContent).toBe('Tensions · 4')
     expect(visibleRows()).toHaveLength(3)
     const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Show 1 more')!
+    expect(more.classList.contains('text-btn')).toBe(true)
     act(() => more.click())
     expect(visibleRows()).toHaveLength(4)
   })
@@ -121,12 +122,12 @@ describe('TensionIndex', () => {
     expect(document.getElementById(id)!.textContent).toBe('Carriers reroute.')
     const toggle = container.querySelector('.index-more')!
     // Label in name (WCAG 2.5.3): the accessible name contains the visible text.
-    expect(toggle.textContent).toBe('more')
-    expect(toggle.getAttribute('aria-label')).toBe('more: Shipping lines vs Houthis')
+    expect(toggle.textContent).toBe('More')
+    expect(toggle.getAttribute('aria-label')).toBe('More: Shipping lines vs Houthis')
     expect(toggle.getAttribute('aria-controls')).toBe(id)
     act(() => (toggle as HTMLButtonElement).click())
-    expect(toggle.textContent).toBe('less')
-    expect(toggle.getAttribute('aria-label')).toBe('less: Shipping lines vs Houthis')
+    expect(toggle.textContent).toBe('Less')
+    expect(toggle.getAttribute('aria-label')).toBe('Less: Shipping lines vs Houthis')
   })
 
   it('strip fills linked developments in order', () => {
@@ -178,6 +179,6 @@ describe('TensionIndex reason toggle', () => {
     act(() => root.render(<Long />))
     const toggles = [...container.querySelectorAll('.index-more')]
     expect(toggles).toHaveLength(1)
-    expect(toggles[0].getAttribute('aria-label')).toBe('more: Long')
+    expect(toggles[0].getAttribute('aria-label')).toBe('More: Long')
   })
 })

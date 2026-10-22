@@ -49,9 +49,33 @@ describe('story styles', () => {
     expect(rule(storyCss, '.alert-list')).toContain('gap: 1px')
   })
 
-  it('gives the Read first reveal a 44px target and a focus ring', () => {
-    expect(rule(storyCss, '.alerts-show')).toContain('min-height: 44px')
-    expect(rule(storyCss, '.alerts-show:focus-visible')).toContain('outline: 2px solid var(--accent)')
+  it('gives text buttons a 24px target, the shared focus ring and no underline', () => {
+    const decls = rulesFor(storyCss, '.text-btn').join(';')
+    expect(decls).toContain('min-height: 24px')
+    expect(decls).not.toContain('text-decoration: underline')
+    const ring = rulesFor(storyCss, '.text-btn:focus-visible').join(';')
+    expect(ring).toContain('outline: 2px solid var(--accent)')
+    expect(ring).toContain('outline-offset: 2px')
+  })
+
+  it('motions text buttons only without reduced-motion', () => {
+    const motion = storyCss.slice(storyCss.indexOf('@media (prefers-reduced-motion: no-preference)'))
+    expect(motion).toContain('.text-btn')
+    expect(motion).toContain('250ms')
+    const outside = storyCss.replace(/@media \(prefers-reduced-motion: no-preference\) \{([^{}]*\{[^}]*\})*\s*\}/g, '')
+    expect(rulesFor(outside, '.text-btn').join(';')).not.toContain('transition')
+  })
+
+  it('styles chips as hairline boxes with 24px targets', () => {
+    const decls = rulesFor(storyCss, '.chip').join(';')
+    expect(decls).toContain('border: 1px solid var(--rule)')
+    expect(decls).toContain('min-height: 24px')
+    expect(decls).not.toContain('background: var(--paper-deep)')
+  })
+
+  it('makes From the archive an ink rule with a two-line teaser', () => {
+    expect(rulesFor(storyCss, '.dev-context').join(';')).toContain('border-left: 2px solid var(--ink)')
+    expect(rulesFor(storyCss, '.dev-context-teaser').join(';')).toContain('line-clamp: 2')
   })
 
   // WCAG AA: a dimmed card keeps its text legible; only the picture, mark, chips and rule recede.
@@ -69,18 +93,19 @@ describe('story styles', () => {
       expect(rulesFor(screen, sel).join(';'), sel).toContain('display: none')
       expect(rulesFor(print, sel).join(';'), sel).toMatch(/display:\s*grid/)
     }
-    for (const sel of ['.clamp-2', '.index-why']) {
+    for (const sel of ['.clamp-2', '.index-why', '.dev-context-teaser']) {
       const decls = rulesFor(print, sel).join(';')
       expect(decls, sel).toContain('-webkit-line-clamp: unset')
       expect(decls, sel).toContain('overflow: visible')
     }
-    for (const sel of ['.index-more', '.index-show', '.alerts-show']) {
+    for (const sel of ['.text-btn', '.dev-conn']) {
       expect(rulesFor(print, sel).join(';'), sel).toMatch(/display:\s*none/)
     }
+    expect(rulesFor(print, '.dev-context-teaser').join(';')).toContain('-webkit-line-clamp: unset')
   })
 
   it('gives the reason toggle and region tags 24px targets', () => {
-    expect(rulesFor(storyCss, '.index-more').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
-    expect(rulesFor(storyCss, '.tags button').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
+    expect(rulesFor(storyCss, '.text-btn').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
+    expect(rulesFor(storyCss, '.chip').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
   })
 })

@@ -1,7 +1,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { ICONS } from './icons'
+import { ICONS, PlusIcon } from './icons'
 
 const NAMES = [
   'StarIcon', 'ExternalIcon', 'TrashIcon', 'PrintIcon', 'ExpandIcon', 'TensionIcon', 'DisagreeIcon',
@@ -37,5 +37,13 @@ describe('icon set', () => {
     const shapes = [...svg.querySelectorAll('path, polygon, circle, rect')]
     expect(shapes.length).toBeGreaterThanOrEqual(2)
     for (const s of shapes) expect(['currentColor', 'none']).toContain(s.getAttribute('fill'))
+  })
+
+  it('PlusIcon open draws only the horizontal stroke', () => {
+    act(() => root.render(<PlusIcon />))
+    expect(container.querySelector('path')!.getAttribute('d')).toMatch(/v/)
+    expect(container.querySelector('svg')!.getAttribute('class')).toBe('btn-plus')
+    act(() => root.render(<PlusIcon open />))
+    expect(container.querySelector('path')!.getAttribute('d')).not.toMatch(/v/)
   })
 })

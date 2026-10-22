@@ -2,10 +2,10 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { cardImage } from '../../lib/cardImage'
 import type { ViewDevelopment } from '../../lib/normalize'
 import { formatTime, UNKNOWN_TIME } from '../../lib/time'
-import { ExpandIcon } from '../icons'
 import { CardImage } from './CardImage'
 import { PriorityMark } from './PriorityMark'
 import { SourceChips } from './SourceChips'
+import { TextButton } from './TextButton'
 
 const PRESS_FOCUS_MS = 300
 
@@ -64,7 +64,7 @@ export function DevelopmentCard({
           {dev.regions.length > 0 && (
             <ul className="tags label" aria-label="Regions">
               {dev.regions.map((r) => (
-                <li key={r}><button type="button" data-index-control="" onClick={() => onRegionTap?.()}>{r}</button></li>
+                <li key={r}><button type="button" className="chip" data-index-control="" onClick={() => onRegionTap?.()}>{r}</button></li>
               ))}
             </ul>
           )}
@@ -77,20 +77,19 @@ export function DevelopmentCard({
             {contextOpen
               ? <p id={contextId} className="dev-context-full">{dev.historicalContext}</p>
               : <p className="dev-context-teaser" aria-hidden="true">{dev.historicalContext}</p>}
-            <button
-              type="button"
-              className="dev-context-toggle"
+            <TextButton
+              open={contextOpen}
               aria-expanded={contextOpen}
               aria-controls={contextOpen ? contextId : undefined}
               onClick={() => setContextOpen((o) => !o)}
             >
-              {contextOpen ? 'Show less' : 'Read background'} <ExpandIcon size={12} open={contextOpen} />
-            </button>
+              {contextOpen ? 'Show less' : 'Read background'}
+            </TextButton>
           </div>
         )}
         <SourceChips sources={dev.sources} />
         {connection && (
-          <button type="button" className="dev-conn label" data-index-control="" aria-controls={indexId}
+          <button type="button" className="dev-conn chip" data-index-control="" aria-controls={indexId}
             aria-label={`Show in tension index: ${connection}`} onClick={onTag}
           >
             {connection}
