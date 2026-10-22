@@ -67,6 +67,7 @@ describe('TopicWire', () => {
     expect(container.querySelector('.wire-label')?.textContent).toBe('On the wire')
     expect(list().getAttribute('aria-label')).toBe('On the wire')
     expect(container.querySelector('.wire')?.classList.contains('wire-live')).toBe(true)
+    expect(container.querySelector('.wire-mark')).not.toBeNull()
     expect(topics()).not.toContain('Kenya floods displace thousands')
   })
 
@@ -87,6 +88,7 @@ describe('TopicWire', () => {
     expect(list().getAttribute('aria-label')).toBe('Suggested topics')
     expect(container.querySelector('.wire-updated')).toBeNull()
     expect(container.querySelector('.wire-live')).toBeNull()
+    expect(container.querySelector('.wire-mark')).toBeNull()
     expect([...container.querySelectorAll('.wire-time')].map((t) => t.textContent)).toEqual(['', ''])
     act(() => root.unmount())
     root = createRoot(container)

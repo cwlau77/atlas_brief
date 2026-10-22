@@ -42,23 +42,62 @@
 .home-lede { max-width: 34em; font-size: 1.12rem; color: var(--ink-2); text-wrap: pretty; }
 .home-lede em { color: var(--ink); font-style: normal; }
 .home-ask { display: grid; gap: 12px; }
-.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.chips-label { color: var(--ink-2); margin-right: var(--space-1); }
-.chips-live .chip { animation: chip-in var(--dur-mid) var(--ease-out) both; }
-@keyframes chip-in { from { opacity: 0; transform: translateY(4px); } }
-@media (prefers-reduced-motion: reduce) {
-  .chips-live .chip { animation: none; }
+/* "On the wire" under the ask box: hairline-ruled lines, newest first. */
+.wire { border-top: 1px solid var(--ink); }
+.wire-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--rule);
 }
-.chip {
-  font-size: 0.86rem;
+.wire-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--ink-2);
-  background: transparent;
-  border: 1px solid var(--rule);
-  padding: 7px 13px;
-  transition: border-color var(--dur-quick), color var(--dur-quick), background-color var(--dur-quick);
+  font-variant-numeric: tabular-nums;
 }
-.chip:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
-.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Heat belongs to the live wire only. */
+.wire-mark { width: 7px; height: 7px; background: var(--hot); }
+.wire-updated { font-size: 0.8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.wire-list { list-style: none; margin: 0; padding: 0; }
+.wire-line {
+  display: grid;
+  grid-template-columns: 5.5em 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  min-height: 24px;
+  padding: 9px 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wire-time { font-size: 0.8rem; color: var(--ink-3); }
+.wire-topic { font-size: 0.95rem; font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
+.wire-go { font-size: 0.75rem; color: var(--ink-3); }
+.wire-line:hover:not(:disabled) .wire-topic { color: var(--accent); }
+.wire-line:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wire-line:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 480px) {
+  .wire-go { display: none; }
+  .wire-line { grid-template-columns: 5.5em 1fr; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wire-live .wire-line { animation: wire-in var(--dur-mid) var(--ease-out) both; }
+  .wire-line.is-new { animation: wire-in var(--dur-mid) var(--ease-out) both, wire-new 1.6s ease-out both; }
+  .wire-topic { transition: color var(--dur-quick); }
+}
+@keyframes wire-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes wire-new { from { background: var(--accent-wash); } to { background: transparent; } }
 .provenance { display: flex; flex-wrap: wrap; gap: 16px; color: var(--ink-3); }
 .home-globe { position: relative; width: 108%; margin-right: -8%; max-width: 700px; justify-self: end; }
 

@@ -20,6 +20,9 @@ Shipped per `docs/superpowers/specs/2026-10-19-ui-spec-3-design.md`: article ima
 Shipped as `GET /trending` (`backend/trending.py`): Google News US top stories grouped by Haiku into up to 6 specific topics, cached an hour in process. Home shows them as "Trending now" chips and keeps the fixed chips when the backend is asleep, has no key, or fails. Original note:
 Under the hero's ask box, replace the four fixed topic chips (`SUGGESTIONS` in `HomePage.tsx`) with a "Trending now" dropdown or strip of hot stories and areas, refreshed from live sources. Needs a design pass: where trending comes from (GDELT, Google News top stories or recent Atlas briefings), how often it refreshes, and a fallback when the backend is asleep. Owner request, 2026-10-19.
 
+### ~~Home: the wire replaces the trending chips~~ (done 2026-10-22)
+Shipped per `docs/superpowers/specs/2026-10-22-home-wire-design.md`: "On the wire" lists up to five newsroom topics with the time of their newest headline, in Newsprint hairline lines, and falls back to "Suggested" lines in the same style.
+
 ### ~~Archive: select, delete and star in bulk~~ (done 2026-10-19)
 Add a select mode to the Archive (`routes/ArchivePage.tsx`): a "Select" toggle that puts a checkbox on each briefing, plus "Select all" per topic thread. A toolbar acting on the selection offers **Delete** and **Star / Unstar**. Today each briefing can only be starred or deleted one at a time through its bead actions. Keep spec 2's rules: real buttons and checkboxes with names, no `window.confirm` (use `ConfirmDialog`, saying how many will be deleted), one failure toast if the storage write fails, and starred briefings are never dropped silently. Owner request, 2026-10-19.
 

@@ -73,7 +73,7 @@ export function TopicWire({ fallback, onPick, disabled = false, timeZone }: {
       <div className="wire-head">
         {/* The list's aria-label already names the wire. */}
         <span className="wire-label" aria-hidden="true">
-          <span className="wire-mark" aria-hidden="true" />
+          {live && <span className="wire-mark" aria-hidden="true" />}
           {live ? 'On the wire' : 'Suggested'}
         </span>
         {updated && <span className="wire-updated">Updated {updated}</span>}
