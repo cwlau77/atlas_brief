@@ -81,6 +81,22 @@ export function formatDateTime(value: string | Date | null | undefined, tz: stri
   return `${formatDate(d, tz)}, ${formatTime(d, tz)}`
 }
 
+const WIRE_OPTS: Intl.DateTimeFormatOptions = {
+  weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+}
+
+/** Wire timestamp: `HH:MM` for today (or later) in the zone, `Ddd HH:MM` for an earlier day, '' if unknown. */
+export function formatWireTime(value: string | null | undefined, tz: string, now: Date = new Date()): string {
+  const d = toDate(value)
+  if (!d) return ''
+  const zone = resolveTimeZone(tz)
+  const p = parts(d, zone, WIRE_OPTS)
+  const n = parts(now, zone, WIRE_OPTS)
+  const day = `${p.year}-${p.month}-${p.day}`
+  const clock = `${p.hour}:${p.minute}`
+  return day >= `${n.year}-${n.month}-${n.day}` ? clock : `${p.weekday} ${clock}`
+}
+
 export function formatClock(now: Date, tz: string): { day: string; time: string } {
   const p = parts(now, resolveTimeZone(tz), DAY_OPTS)
   return { day: `${p.weekday} ${p.day} ${p.month} ${p.year}`, time: formatTime(now, tz) }

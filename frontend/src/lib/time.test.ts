@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AUTO_ZONE, UNKNOWN_TIME, deviceTimeZone, formatClock, formatDate, formatDateTime, formatTime,
-  isValidTimeZone, listTimeZones, resolveTimeZone, zoneLabel,
+  formatWireTime, isValidTimeZone, listTimeZones, resolveTimeZone, zoneLabel,
 } from './time'
 
 const AUTUMN = '2026-10-16T18:32:00Z'
@@ -49,6 +49,23 @@ describe('formatDate and formatDateTime', () => {
   })
   it('returns the unknown label for bad input', () => {
     expect(formatDateTime('garbage', 'UTC')).toBe(UNKNOWN_TIME)
+  })
+})
+
+describe('formatWireTime', () => {
+  const now = new Date('2026-10-21T12:00:00Z')
+  it('shows the clock alone for today', () => {
+    expect(formatWireTime('2026-10-21T09:28:00Z', 'UTC', now)).toBe('09:28')
+  })
+  it('prefixes the weekday for an earlier day', () => {
+    expect(formatWireTime('2026-10-20T21:10:00Z', 'UTC', now)).toBe('Tue 21:10')
+  })
+  it('judges the day in the chosen zone', () => {
+    expect(formatWireTime('2026-10-21T02:00:00Z', 'America/New_York', now)).toBe('Tue 22:00')
+  })
+  it('returns an empty string for missing or invalid values', () => {
+    expect(formatWireTime(null, 'UTC', now)).toBe('')
+    expect(formatWireTime('nonsense', 'UTC', now)).toBe('')
   })
 })
 
