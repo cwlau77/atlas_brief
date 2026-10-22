@@ -67,3 +67,31 @@ describe('linkBriefing', () => {
     expect(linkBriefing(b).tensions[0]).toEqual([0, 1])
   })
 })
+
+describe('linkBriefing with explicit links', () => {
+  const withTension = (relatedDevelopments: number[] | null) => {
+    const b = makeBriefing()
+    b.keyDevelopments[0] = { ...b.keyDevelopments[0], regions: ['United States'] }
+    b.emergingTensions[0] = { ...b.emergingTensions[0], description: 'United States presses allies.', relatedDevelopments }
+    return b
+  }
+  it('prefers explicit links over region matching', () => {
+    expect(linkBriefing(withTension([1])).tensions[0]).toEqual([1])
+  })
+  it('respects an explicit empty list', () => {
+    expect(linkBriefing(withTension([])).tensions[0]).toEqual([])
+  })
+  it('drops out-of-range and duplicate explicit indexes', () => {
+    expect(linkBriefing(withTension([2, 0, 0, -1, 9])).tensions[0]).toEqual([2, 0])
+  })
+  it('falls back to region matching when null', () => {
+    expect(linkBriefing(withTension(null)).tensions[0]).toEqual([0])
+  })
+  it('applies the same rules to contradictions', () => {
+    const b = makeBriefing()
+    b.contradictions[0] = { ...b.contradictions[0], relatedDevelopments: [2] }
+    expect(linkBriefing(b).contradictions[0]).toEqual([2])
+    b.contradictions[0] = { ...b.contradictions[0], relatedDevelopments: null }
+    expect(linkBriefing(b).contradictions[0]).toEqual([0])
+  })
+})

@@ -33,6 +33,11 @@ export interface ViewTension {
   level: 'high' | 'medium' | 'low'
   description: string
   sources: SourceCitation[]
+  relatedDevelopments: number[] | null
+}
+
+export type ViewContradiction = Omit<Contradiction, 'related_developments'> & {
+  relatedDevelopments: number[] | null
 }
 
 export interface ViewReading {
@@ -54,7 +59,7 @@ export interface SavedBriefing {
   alerts: ViewAlert[]
   keyDevelopments: ViewDevelopment[]
   emergingTensions: ViewTension[]
-  contradictions: Contradiction[]
+  contradictions: ViewContradiction[]
   readingList: ViewReading[]
 }
 
@@ -138,8 +143,12 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
       level: index === 0 ? 'high' : index === 1 ? 'medium' : 'low',
       description: item.description,
       sources: item.sources || [],
+      relatedDevelopments: item.related_developments ?? null,
     })),
-    contradictions: apiBriefing.contradictions || [],
+    contradictions: (apiBriefing.contradictions || []).map(({ related_developments, ...rest }) => ({
+      ...rest,
+      relatedDevelopments: related_developments ?? null,
+    })),
     readingList: (apiBriefing.recommended_readings || []).map((item) => ({
       title: item.title,
       publication: item.outlet,
@@ -160,5 +169,7 @@ export function withDefaults(b: SavedBriefing): SavedBriefing {
       place: d.place ?? null,
       commonsImage: d.commonsImage ?? null,
     })),
+    emergingTensions: (b.emergingTensions ?? []).map((t) => ({ ...t, relatedDevelopments: t.relatedDevelopments ?? null })),
+    contradictions: (b.contradictions ?? []).map((c) => ({ ...c, relatedDevelopments: c.relatedDevelopments ?? null })),
   }
 }

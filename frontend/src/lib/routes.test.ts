@@ -7,8 +7,8 @@ import { sortDevelopments } from './timeline'
 const routesFor = (b: SavedBriefing, order = sortDevelopments(b.keyDevelopments)) => buildRoutes(b, order)
 
 // Fixture rows: dev 0 (Yemen, Red Sea, 02:10), dev 1 (Red Sea, South Africa, 05:45), dev 2 (Egypt, 14:32).
-const tension = (description: string) => ({ actors: 'A ↔ B', level: 'medium' as const, description, sources: [] })
-const contradiction = (topic: string) => ({ topic, account_a: 'a', account_b: 'b', sources_a: [], sources_b: [] })
+const tension = (description: string) => ({ actors: 'A ↔ B', level: 'medium' as const, description, sources: [], relatedDevelopments: null })
+const contradiction = (topic: string) => ({ topic, account_a: 'a', account_b: 'b', sources_a: [], sources_b: [], relatedDevelopments: null })
 
 describe('ROUTE_COLORS', () => {
   it('lists the five route colours in assignment order', () => {

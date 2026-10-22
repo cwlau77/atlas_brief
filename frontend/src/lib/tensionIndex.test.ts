@@ -6,8 +6,8 @@ import { buildTensionIndex, connectionLabel, type IndexItem } from './tensionInd
 import { sortDevelopments } from './timeline'
 
 // Fixture rows: dev 0 (Yemen, Red Sea), dev 1 (Red Sea, South Africa), dev 2 (Egypt).
-const tension = (description: string, actors = 'A ↔ B') => ({ actors, level: 'medium' as const, description, sources: [] })
-const contradiction = (topic: string, a = 'a', b = 'b') => ({ topic, account_a: a, account_b: b, sources_a: [], sources_b: [] })
+const tension = (description: string, actors = 'A ↔ B') => ({ actors, level: 'medium' as const, description, sources: [], relatedDevelopments: null })
+const contradiction = (topic: string, a = 'a', b = 'b') => ({ topic, account_a: a, account_b: b, sources_a: [], sources_b: [], relatedDevelopments: null })
 const indexFor = (b: SavedBriefing) => buildTensionIndex(b, sortDevelopments(b.keyDevelopments))
 
 describe('buildTensionIndex', () => {

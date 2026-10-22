@@ -40,6 +40,8 @@ export interface Tension {
   description: string
   actors: string[]
   sources: SourceCitation[]
+  /** Zero-based indexes into key_developments; null/absent when the link call did not run. */
+  related_developments?: number[] | null
 }
 
 export interface Contradiction {
@@ -48,6 +50,7 @@ export interface Contradiction {
   account_b: string
   sources_a: SourceCitation[]
   sources_b: SourceCitation[]
+  related_developments?: number[] | null
 }
 
 export type AlertSeverity = 'critical' | 'high' | 'elevated'

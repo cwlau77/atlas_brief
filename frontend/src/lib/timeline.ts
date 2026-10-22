@@ -1,6 +1,7 @@
 // Story-tab logic: chronological order (oldest or newest first) and which tensions/contradictions
-// relate to which developments. Links require a shared region by name;
-// anything unmatched is shown separately, never attached at random.
+// relate to which developments. Links come from the briefing first (related_developments) and
+// region names second (a shared region by name); anything unmatched is shown separately,
+// never attached at random.
 import type { SavedBriefing, ViewDevelopment } from './normalize'
 
 export interface TimelineEntry {
@@ -56,8 +57,17 @@ export function linkBriefing(
 ): BriefingLinks {
   const match = (text: string) =>
     b.keyDevelopments.flatMap((d, i) => (d.regions.some((r) => mentionsRegion(text, r)) ? [i] : []))
+  const explicit = (indexes: number[]) => {
+    const seen = new Set<number>()
+    for (const i of indexes) {
+      if (Number.isInteger(i) && i >= 0 && i < b.keyDevelopments.length) seen.add(i)
+    }
+    return [...seen]
+  }
+  const link = (related: number[] | null | undefined, text: string) =>
+    related ? explicit(related) : match(text)
   return {
-    tensions: b.emergingTensions.map((t) => match(`${t.actors} ${t.description}`)),
-    contradictions: b.contradictions.map((c) => match(`${c.topic} ${c.account_a} ${c.account_b}`)),
+    tensions: b.emergingTensions.map((t) => link(t.relatedDevelopments, `${t.actors} ${t.description}`)),
+    contradictions: b.contradictions.map((c) => link(c.relatedDevelopments, `${c.topic} ${c.account_a} ${c.account_b}`)),
   }
 }

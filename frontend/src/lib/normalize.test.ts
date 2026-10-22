@@ -170,3 +170,35 @@ describe('commons images', () => {
     expect(loaded.alerts.every((a) => a.commonsImage === null)).toBe(true)
   })
 })
+
+describe('related developments', () => {
+  it('carries related_developments as relatedDevelopments', () => {
+    const api: ApiBriefing = {
+      ...FIXTURE,
+      emerging_tensions: [{ ...FIXTURE.emerging_tensions[0], related_developments: [1, 0] }],
+      contradictions: [{ ...FIXTURE.contradictions[0], related_developments: [] }],
+    }
+    const b = normalizeBriefing(api, 'daily')
+    expect(b.emergingTensions[0].relatedDevelopments).toEqual([1, 0])
+    expect(b.contradictions[0].relatedDevelopments).toEqual([])
+    expect(b.contradictions[0]).not.toHaveProperty('related_developments')
+  })
+
+  it('maps a missing field to null on both', () => {
+    const b = normalizeBriefing(FIXTURE, 'daily')
+    expect(b.emergingTensions[0].relatedDevelopments).toBeNull()
+    expect(b.contradictions[0].relatedDevelopments).toBeNull()
+  })
+
+  it('withDefaults fills relatedDevelopments with null', () => {
+    const current = normalizeBriefing(FIXTURE, 'daily')
+    const old = JSON.parse(JSON.stringify({
+      ...current,
+      emergingTensions: current.emergingTensions.map(({ relatedDevelopments: _r, ...rest }) => rest),
+      contradictions: current.contradictions.map(({ relatedDevelopments: _r, ...rest }) => rest),
+    })) as SavedBriefing
+    const loaded = withDefaults(old)
+    expect(loaded.emergingTensions[0].relatedDevelopments).toBeNull()
+    expect(loaded.contradictions[0].relatedDevelopments).toBeNull()
+  })
+})
