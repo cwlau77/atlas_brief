@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatWireTime } from '../lib/time'
-import { loadTrending, orderWire, type TrendingItem } from '../lib/trending'
+import { loadTrending, orderWire, peekTrending, type TrendingItem } from '../lib/trending'
 
 const WIRE_LINES = 5
 const REFRESH_MS = 10 * 60_000
@@ -11,6 +11,11 @@ type Wire = { items: TrendingItem[]; generatedAt: string | null }
 const fold = (topic: string) => topic.toLocaleLowerCase()
 const sameTopics = (a: TrendingItem[], b: TrendingItem[]) =>
   a.length === b.length && a.every((item, i) => item.topic === b[i].topic)
+
+function seedWire(): Wire {
+  const cached = peekTrending()
+  return cached ? { items: orderWire(cached.items), generatedAt: cached.generatedAt } : { items: [], generatedAt: null }
+}
 
 /**
  * "On the wire" under Home's ask box: timed newsroom topics, newest first, or the
@@ -23,13 +28,15 @@ export function TopicWire({ fallback, onPick, disabled = false, timeZone }: {
   disabled?: boolean
   timeZone: string
 }) {
-  const [wire, setWire] = useState<Wire>({ items: [], generatedAt: null })
+  // A fresh session copy paints on the first render, so a returning visitor never sees the fallback.
+  const [wire, setWire] = useState<Wire>(seedWire)
   // Casefolded topics that just joined the visible lines.
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set())
 
   useEffect(() => {
     const ctrl = new AbortController()
-    let current: TrendingItem[] = []
+    // The same session copy the first render showed, so the mount load highlights nothing.
+    let current: TrendingItem[] = seedWire().items
     let freshTimer: number | undefined
     const load = () => {
       void loadTrending(ctrl.signal).then((result) => {

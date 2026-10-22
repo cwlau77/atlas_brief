@@ -40,6 +40,11 @@ function readCache(): TrendingResult | null {
   }
 }
 
+/** The fresh session copy, read synchronously, or null when there isn't one. */
+export function peekTrending(): TrendingResult | null {
+  return readCache()
+}
+
 /** Wire items, or an empty result when the backend is asleep, has no model key, or fails. */
 export async function loadTrending(signal?: AbortSignal): Promise<TrendingResult> {
   const cached = readCache()

@@ -3,7 +3,7 @@ import homeCss from './home.css?raw'
 
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '')
 
-// Every top-level rule as [selector list, declarations]; at-rule blocks are skipped.
+// Every top-level rule as [selector list, declarations]; rules nested in @media blocks match too (they follow a newline), while the at-rule lines themselves are skipped.
 function rules(css: string): [string, string][] {
   const out: [string, string][] = []
   for (const m of strip(css).matchAll(/(^|\n)([^{}@\n][^{}]*)\{([^}]*)\}/g)) out.push([m[2].trim(), m[3]])

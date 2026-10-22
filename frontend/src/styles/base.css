@@ -163,7 +163,7 @@ input, select, textarea { font: inherit; color: inherit; }
 @media print {
   html, body { background: #fff; color: #000; }
   body::after { display: none; }
-  .nav, .footer, .ask, .tabs, .story-globe, .globe-view, .toast-host, .skip-link, .chips { display: none !important; }
+  .nav, .footer, .ask, .tabs, .story-globe, .globe-view, .toast-host, .skip-link, .wire { display: none !important; }
   .dev, .alert { break-inside: avoid; border: 1px solid #ccc; }
   a { color: #000; }
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TRENDING_CACHE_KEY, loadTrending, orderWire } from './trending'
+import { TRENDING_CACHE_KEY, loadTrending, orderWire, peekTrending } from './trending'
 
 function stubFetch(body: unknown, ok = true) {
   const fn = vi.fn().mockResolvedValue({ ok, json: async () => body })
@@ -77,6 +77,23 @@ describe('loadTrending', () => {
     const fetchFn = stubFetch({ topics: ['New'] })
     expect((await loadTrending()).items).toEqual([{ topic: 'New', publishedAt: null }])
     expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('peekTrending', () => {
+  it('returns a fresh session entry without fetching', () => {
+    const fetchFn = stubFetch({ topics: ['X'] })
+    window.sessionStorage.setItem(TRENDING_CACHE_KEY, JSON.stringify({ items: [{ topic: 'A', publishedAt: null }], generatedAt: 'g', at: Date.now() }))
+    expect(peekTrending()).toEqual({ items: [{ topic: 'A', publishedAt: null }], generatedAt: 'g' })
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it('is null for a stale entry, a V1 entry or nothing', () => {
+    expect(peekTrending()).toBeNull()
+    window.sessionStorage.setItem('atlasTrendingV1', JSON.stringify({ topics: ['Old'], at: Date.now() }))
+    expect(peekTrending()).toBeNull()
+    window.sessionStorage.setItem(TRENDING_CACHE_KEY, JSON.stringify({ items: [{ topic: 'A', publishedAt: null }], generatedAt: 'g', at: Date.now() - 31 * 60_000 }))
+    expect(peekTrending()).toBeNull()
   })
 })
 

@@ -71,6 +71,23 @@ describe('TopicWire', () => {
     expect(topics()).not.toContain('Kenya floods displace thousands')
   })
 
+  it('paints the live list on the very first render when the session copy is fresh', async () => {
+    const items = ITEMS.map((i) => ({ topic: i.topic, publishedAt: i.published_at }))
+    sessionStorage.setItem(TRENDING_CACHE_KEY, JSON.stringify({ items, generatedAt: BODY.generated_at, at: Date.now() }))
+    const fetch = respond(BODY)
+    act(() => {
+      root.render(<TopicWire fallback={FALLBACK} timeZone="UTC" onPick={vi.fn()} />)
+    })
+    expect(fetch).not.toHaveBeenCalled()
+    expect(container.querySelector('.wire-label')?.textContent).toBe('On the wire')
+    expect(topics()[0]).toBe('ECB holds rates at 2%')
+    expect(lines()).toHaveLength(5)
+    expect(newTopics()).toEqual([])
+    await advance(0)
+    expect(newTopics()).toEqual([])
+    expect(topics()[0]).toBe('ECB holds rates at 2%')
+  })
+
   it('leaves the time blank for undated topics', async () => {
     respond({ topics: ['Undated topic'], items: [{ topic: 'Undated topic', published_at: null }], generated_at: '2026-10-21T09:42:00Z' })
     await render()
