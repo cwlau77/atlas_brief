@@ -66,6 +66,32 @@ describe('story styles', () => {
     expect(ring).toContain('outline: 2px solid var(--accent)')
   })
 
+  it('only hides the row button ring where :has() can ring the row instead', () => {
+    const at = storyCss.indexOf('@supports selector(:has(*)) {')
+    expect(at).toBeGreaterThan(-1)
+    const block = storyCss.slice(at, storyCss.indexOf('\n}', at))
+    expect(block).toContain('.index-item:has(.index-row:focus-visible)')
+    expect(block).toContain('.index-row:focus-visible { outline: none; }')
+    // Nowhere outside the guard.
+    expect(storyCss.replace(block, '')).not.toContain('.index-row:focus-visible { outline: none; }')
+  })
+
+  it('insets Show N more to line up with the row text', () => {
+    expect(rulesFor(storyCss, '.index-show').join(';')).toContain('margin-left: 12px')
+    expect(rulesFor(storyCss, '.alerts-show').join(';')).not.toContain('margin-left')
+  })
+
+  it('animates the timeline node only without reduced motion', () => {
+    expect(rulesFor(storyCss, '.t-node span')[0]).not.toContain('transition')
+    const motion = storyCss.slice(storyCss.indexOf('@media (prefers-reduced-motion: no-preference)'))
+    expect(storyCss).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{[^@]*\.t-node span \{[^}]*transition: background-color 0\.4s, box-shadow 0\.4s/)
+    expect(motion).toContain('.t-node span')
+  })
+
+  it('lets the chip time follow the chip colour on hover', () => {
+    expect(rulesFor(storyCss, '.chip:hover .source-chip-time').join(';')).toContain('color: inherit')
+  })
+
   it('makes text buttons hug their label in grid parents', () => {
     expect(rulesFor(storyCss, '.text-btn').join(';')).toContain('justify-self: start')
   })
