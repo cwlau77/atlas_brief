@@ -1,5 +1,5 @@
 """Turn a free-text focus into a SearchPlan: search strings, required concepts,
-an optional coverage-country filter and topic domains.
+an optional coverage-country filter, the place the story is about and topic domains.
 
 rule_plan is deterministic and always available; plan_search layers an LLM planner on top and falls back to rule_plan on any failure.
 """
@@ -16,6 +16,7 @@ from backend import llm
 from backend.config import settings
 from backend.focus_terms import _TERM_ALIASES, _normalize_focus_tokens, distinctive_tokens, topic_heads
 from backend.llm_json import extract_json
+from backend.place_names import find_place
 
 logger = logging.getLogger("briefing.search_plan")
 
@@ -28,6 +29,8 @@ class SearchPlan(BaseModel):
     must_terms: list[str] = Field(default_factory=list)
     synonyms: list[str] = Field(default_factory=list)
     country: str | None = None
+    # The country or region the story is about, for the globe; unlike country, never a search filter.
+    place: str | None = None
     domains: list[Domain] = Field(default_factory=lambda: ["general"])
     tickers: list[str] = Field(default_factory=list)
     source: Literal["llm", "rules"] = "rules"
@@ -158,6 +161,7 @@ def rule_plan(focus: str) -> SearchPlan:
         must_terms=list(dict.fromkeys(must))[:4],
         synonyms=list(dict.fromkeys(synonyms))[:8],
         country=country,
+        place=find_place(focus),
         domains=_domains(focus, tickers),
         tickers=tickers,
         source="rules",
@@ -170,6 +174,7 @@ Return ONLY a JSON object with exactly these keys:
 - "must_terms": 1-4 lowercase concepts that a relevant article must mention, in the words journalists use.
 - "synonyms": up to 8 lowercase alternative terms journalists use for the same concepts.
 - "country": an ISO 3166-1 alpha-2 code only if the focus limits coverage to one country's domestic news (for example "in the US" -> "US"); otherwise null. A country that is the subject of the story (for example "elections in Iran") is not a filter, so use null.
+- "place": the English name of the single country or region the story is about (for example "Sudan's ceasefire talks" -> "Sudan"), or null when it is not about one place. This is separate from "country".
 - "domains": one or more of "finance", "tech", "politics", "general". Use "finance" only when the focus is about markets, investing, company earnings or monetary policy, not merely because a topic has a business angle (for example "data centers in Virginia" -> ["tech", "politics"]).
 - "tickers": uppercase stock ticker symbols only for publicly listed companies named in the focus; otherwise []."""
 
@@ -223,12 +228,17 @@ def _clamp(data: dict, fallback: SearchPlan) -> SearchPlan:
     must_terms = _str_list(data.get("must_terms"), 4, lower=True) or fallback.must_terms
     synonyms = _str_list(data.get("synonyms"), 8, lower=True)
     synonyms = list(dict.fromkeys([*synonyms, *_plural_variants(must_terms)]))[:8]
+    raw_place = data.get("place")
+    place = " ".join(raw_place.split()) if isinstance(raw_place, str) and raw_place.strip() else fallback.place
+    if place is not None and len(place) > 60:
+        place = None
     return SearchPlan(
         phrase=fallback.phrase,
         queries=queries,
         must_terms=must_terms,
         synonyms=synonyms,
         country=country or fallback.country,
+        place=place,
         domains=domains,
         tickers=list(dict.fromkeys([*fallback.tickers, *llm_tickers]))[:5],
         source="llm",

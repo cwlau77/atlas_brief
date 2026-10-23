@@ -437,3 +437,23 @@ async def test_fallback_briefing_has_no_links(monkeypatch, make_article):
     b = await synthesize_briefing("trade", [make_article(title="Sanction dispute widens")])
     assert b.emerging_tensions
     assert all(t.related_developments is None for t in b.emerging_tensions)
+
+
+@pytest.mark.asyncio
+async def test_on_section_reports_each_section(monkeypatch, make_article):
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        return "Background." if section == "context" else json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    seen = []
+
+    async def on_section(name):
+        seen.append(name)
+
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1")], on_section=on_section)
+    assert sorted(seen) == ["alerts", "developments", "signals"]

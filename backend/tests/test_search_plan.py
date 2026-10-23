@@ -242,3 +242,28 @@ def test_market_alone_is_not_a_finance_cue():
 def test_llm_prompt_reserves_finance_for_market_topics():
     from backend.search_plan import PLAN_SYSTEM_PROMPT
     assert "only when" in PLAN_SYSTEM_PROMPT.split('"domains"')[1].split("\n")[0]
+
+
+def test_rule_plan_finds_subject_place():
+    sudan = rule_plan("Sudan's ceasefire talks")
+    hormuz = rule_plan("shipping in the Strait of Hormuz")
+    assert sudan.place == "Sudan"
+    assert hormuz.place == "Strait of Hormuz"
+    assert sudan.country is None and hormuz.country is None
+
+
+def test_plan_place_is_null_for_placeless_topics():
+    assert rule_plan("chip export controls").place is None
+
+
+def test_llm_place_is_clamped():
+    from backend.search_plan import _clamp
+    assert _clamp({"queries": ["x"], "place": "  Iran "}, rule_plan("x")).place == "Iran"
+    fallback = rule_plan("Sudan ceasefire")
+    assert _clamp({"queries": ["x"], "place": 7}, fallback).place == "Sudan"
+    assert _clamp({"queries": ["x"], "place": "  "}, fallback).place == "Sudan"
+    assert _clamp({"queries": ["x"], "place": "y" * 61}, fallback).place is None
+
+
+def test_country_unchanged_by_place():
+    assert rule_plan("housing costs in the UK").country == "GB"

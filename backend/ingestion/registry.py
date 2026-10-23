@@ -71,26 +71,50 @@ async def _run(source: Source, plan: SearchPlan, client: httpx.AsyncClient) -> t
     return articles, SourceStat(len(articles), status, int((time.monotonic() - start) * 1000))
 
 
-async def ingest(plan: SearchPlan, sources: list[Source] | None = None) -> IngestResult:
-    sources = SOURCES if sources is None else sources
+def active_sources(plan: SearchPlan, sources: list[Source] | None = None) -> tuple[list[Source], list[str]]:
+    """The sources that will run for this plan, and the names skipped for a missing key.
+    Finance-only sources sit out non-finance plans without counting as skipped."""
     active: list[Source] = []
     skipped: list[str] = []
-    for source in sources:
+    for source in SOURCES if sources is None else sources:
         if source.finance_only and not plan.is_finance:
             continue
         if not source.enabled():
             skipped.append(source.name)
             continue
         active.append(source)
+    return active, skipped
+
+
+OnSource = Callable[[str, SourceStat, list[Article]], Awaitable[None]]
+
+
+async def _report(on_source: OnSource | None, name: str, stat: SourceStat, articles: list[Article]) -> None:
+    if on_source is None:
+        return
+    try:
+        await on_source(name, stat, articles)
+    except Exception:  # progress reporting must never fail the briefing
+        logger.warning("on_source callback failed for source=%s", name, exc_info=True)
+
+
+async def ingest(plan: SearchPlan, sources: list[Source] | None = None, on_source: OnSource | None = None) -> IngestResult:
+    active, skipped = active_sources(plan, sources)
 
     stats: dict[str, SourceStat] = {}
     by_source: dict[str, list[Article]] = {}
+
+    async def run(source: Source, client: httpx.AsyncClient) -> tuple[list[Article], SourceStat]:
+        articles, stat = await _run(source, plan, client)
+        await _report(on_source, source.name, stat, articles)
+        return articles, stat
+
     async with httpx.AsyncClient(
         timeout=settings.source_timeout_seconds,
         follow_redirects=True,
         headers={"User-Agent": USER_AGENT},
     ) as client:
-        tasks = {asyncio.create_task(_run(s, plan, client)): s for s in active}
+        tasks = {asyncio.create_task(run(s, client)): s for s in active}
         if tasks:
             done, pending = await asyncio.wait(tasks, timeout=settings.ingest_deadline_seconds)
             for task in pending:
@@ -100,6 +124,9 @@ async def ingest(plan: SearchPlan, sources: list[Source] | None = None) -> Inges
                 logger.warning("source=%s status=deadline", name)
             if pending:
                 await asyncio.gather(*pending, return_exceptions=True)
+                for task in pending:
+                    name = tasks[task].name
+                    await _report(on_source, name, stats[name], [])
             for task in done:
                 articles, stat = task.result()
                 name = tasks[task].name

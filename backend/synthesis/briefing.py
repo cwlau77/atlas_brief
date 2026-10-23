@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from typing import TypeVar
 
@@ -442,7 +442,9 @@ async def _optional_section(section: str, focus: str, articles: list[Article]) -
         return {}
 
 
-async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
+async def synthesize_briefing(
+    focus: str, articles: list[Article], on_section: Callable[[str], Awaitable[None]] | None = None,
+) -> Briefing:
     """Write the briefing with three parallel section calls and return it.
 
     Historical context for the key developments starts as soon as they are
@@ -450,6 +452,7 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
     SynthesisUnavailableError when no key is configured (unless DEMO_MODE opts
     into the keyword fallback) and SynthesisFailedError when the key
     developments can't be produced; the other sections are left empty if they fail.
+    on_section, when given, is awaited with each section's name as it lands.
     """
     if not settings.anthropic_api_key:
         if settings.demo_mode:
@@ -472,7 +475,20 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
             logger.warning("commons lookup failed: %s", type(exc).__name__)
             return {}
 
-    signals_task = asyncio.create_task(_optional_section("signals", focus, articles))
+    async def report(name: str) -> None:
+        if on_section is None:
+            return
+        try:
+            await on_section(name)
+        except Exception:  # progress reporting must never fail the briefing
+            logger.warning("on_section callback failed for section=%s", name, exc_info=True)
+
+    async def reported(name: str) -> dict:
+        data = await _optional_section(name, focus, articles)
+        await report(name)
+        return data
+
+    signals_task = asyncio.create_task(reported("signals"))
 
     async def linked_signals(devs: list[KeyDevelopment]):
         signals = await signals_task
@@ -484,6 +500,7 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
             "developments", focus, articles,
             lambda data: briefing_from_data({"key_developments": data.get("key_developments", [])}, focus, articles),
         )
+        await report("developments")
         _, candidates, links = await asyncio.gather(
             enrich_with_historical_context(partial),
             commons_candidates(partial.key_developments),
@@ -495,7 +512,7 @@ async def synthesize_briefing(focus: str, articles: list[Article]) -> Briefing:
         (devs, candidates, (tension_links, contradiction_links)), signals, alerts = await asyncio.gather(
             developments(),
             signals_task,
-            _optional_section("alerts", focus, articles),
+            reported("alerts"),
         )
     except BaseException:
         signals_task.cancel()

@@ -1,12 +1,18 @@
+import asyncio
+import json
 import logging
 import time
+from collections import Counter
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from backend import turnstile
 from backend.config import settings
 from backend.ingestion import ingest
+from backend.ingestion.registry import active_sources
 from backend.models import Briefing, BriefingRequest
 from backend.processing import deduplicate, embed_texts
 from backend.processing.rerank import rank_articles
@@ -98,8 +104,11 @@ def _missing_key_hint(skipped: list[str]) -> str:
     return f" Sources skipped for missing API keys: {', '.join(skipped)}." if skipped else ""
 
 
-@app.post("/briefing", response_model=Briefing)
-async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
+Emit = Callable[[dict], Awaitable[None]]
+
+
+async def _admit(request: Request) -> None:
+    """Per-IP rate limit, then Turnstile: the checks every briefing request passes, cached or not."""
     if settings.rate_limit_per_minute > 0 and not _limiter.allow(_client_ip(request)):
         raise HTTPException(
             status_code=429,
@@ -113,22 +122,96 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
             detail="We couldn't verify this request came from a person. Reload the page and try again.",
         )
 
-    focus = req.focus.strip()
-    cache_key = focus.lower()
 
+def _cached(focus: str) -> Briefing | None:
     if settings.cache_ttl_minutes > 0:
-        cached = _briefing_cache.get(cache_key)
+        cached = _briefing_cache.get(focus.lower())
         if cached and cached[1] > time.time():
             logger.info("cache hit for focus=%r", focus)
             return cached[0]
+    return None
 
-    # Cached briefings above are free; everything below spends API credit.
+
+def _spend_budget(focus: str) -> None:
+    # Cached briefings are free; everything after this spends API credit.
     if not _budget.allow():
         logger.warning("briefing budget exhausted; refusing focus=%r", focus)
         raise HTTPException(
             status_code=429,
             detail="Atlas has reached its briefing limit for now. Please try again later.",
         )
+
+
+# Strong references to running stream pipelines, so a disconnected client's pipeline isn't garbage-collected.
+_pipeline_tasks: set[asyncio.Task] = set()
+
+
+async def _lines(events: list[dict]):
+    for event in events:
+        yield json.dumps(event) + "\n"
+
+
+def _ndjson_response(body) -> StreamingResponse:
+    return StreamingResponse(
+        body, media_type="application/x-ndjson", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.post("/briefing", response_model=Briefing)
+async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
+    await _admit(request)
+    focus = req.focus.strip()
+    if cached := _cached(focus):
+        return cached
+    _spend_budget(focus)
+    return await _run_pipeline(focus, None)
+
+
+@app.post("/briefing/stream")
+async def briefing_stream_endpoint(req: BriefingRequest, request: Request) -> StreamingResponse:
+    """/briefing's pipeline as NDJSON progress events, ending in a briefing or an error event.
+    The up-front checks fail as plain HTTP errors, exactly like /briefing."""
+    await _admit(request)
+    focus = req.focus.strip()
+    if cached := _cached(focus):
+        return _ndjson_response(_lines([{"type": "briefing", "briefing": cached.model_dump(mode="json")}]))
+    _spend_budget(focus)
+
+    queue: asyncio.Queue[dict | None] = asyncio.Queue()
+
+    async def run() -> None:
+        try:
+            briefing = await _run_pipeline(focus, queue.put)
+            await queue.put({"type": "briefing", "briefing": briefing.model_dump(mode="json")})
+        except HTTPException as exc:
+            await queue.put({"type": "error", "status": exc.status_code, "detail": exc.detail})
+        except Exception:
+            logger.exception("streamed briefing failed for focus=%r", focus)
+            await queue.put({"type": "error", "status": 500, "detail": "Something went wrong while generating the briefing."})
+        finally:
+            await queue.put(None)
+
+    # The pipeline runs on even if the client disconnects, so the briefing still reaches the cache.
+    task = asyncio.create_task(run())
+    _pipeline_tasks.add(task)
+    task.add_done_callback(_pipeline_tasks.discard)
+
+    async def events():
+        while (event := await queue.get()) is not None:
+            yield json.dumps(event) + "\n"
+
+    return _ndjson_response(events())
+
+
+async def _run_pipeline(focus: str, emit: Emit | None) -> Briefing:
+    """Plan, ingest, rank and synthesize one briefing, then cache it. Raises HTTPException
+    with /briefing's status and detail. With emit, progress events are reported as they happen."""
+
+    async def report(event: dict) -> None:
+        try:
+            await emit(event)
+        except Exception:  # progress reporting must never fail the briefing
+            logger.warning("progress emit failed for event=%s", event.get("type"), exc_info=True)
 
     started = time.monotonic()
     steps: dict[str, int] = {}
@@ -140,7 +223,24 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
 
     plan = await plan_search(focus)
     mark = lap("plan", started)
-    ingest_result = await ingest(plan)
+    if emit:
+        await report({
+            "type": "plan", "place": plan.place, "queries": len(plan.queries), "is_finance": plan.is_finance,
+            "sources": [s.name for s in active_sources(plan)[0]],
+        })
+
+        async def on_source(name, stat, found) -> None:
+            await report({
+                "type": "source", "name": name, "count": stat.count, "status": stat.status,
+                "outlets": dict(Counter(a.source for a in found)),
+            })
+
+        async def on_section(name: str) -> None:
+            await report({"type": "section", "name": name})
+
+        ingest_result = await ingest(plan, on_source=on_source)
+    else:
+        ingest_result = await ingest(plan)
     mark = lap("ingest", mark)
     articles = dedupe_exact(ingest_result.articles)
     merged_count = len(ingest_result.articles)
@@ -156,7 +256,11 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     rank_result = await rank_articles(focus, plan, articles, embeddings)
     articles = rank_result.articles
     mark = lap("rank", mark)
-
+    if emit:
+        await report({
+            "type": "ranked", "merged": merged_count, "deduped": deduped_count, "kept": len(articles),
+            "outlets": len({a.source for a in ingest_result.articles}),
+        })
     def log_pipeline() -> None:
         logger.info(
             "briefing pipeline focus=%r plan=%s queries=%s country=%s domains=%s sources=%s skipped=%s "
@@ -180,7 +284,10 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
 
     try:
         # Writes the sections in parallel; historical context is added inside, overlapping them.
-        briefing = await synthesize_briefing(focus, articles)
+        if emit:
+            briefing = await synthesize_briefing(focus, articles, on_section=on_section)
+        else:
+            briefing = await synthesize_briefing(focus, articles)
     except SynthesisUnavailableError:
         raise HTTPException(
             status_code=503,
@@ -200,5 +307,5 @@ async def briefing_endpoint(req: BriefingRequest, request: Request) -> Briefing:
     briefing = enforce_url_allowlist(briefing, {a.url for a in articles})
 
     if settings.cache_ttl_minutes > 0:
-        _briefing_cache[cache_key] = (briefing, time.time() + settings.cache_ttl_minutes * 60)
+        _briefing_cache[focus.lower()] = (briefing, time.time() + settings.cache_ttl_minutes * 60)
     return briefing

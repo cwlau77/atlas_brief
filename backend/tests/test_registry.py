@@ -60,3 +60,27 @@ async def test_disabled_sources_are_reported_and_finance_sources_gated(make_arti
     finance = SearchPlan(phrase="nvda", queries=["nvda"], domains=["finance"])
     result = await ingest(finance, sources)
     assert result.stats["finnhub"].count == 1
+
+
+@pytest.mark.asyncio
+async def test_on_source_fires_per_active_source(make_article, monkeypatch):
+    monkeypatch.setattr(settings, "source_timeout_seconds", 5.0)
+    monkeypatch.setattr(settings, "ingest_deadline_seconds", 0.05)
+    seen = {}
+
+    async def on_source(name, stat, articles):
+        seen[name] = (stat.status, len(articles))
+
+    await ingest(rule_plan("climate"), [_source("rss", [make_article()]), _source("gdelt", [make_article()], delay=1.0)], on_source=on_source)
+    assert seen == {"rss": ("ok", 1), "gdelt": ("deadline", 0)}
+
+
+@pytest.mark.asyncio
+async def test_on_source_failure_does_not_fail_ingest(make_article):
+    a, b = make_article(title="A"), make_article(title="B")
+
+    async def on_source(name, stat, articles):
+        raise RuntimeError("callback bug")
+
+    result = await ingest(rule_plan("climate"), [_source("rss", [a]), _source("gdelt", [b])], on_source=on_source)
+    assert result.articles == [a, b]
