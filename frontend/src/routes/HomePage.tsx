@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AskForm } from '../components/AskForm'
 import { Contours, type ContourCenter } from '../components/Contours'
+import { HomeLede } from '../components/HomeLede'
 import { HowAtlasReads } from '../components/HowAtlasReads'
 import { RotatingHeadline } from '../components/RotatingHeadline'
 import { TopicWire } from '../components/TopicWire'
@@ -58,10 +59,7 @@ export function HomePage() {
         <div className="home-copy">
           <p className="eyebrow label"><span>{clock.day}</span><span>{clock.time}</span><span>Global intelligence</span></p>
           <RotatingHeadline />
-          <p className="home-lede">
-            Atlas searches up to thirteen news sources and 26 newsroom feeds, then tells you{' '}
-            <em>what changed, where it happened,</em> and what to read next.
-          </p>
+          <HomeLede info={sources} />
           <div className="home-ask">
             <AskForm id="home-ask" loading={loading} error={error} onGenerate={generate} onRetry={retry} placeholder={placeholder} prefill={prefill} />
             <TopicWire fallback={SUGGESTIONS} timeZone={settings.timeZone} onPick={(t) => {
