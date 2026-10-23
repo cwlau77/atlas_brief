@@ -12,6 +12,7 @@ from backend.search_plan import SearchPlan
 logger = logging.getLogger("briefing.newsdata")
 
 SOURCE_NAME = "newsdata"
+SOURCE_LABEL = "NewsData.io"
 FINANCE_ONLY = False
 NEWSDATA_LATEST = "https://newsdata.io/api/1/latest"
 _MAX_QUERY_CHARS = 100  # NewsData rejects longer q values

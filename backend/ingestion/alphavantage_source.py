@@ -11,6 +11,7 @@ from backend.search_plan import SearchPlan
 logger = logging.getLogger("briefing.alphavantage")
 
 SOURCE_NAME = "alphavantage"
+SOURCE_LABEL = "Alpha Vantage"
 FINANCE_ONLY = True
 ALPHAVANTAGE_QUERY = "https://www.alphavantage.co/query"
 _TOPICS = {"finance": "financial_markets,economy_macro", "tech": "technology"}

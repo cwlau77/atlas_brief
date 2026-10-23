@@ -10,6 +10,7 @@ from backend.models import Article
 from backend.search_plan import SearchPlan
 
 SOURCE_NAME = "guardian"
+SOURCE_LABEL = "The Guardian"
 FINANCE_ONLY = False
 GUARDIAN_SEARCH = "https://content.guardianapis.com/search"
 

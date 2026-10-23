@@ -8,6 +8,7 @@ from backend.models import Article
 from backend.search_plan import SearchPlan
 
 SOURCE_NAME = "brave"
+SOURCE_LABEL = "Brave Search"
 FINANCE_ONLY = False
 BRAVE_NEWS = "https://api.search.brave.com/res/v1/news/search"
 

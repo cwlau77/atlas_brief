@@ -10,6 +10,7 @@ from backend.models import Article
 from backend.search_plan import SearchPlan
 
 SOURCE_NAME = "finnhub"
+SOURCE_LABEL = "Finnhub"
 FINANCE_ONLY = True
 FINNHUB_MARKET_NEWS = "https://finnhub.io/api/v1/news"
 FINNHUB_COMPANY_NEWS = "https://finnhub.io/api/v1/company-news"

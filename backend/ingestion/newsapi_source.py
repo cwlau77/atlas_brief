@@ -12,6 +12,7 @@ from backend.search_plan import SearchPlan
 logger = logging.getLogger("briefing.newsapi")
 
 SOURCE_NAME = "newsapi"
+SOURCE_LABEL = "NewsAPI"
 FINANCE_ONLY = False
 NEWSAPI_EVERYTHING = "https://newsapi.org/v2/everything"
 

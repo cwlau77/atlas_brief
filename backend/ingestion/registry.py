@@ -26,6 +26,7 @@ class Source:
     name: str
     fetch: Callable[[SearchPlan, httpx.AsyncClient], Awaitable[list[Article]]]
     enabled: Callable[[], bool]
+    label: str = ""
     finance_only: bool = False
 
 
@@ -48,6 +49,7 @@ def source_from_module(module: ModuleType) -> Source:
         name=module.SOURCE_NAME,
         fetch=module.fetch,
         enabled=module.enabled,
+        label=module.SOURCE_LABEL,
         finance_only=getattr(module, "FINANCE_ONLY", False),
     )
 

@@ -8,6 +8,7 @@ from backend.models import Article
 from backend.search_plan import SearchPlan
 
 SOURCE_NAME = "gnews"
+SOURCE_LABEL = "GNews"
 FINANCE_ONLY = False
 GNEWS_SEARCH = "https://gnews.io/api/v4/search"
 

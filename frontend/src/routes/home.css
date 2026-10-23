@@ -115,3 +115,6 @@
   .home-copy { padding-top: var(--space-5); border-top: 1px solid var(--rule); }
   .home-globe { width: 100%; margin: 0 auto; max-width: 520px; justify-self: center; order: -1; }
 }
+.provenance a { color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+.provenance a:hover { color: var(--accent); }
+.provenance a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

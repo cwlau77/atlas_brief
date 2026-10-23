@@ -8,6 +8,7 @@ from backend.models import Article
 from backend.search_plan import SearchPlan
 
 SOURCE_NAME = "exa"
+SOURCE_LABEL = "Exa"
 FINANCE_ONLY = False
 EXA_SEARCH = "https://api.exa.ai/search"
 

@@ -8,6 +8,7 @@ from backend.models import Article
 from backend.search_plan import SearchPlan
 
 SOURCE_NAME = "marketaux"
+SOURCE_LABEL = "Marketaux"
 FINANCE_ONLY = True
 MARKETAUX_NEWS = "https://api.marketaux.com/v1/news/all"
 

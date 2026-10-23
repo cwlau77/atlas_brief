@@ -18,6 +18,7 @@ from backend.search_plan import SearchPlan
 logger = logging.getLogger("briefing.google_news")
 
 SOURCE_NAME = "google_news"
+SOURCE_LABEL = "Google News"
 FINANCE_ONLY = False
 GOOGLE_NEWS_SEARCH = "https://news.google.com/rss/search"
 

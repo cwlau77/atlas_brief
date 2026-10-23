@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { AskForm } from '../components/AskForm'
 import { Contours, type ContourCenter } from '../components/Contours'
+import { HowAtlasReads } from '../components/HowAtlasReads'
 import { RotatingHeadline } from '../components/RotatingHeadline'
 import { TopicWire } from '../components/TopicWire'
 import { Globe } from '../globe/Globe'
 import { markIntroPlayed, shouldPlayIntro } from '../lib/intro'
+import { liveServiceCount, useSources } from '../lib/sources'
 import { useClock } from '../lib/useClock'
 import { useFocusOnArrival } from '../lib/useFocusOnArrival'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
@@ -24,6 +26,7 @@ const INTRO_MS = 2600
 export function HomePage() {
   const reduced = usePrefersReducedMotion()
   const { settings } = useAppState()
+  const sources = useSources()
   const clock = useClock(settings.timeZone, 15_000)
   const { generate, retry, loading, error } = useGenerateBriefing()
   useFocusOnArrival('home-ask')
@@ -67,7 +70,15 @@ export function HomePage() {
             }} disabled={loading} />
           </div>
           <p className="provenance label">
-            <span>Google News</span><span>NewsAPI</span><span>GDELT 2.0</span><span>26 newsroom feeds</span><span>Model-written, source-cited</span>
+            <span>{sources ? `${liveServiceCount(sources)} news services` : 'News services'}</span>
+            <span>{sources ? `${sources.feeds.count} newsroom feeds` : 'Newsroom feeds'}</span>
+            <span>Model-written, source-cited</span>
+            <a href="#how-atlas-reads" onClick={(e) => {
+              const target = document.getElementById('how-atlas-reads')
+              if (!target) return
+              e.preventDefault()
+              target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
+            }}>How Atlas reads ↓</a>
           </p>
         </div>
         <div className="home-globe">
@@ -79,6 +90,7 @@ export function HomePage() {
           />
         </div>
       </div>
+      <HowAtlasReads info={sources} />
     </section>
   )
 }

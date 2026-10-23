@@ -8,6 +8,7 @@ from backend.models import Article
 from backend.search_plan import SearchPlan
 
 SOURCE_NAME = "tavily"
+SOURCE_LABEL = "Tavily"
 FINANCE_ONLY = False
 TAVILY_SEARCH = "https://api.tavily.com/search"
 

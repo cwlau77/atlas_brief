@@ -15,6 +15,7 @@ from backend.search_plan import SearchPlan
 logger = logging.getLogger("briefing.rss")
 
 SOURCE_NAME = "rss"
+SOURCE_LABEL = "Newsroom feeds"
 FINANCE_ONLY = False
 
 # Deliberately spans regions: a "global briefing" product fed only by Western
@@ -56,6 +57,30 @@ RSS_FEEDS: list[tuple[str, str]] = [
     ("Investing.com", "https://www.investing.com/rss/news.rss"),
     ("Financial Times", "https://www.ft.com/rss/home"),
 ]
+
+
+_OUTLET_COLLAPSE = {
+    "New York Times World": "New York Times",
+    "New York Times U.S.": "New York Times",
+    "New York Times Technology": "New York Times",
+    "NPR World": "NPR",
+    "NPR News": "NPR",
+    "The Guardian World": "The Guardian",
+    "BBC World": "BBC",
+    "CNN World": "CNN",
+    "Fox News World": "Fox News",
+    "ABC News International": "ABC News",
+    "CBS News World": "CBS News",
+    "CNBC Top News": "CNBC",
+}
+
+
+def feed_outlets() -> list[str]:
+    """Distinct outlets in RSS_FEEDS order, with an outlet's section feeds collapsed into one name."""
+    seen: dict[str, None] = {}
+    for name, _ in RSS_FEEDS:
+        seen.setdefault(_OUTLET_COLLAPSE.get(name, name), None)
+    return list(seen)
 
 
 def _entry_to_article(outlet: str, entry) -> Article | None:

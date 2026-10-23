@@ -13,6 +13,7 @@ from backend.processing.rerank import rank_articles
 from backend.processing.urls import dedupe_exact
 from backend.rate_limit import GlobalBudget, SlidingWindowLimiter
 from backend.search_plan import plan_search
+from backend.sources_info import sources_payload
 from backend.trending import Trending, get_trending
 from backend.synthesis import (
     SynthesisFailedError,
@@ -65,6 +66,12 @@ async def health() -> dict[str, str]:
 async def trending_endpoint() -> Trending:
     """Timed topics for Home's "On the wire" list; empty when they can't be produced (Home shows its fixed suggestions)."""
     return await get_trending()
+
+
+@app.get("/sources")
+async def sources_endpoint() -> dict:
+    """What Atlas reads, from live config: Home's source counts and its "How Atlas reads" list."""
+    return sources_payload()
 
 
 @app.get("/", include_in_schema=False)

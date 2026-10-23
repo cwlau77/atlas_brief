@@ -13,6 +13,7 @@ from backend.search_plan import SearchPlan
 logger = logging.getLogger("briefing.gdelt")
 
 SOURCE_NAME = "gdelt"
+SOURCE_LABEL = "GDELT 2.0"
 FINANCE_ONLY = False
 GDELT_DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc"
 
