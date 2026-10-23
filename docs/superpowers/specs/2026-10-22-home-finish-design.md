@@ -277,7 +277,9 @@ The owner picked **option B**: a short provenance row plus a new section lower o
 - **The globe target:** the client flies only to the plan's `place`. When a named place doesn't resolve (for example "Donbas"), it tries the focus phrase. A null place never falls back to the focus, so nothing is guessed.
 - **The readout** runs in every globe mode, not only on the loading screen, and the coordinates now read `15.50° N` (with a space).
 - **`FEED_CITIES`:** AllAfrica is placed at its Washington, DC headquarters, and Investing.com in Tel Aviv.
-- **The readout table** gives Congo (Brazzaville) its own centroid. `centroids.ts` shares DRC's coordinates for it.
+- **The readout's place** is now the country the point is *in*, from the world-atlas countries-110m polygons that the land points already use. The spec's nearest centroid within 800 km named neighbours wrongly near big countries (Moscow came out as Belarus, Kashgar as Kyrgyzstan with Kyrgyz time). Points off the coarse coastlines, and very small states such as Singapore, show coordinates only.
+- **Arcs** draw in over about 700 ms on the loading screen and appear whole under reduced motion. The briefing page's route arcs are unchanged.
+- **An explicit `"place": null` from the planner** means no place. Only a missing or unusable value falls back to the rules' word match.
 - **The phrase transition** is a fade-up in place: the heading drops in first in the ledger's stagger. It isn't a FLIP from the input.
 - **On an error,** the hook also pops its pushed history entry, so Back after an error doesn't land on a dead loading state.
 
