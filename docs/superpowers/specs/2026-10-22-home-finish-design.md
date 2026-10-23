@@ -269,3 +269,15 @@ The owner picked **option B**: a short provenance row plus a new section lower o
 - **Tests and checks:** all of the above tests pass, plus `npm run build` and `npm run lint`.
 - **Notes:** the spec's notes list any deviations.
 - **After the owner merges and deploys:** check one live briefing to confirm that Vercel's rewrite to Render passes the stream through unbuffered. If it buffers, the fallback behaviour above is acceptable, and the fix becomes a follow-up, not a blocker.
+
+## Notes (from the build, 2026-10-23)
+
+- **Client disconnect:** the stream's pipeline task is not cancelled when the client goes away. It runs to the end and fills the cache, so a retry of the same focus is instant.
+- **`find_place`** lives in `backend/place_names.py`, because `backend/places.py` already held the GeoNames city resolver.
+- **The globe target:** the client flies only to the plan's `place`. When a named place doesn't resolve (for example "Donbas"), it tries the focus phrase. A null place never falls back to the focus, so nothing is guessed.
+- **The readout** runs in every globe mode, not only on the loading screen, and the coordinates now read `15.50° N` (with a space).
+- **`FEED_CITIES`:** AllAfrica is placed at its Washington, DC headquarters, and Investing.com in Tel Aviv.
+- **The readout table** gives Congo (Brazzaville) its own centroid. `centroids.ts` shares DRC's coordinates for it.
+- **The phrase transition** is a fade-up in place: the heading drops in first in the ledger's stagger. It isn't a FLIP from the input.
+- **On an error,** the hook also pops its pushed history entry, so Back after an error doesn't land on a dead loading state.
+

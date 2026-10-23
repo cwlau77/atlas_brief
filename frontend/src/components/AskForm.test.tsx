@@ -40,4 +40,10 @@ describe('AskForm prefill', () => {
     render({ text: 'Gaza', n: 2 })
     expect(input().value).toBe('Gaza')
   })
+
+  it('leaves loading progress to the ledger: no timed status line', () => {
+    render(undefined, true)
+    expect(container.querySelector('[role="status"]')).toBeNull()
+    expect(container.querySelector('button[type="submit"]')?.textContent).toBe('Briefing…')
+  })
 })

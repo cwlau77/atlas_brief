@@ -1,28 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { PlusIcon } from './icons'
 import './askform.css'
 
 const FREQUENCIES = ['daily', 'twice-daily', 'weekly'] as const
-
-// The free-tier backend sleeps when idle and synthesis takes tens of seconds. Say so.
-const STAGES: { after: number; text: string }[] = [
-  { after: 0, text: 'Contacting Atlas…' },
-  { after: 8, text: 'Waking the backend. Free hosting sleeps when idle, so this can take up to a minute…' },
-  { after: 25, text: 'Still working: gathering sources, removing duplicates, writing the brief…' },
-]
-
-function useStagedMessage(active: boolean): string {
-  const [elapsed, setElapsed] = useState(0)
-  useEffect(() => {
-    if (!active) {
-      setElapsed(0)
-      return
-    }
-    const t = window.setInterval(() => setElapsed((s) => s + 1), 1000)
-    return () => window.clearInterval(t)
-  }, [active])
-  return ([...STAGES].reverse().find((s) => elapsed >= s.after) ?? STAGES[0]).text
-}
 
 export function AskForm({ id, compact = false, loading, error, onGenerate, onRetry, placeholder = 'about the Strait of Hormuz', prefill }: {
   id: string
@@ -42,7 +22,6 @@ export function AskForm({ id, compact = false, loading, error, onGenerate, onRet
     setFocus(prefill.text)
   }
   const [frequency, setFrequency] = useState<string>('daily')
-  const stage = useStagedMessage(loading)
   const trimmed = focus.trim()
   const valid = trimmed.length >= 2 && trimmed.length <= 200
 
@@ -75,12 +54,6 @@ export function AskForm({ id, compact = false, loading, error, onGenerate, onRet
           {loading ? 'Briefing…' : <>Brief me<PlusIcon /></>}
         </button>
       </div>
-      {loading && (
-        <p className="ask-stage label" role="status">
-          <span className="ask-beacon" aria-hidden="true" />
-          {stage}
-        </p>
-      )}
       {error && !loading && (
         <div className="ask-error" role="alert">
           <p>{error}</p>

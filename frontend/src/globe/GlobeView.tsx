@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
-import { applyReadout } from './readout'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { applyReadout, formatReadout } from './readout'
 import { formatTime } from '../lib/time'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { attachDrag } from './controls'
-import type { GlobeArc } from './arcs'
+import { slerpArc, type GlobeArc } from './arcs'
 import { GlobeEngine, type GlobeHotspot } from './engine'
-import type { FollowTarget } from './follow'
-import { pointKey, topRegion, type RegionPoint } from './regions'
+import { feedCity } from './feedCities'
+import type { FollowTarget, LatLng } from './follow'
+import { pointKey, toVec3, topRegion, type RegionPoint } from './regions'
 import { StaticGlobe } from './StaticGlobe'
 import './globe.css'
 
@@ -18,6 +19,8 @@ const HERO_HOTSPOTS: GlobeHotspot[] = [
   { lat: 1.3, lng: 103.8, count: 2 },
 ]
 const NO_REGIONS: RegionPoint[] = []
+// The loading arcs are ultramarine: --accent, which --route-1 mirrors as a hex for WebGL.
+const ACCENT_HEX = '#1F3FE0'
 const CLOSE_DELAY_MS = 160
 const LABELED_COUNT = 5
 
@@ -43,6 +46,12 @@ export interface GlobeViewProps {
    * zoomedTo (the open carousel) wins over it.
    */
   follow?: FollowTarget
+  /**
+   * Hero mode, while a briefing builds: the story's place (null when it has none) and the
+   * newsroom feeds that returned articles. A target is flown to with arcs from the feeds'
+   * home cities; with none, those cities light up instead.
+   */
+  loading?: { target: LatLng | null; feedOutlets: string[] }
 }
 
 const NO_ARCS: GlobeArc[] = []
@@ -53,7 +62,7 @@ const CLICK_SLOP_PX = 5
 
 export default function GlobeView({
   mode, label, regions = NO_REGIONS, timeZone = 'auto', playIntro = false, scanning = false, onSelectStory,
-  onFocusPoint, zoomedTo = null, arcs = NO_ARCS, litArcs = NOTHING_LIT, onArcHover, follow = null,
+  onFocusPoint, zoomedTo = null, arcs = NO_ARCS, litArcs = NOTHING_LIT, onArcHover, follow = null, loading,
 }: GlobeViewProps) {
   const reduced = usePrefersReducedMotion()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -73,7 +82,22 @@ export default function GlobeView({
   const [pinned, setPinned] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
 
-  const spots: GlobeHotspot[] = mode === 'hero' ? HERO_HOTSPOTS : regions.map((r) => ({ lat: r.lat, lng: r.lng, count: r.count }))
+  const target = mode === 'hero' ? loading?.target ?? null : null
+  const feedKey = mode === 'hero' && loading ? loading.feedOutlets.join('|') : ''
+  const feedCities = useMemo(() => {
+    const seen = new Map<string, LatLng>()
+    for (const outlet of feedKey ? feedKey.split('|') : []) {
+      const city = feedCity(outlet)
+      if (city) seen.set(`${city.lat},${city.lng}`, city)
+    }
+    return [...seen.values()]
+  }, [feedKey])
+  const loadingSpots: GlobeHotspot[] | null = !loading || mode !== 'hero'
+    ? null
+    : target ? [{ ...target, count: 3 }] : feedCities.length ? feedCities.map((c) => ({ ...c, count: 2 })) : null
+  const spots: GlobeHotspot[] = mode === 'hero'
+    ? loadingSpots ?? HERO_HOTSPOTS
+    : regions.map((r) => ({ lat: r.lat, lng: r.lng, count: r.count }))
   const spotsKey = spots.map((s) => `${s.lat},${s.lng},${s.count}`).join('|')
   // Read inside the hotspot-push effect below, which intentionally keys off spotsKey
   // (a stable primitive) rather than the spots/regions array identities, which change every render.
@@ -117,8 +141,8 @@ export default function GlobeView({
     wrap.addEventListener('pointermove', onMove, { passive: true })
     wrap.addEventListener('pointerleave', onLeave)
 
-    engine.onFrame = ({ hotspots, readout }) => {
-      applyReadout(readoutEl, readout)
+    engine.onFrame = ({ hotspots, pointer }) => {
+      applyReadout(readoutEl, pointer && formatReadout(pointer.lat, pointer.lng, new Date()))
       hotspots.forEach((h, i) => {
         const el = hotRefs.current[i]
         if (!el) return
@@ -197,7 +221,21 @@ export default function GlobeView({
     return () => document.removeEventListener('keydown', onKey)
   }, [zoomable, zoomedTo, onFocusPoint])
 
-  const shownArcs = mode === 'briefing' ? arcs : NO_ARCS
+  // A newly named place is flown to once; dragging away from it afterwards is the reader's call.
+  const targetLat = target?.lat
+  const targetLng = target?.lng
+  useEffect(() => {
+    if (targetLat !== undefined && targetLng !== undefined) engineRef.current?.focusOn(targetLat, targetLng)
+  }, [targetLat, targetLng, engineVersion])
+
+  const loadingArcs = useMemo(() => {
+    if (targetLat === undefined || targetLng === undefined) return NO_ARCS
+    const to = toVec3(targetLat, targetLng)
+    return feedCities
+      .filter((c) => c.lat !== targetLat || c.lng !== targetLng)
+      .map((c) => ({ key: `feed:${c.lat},${c.lng}`, color: ACCENT_HEX, dashed: false, points: slerpArc(toVec3(c.lat, c.lng), to, 48, 0.12) }))
+  }, [feedCities, targetLat, targetLng])
+  const shownArcs = mode === 'briefing' ? arcs : loadingArcs
   useEffect(() => { engineRef.current?.setArcs(shownArcs) }, [shownArcs, engineVersion])
   useEffect(() => { engineRef.current?.setLitArcs(litArcs) }, [litArcs, engineVersion])
   const arcHoverRef = useRef(onArcHover)
@@ -209,8 +247,8 @@ export default function GlobeView({
 
   useEffect(() => { engineRef.current?.setScanning(scanning) }, [scanning, engineVersion])
   // Hold auto-spin while a hotspot is pinned open, a hotspot/the panel has keyboard focus,
-  // or the globe is following the reader.
-  const holdForFollow = !!following
+  // the globe is following the reader, or it has flown to a loading briefing's place.
+  const holdForFollow = !!following || target !== null
   useEffect(() => {
     engineRef.current?.setHold(pinned || focusedIndex !== null || holdForFollow)
   }, [pinned, focusedIndex, holdForFollow, engineVersion])

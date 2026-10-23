@@ -9,7 +9,7 @@ import { decodeLandPoints, toVec3 } from './regions'
 
 export interface GlobeHotspot { lat: number; lng: number; count: number }
 export interface HotspotScreen { x: number; y: number; visible: boolean }
-export interface FrameInfo { hotspots: HotspotScreen[]; readout: string | null }
+export interface FrameInfo { hotspots: HotspotScreen[]; pointer: LatLng | null }
 export interface EngineOptions { reducedMotion: boolean; playIntro: boolean; baseSpin: number }
 
 const CAMERA_Z = 5
@@ -154,7 +154,6 @@ function randomSphere(n: number): Float32Array {
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a))
-const fmtCoord = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(2)}°${v >= 0 ? pos : neg}`
 
 export class GlobeEngine {
   onFrame: ((info: FrameInfo) => void) | null = null
@@ -544,14 +543,14 @@ export class GlobeEngine {
     this.globe.updateMatrixWorld()
 
     this.overSphere = false
-    let readout: string | null = null
+    let pointer: LatLng | null = null
     if (this.pointer) {
       this.ray.setFromCamera(this.pointer, this.camera)
       if (this.ray.ray.intersectSphere(this.sphere, this.hit)) {
         this.overSphere = true
         const local = this.globe.worldToLocal(this.hit.clone()).normalize()
         this.mouseLocal.lerp(local, 0.18)
-        readout = `${fmtCoord(Math.asin(local.y) / DEG, 'N', 'S')}  ${fmtCoord(Math.atan2(local.x, local.z) / DEG, 'E', 'W')}`
+        pointer = { lat: Math.asin(local.y) / DEG, lng: Math.atan2(local.x, local.z) / DEG }
       }
     }
     if (this.pointerMoved && this.arcs.length) this.pickArc()
@@ -570,6 +569,6 @@ export class GlobeEngine {
     })
 
     this.renderer.render(this.scene, this.camera)
-    this.onFrame?.({ hotspots, readout })
+    this.onFrame?.({ hotspots, pointer })
   }
 }

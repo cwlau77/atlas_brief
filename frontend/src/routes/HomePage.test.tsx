@@ -2,13 +2,23 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { initialLedger, type LedgerState } from '../lib/ledger'
 import { SOURCES_CACHE_KEY } from '../lib/sources'
 import { AppStateProvider } from '../state/AppState'
 import { HomePage } from './HomePage'
 
-vi.mock('../globe/Globe', () => ({ Globe: () => null }))
+const hook = vi.hoisted(() => ({
+  state: { loading: false, ledger: null as LedgerState | null },
+  globeProps: [] as unknown[],
+}))
+vi.mock('../globe/Globe', () => ({
+  Globe: (props: unknown) => {
+    hook.globeProps.push(props)
+    return <div className="globe-stub" />
+  },
+}))
 vi.mock('../state/useGenerateBriefing', () => ({
-  useGenerateBriefing: () => ({ generate: vi.fn(), retry: vi.fn(), loading: false, error: null }),
+  useGenerateBriefing: () => ({ generate: vi.fn(), retry: vi.fn(), cancel: vi.fn(), error: null, ...hook.state }),
 }))
 
 const svc = (name: string, enabled: boolean, finance_only = false) => ({ name, label: name, enabled, finance_only })
@@ -59,5 +69,53 @@ describe('HomePage provenance row', () => {
     await render()
     expect(spans().slice(0, 2)).toEqual(['News services', 'Newsroom feeds'])
     expect(container.querySelector('section#how-atlas-reads')).not.toBeNull()
+  })
+})
+
+describe('HomePage loading screen', () => {
+  let container: HTMLDivElement
+  let root: Root
+  beforeEach(() => {
+    sessionStorage.clear()
+    hook.state = { loading: false, ledger: null }
+    hook.globeProps.length = 0
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
+  })
+  afterEach(() => {
+    act(() => root.unmount())
+    container.remove()
+    vi.unstubAllGlobals()
+  })
+  const render = async () => {
+    await act(async () => {
+      root.render(<MemoryRouter><AppStateProvider><HomePage /></AppStateProvider></MemoryRouter>)
+    })
+  }
+  const lastGlobe = () => hook.globeProps[hook.globeProps.length - 1] as { loading?: { target: unknown; feedOutlets: string[] } }
+
+  it('swaps the copy for the ledger and keeps the same globe', async () => {
+    await render()
+    const globe = container.querySelector('.globe-stub')
+    expect(container.querySelector('.home-copy')).not.toBeNull()
+
+    hook.state = { loading: true, ledger: initialLedger('Sudan ceasefire talks') }
+    await render()
+    expect(container.querySelector('.ledger h1')?.textContent).toBe('Sudan ceasefire talks')
+    expect(container.querySelector('.globe-stub')).toBe(globe)
+    expect(lastGlobe().loading).toBeUndefined()
+
+    hook.state = { loading: true, ledger: { ...initialLedger('Sudan ceasefire talks'), plan: { place: 'Sudan', queries: 4, sources: ['rss'] }, feedOutlets: { 'BBC World': 3 } } }
+    await render()
+    expect(lastGlobe().loading).toEqual({ target: { lat: 12.9, lng: 30.2 }, feedOutlets: ['BBC World'] })
+  })
+
+  it('places a placeless plan nowhere', async () => {
+    hook.state = { loading: true, ledger: { ...initialLedger('chip export controls'), plan: { place: null, queries: 3, sources: [] } } }
+    await render()
+    expect(lastGlobe().loading?.target).toBeNull()
   })
 })
