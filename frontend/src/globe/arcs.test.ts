@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ROUTE_COLORS, type Route } from '../lib/routes'
 import { makeBriefing } from '../test/fixtures'
-import { buildArcs, slerpArc } from './arcs'
+import { ARC_DRAW_MS, buildArcs, drawnPoints, slerpArc } from './arcs'
 import { devAnchor, toVec3, type Vec3 } from './regions'
 
 const len = (v: Vec3) => Math.hypot(v.x, v.y, v.z)
@@ -48,5 +48,16 @@ describe('buildArcs', () => {
     b.keyDevelopments[1] = { ...b.keyDevelopments[1], place: b.keyDevelopments[0].place }
     b.keyDevelopments[2] = { ...b.keyDevelopments[2], regions: ['Atlantis'] }
     expect(buildArcs(b, [route([0, 1]), route([0, 2], { key: 'tension-1' })])).toEqual([])
+  })
+})
+
+describe('drawnPoints', () => {
+  it('draws an arc in from its start, eased, then whole', () => {
+    expect(drawnPoints(0, 49)).toBe(0)
+    const mid = drawnPoints(ARC_DRAW_MS / 2, 49)
+    expect(mid).toBeGreaterThan(24)
+    expect(mid).toBeLessThan(49)
+    expect(drawnPoints(ARC_DRAW_MS, 49)).toBe(49)
+    expect(drawnPoints(ARC_DRAW_MS * 3, 49)).toBe(49)
   })
 })

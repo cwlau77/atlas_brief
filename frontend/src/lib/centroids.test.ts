@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveRegion } from './centroids'
+import { findPlaceIn, resolveRegion } from './centroids'
 
 describe('resolveRegion', () => {
   it('resolves exact country names case-insensitively', () => {
@@ -29,5 +29,13 @@ describe('resolveRegion', () => {
   it('returns null for unknown regions instead of guessing', () => {
     expect(resolveRegion('Atlantis')).toBeNull()
     expect(resolveRegion('')).toBeNull()
+  })
+})
+
+describe('findPlaceIn', () => {
+  it('finds a place on the ground in a phrase, never a pronoun or bloc', () => {
+    expect(findPlaceIn('tell us about Tigray')).toBeNull()
+    expect(findPlaceIn('NATO and EU summit')).toBeNull()
+    expect(findPlaceIn('shelling near Donbas in Ukraine')).toEqual({ lat: 48.4, lng: 31.2 })
   })
 })

@@ -228,8 +228,14 @@ def _clamp(data: dict, fallback: SearchPlan) -> SearchPlan:
     must_terms = _str_list(data.get("must_terms"), 4, lower=True) or fallback.must_terms
     synonyms = _str_list(data.get("synonyms"), 8, lower=True)
     synonyms = list(dict.fromkeys([*synonyms, *_plural_variants(must_terms)]))[:8]
-    raw_place = data.get("place")
-    place = " ".join(raw_place.split()) if isinstance(raw_place, str) and raw_place.strip() else fallback.place
+    # An explicit null is the planner saying "no one place"; only a missing or unusable value uses the rules.
+    raw_place = data.get("place", fallback.place)
+    if raw_place is None:
+        place = None
+    elif isinstance(raw_place, str) and raw_place.strip():
+        place = " ".join(raw_place.split())
+    else:
+        place = fallback.place
     if place is not None and len(place) > 60:
         place = None
     return SearchPlan(

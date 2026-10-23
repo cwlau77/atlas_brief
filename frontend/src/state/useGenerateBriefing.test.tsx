@@ -116,11 +116,19 @@ describe('useGenerateBriefing', () => {
     expect(back).not.toHaveBeenCalled()
   })
 
-  it('surfaces an error event as the error', async () => {
-    vi.spyOn(window.history, 'back').mockImplementation(() => {})
+  it('surfaces an error event as the error and drops the loading entry', async () => {
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {})
     api.requestBriefingStream.mockRejectedValue(new Error('No recent articles matched.'))
     await act(async () => { void hook.generate('Sudan ceasefire', 'daily') })
     expect(hook.error).toBe('No recent articles matched.')
     expect(hook.loading).toBe(false)
+    expect(back).toHaveBeenCalledTimes(1)
+  })
+
+  it('explains a timeout', async () => {
+    vi.spyOn(window.history, 'back').mockImplementation(() => {})
+    api.requestBriefingStream.mockRejectedValue(new DOMException('timed out', 'TimeoutError'))
+    await act(async () => { void hook.generate('Sudan ceasefire', 'daily') })
+    expect(hook.error).toMatch(/timed out/)
   })
 })

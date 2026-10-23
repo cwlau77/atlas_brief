@@ -267,3 +267,10 @@ def test_llm_place_is_clamped():
 
 def test_country_unchanged_by_place():
     assert rule_plan("housing costs in the UK").country == "GB"
+
+
+def test_llm_null_place_means_no_place():
+    from backend.search_plan import _clamp
+    # The planner read "Jordan Peterson" as a person; the rules' word match must not overrule it.
+    assert _clamp({"queries": ["jordan peterson"], "place": None}, rule_plan("Jordan Peterson")).place is None
+    assert _clamp({"queries": ["x"]}, rule_plan("Sudan ceasefire")).place == "Sudan"

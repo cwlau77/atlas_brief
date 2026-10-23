@@ -2,6 +2,8 @@
    finished rows ink, waiting rows the third ink. Progress never uses the heat colours. */
 .ledger { display: grid; gap: 20px; align-content: center; position: relative; z-index: 2; }
 .ledger-kicker { color: var(--ink-3); }
+.ledger-focus:focus { outline: none; }
+.ledger-focus:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .ledger-focus {
   font-weight: 600;
   font-size: clamp(2rem, 4.2vw, 3.4rem);

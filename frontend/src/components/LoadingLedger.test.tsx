@@ -99,4 +99,16 @@ describe('LoadingLedger', () => {
     render(ledgerOf([]), { reduced: true })
     expect(container.querySelector('.ledger')?.classList.contains('ledger-enter')).toBe(false)
   })
+
+  it('takes focus on its heading and announces each stage once', () => {
+    render(ledgerOf([]))
+    expect(document.activeElement).toBe(container.querySelector('h1'))
+    const status = () => container.querySelector('.ledger-announce')?.textContent
+    expect(status()).toBe('Planning the search')
+    render(ledgerOf([plan('Sudan')]))
+    expect(status()).toBe('Gathering sources')
+    render(ledgerOf([plan('Sudan'), { type: 'ranked', merged: 9, deduped: 9, kept: 4, outlets: 3 }]))
+    expect(status()).toBe('Writing the briefing')
+  })
 })
+

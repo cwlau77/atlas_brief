@@ -1,4 +1,6 @@
+import asyncio
 import json
+from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,11 +10,14 @@ from backend.config import settings
 from backend.ingestion.registry import IngestResult, SourceStat
 from backend.rate_limit import GlobalBudget, SlidingWindowLimiter
 
+# Fixed, so /briefing and the stream build identical briefings from it.
+PUBLISHED = datetime(2026, 10, 1, tzinfo=timezone.utc)
+
 
 @pytest.fixture
 def client(monkeypatch, make_article):
     async def fake_ingest(plan, on_source=None):
-        article = make_article(title=f"{plan.phrase} development one", source="BBC",
+        article = make_article(title=f"{plan.phrase} development one", source="BBC", published_at=PUBLISHED,
                                snippet=f"Latest on {plan.phrase}.", url="https://ex.com/dev1")
         if on_source:
             await on_source("rss", SourceStat(1, "ok", 5), [article])
@@ -43,7 +48,8 @@ def test_stream_success_order(client):
     assert events[1] == {"type": "source", "name": "rss", "count": 1, "status": "ok", "outlets": {"BBC": 1}}
     assert {"place", "queries", "is_finance", "sources"} <= set(events[0])
     plain = client.post("/briefing", json={"focus": "trade policy"}).json()
-    assert set(events[-1]["briefing"]) == set(plain)
+    streamed = events[-1]["briefing"]
+    assert {**streamed, "generated_at": None} == {**plain, "generated_at": None}
 
 
 def test_stream_cache_hit_emits_only_briefing(client, monkeypatch):
@@ -91,3 +97,27 @@ def test_stream_503_is_error_event(client, monkeypatch):
     events = _events(client.post("/briefing/stream", json={"focus": "trade policy"}))
     assert events[-1]["type"] == "error" and events[-1]["status"] == 503
     assert "ANTHROPIC_API_KEY" in events[-1]["detail"]
+
+
+def test_stream_turnstile_is_plain_http(client, monkeypatch):
+    monkeypatch.setattr(settings, "turnstile_secret_key", "secret")
+    plain = client.post("/briefing", json={"focus": "trade policy"})
+    res = client.post("/briefing/stream", json={"focus": "trade policy"})
+    assert res.status_code == plain.status_code == 403
+    assert res.json()["detail"] == plain.json()["detail"]
+
+
+def test_stream_budget_is_plain_http(client, monkeypatch):
+    monkeypatch.setattr(main, "_budget", GlobalBudget(per_hour=1, per_day=10))
+    assert client.post("/briefing/stream", json={"focus": "first topic"}).status_code == 200
+    res = client.post("/briefing/stream", json={"focus": "second topic"})
+    assert res.status_code == 429
+    assert "briefing limit" in res.json()["detail"].lower()
+
+
+def test_raising_emit_does_not_fail_the_pipeline(client):
+    async def emit(event):
+        raise RuntimeError("emit bug")
+
+    briefing = asyncio.run(main._run_pipeline("trade policy", emit))
+    assert briefing.focus == "trade policy"

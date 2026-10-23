@@ -1,175 +1,126 @@
-// The globe readout's place names: the nearest country to the pointer, from the
-// country entries of centroids.ts (aliases collapsed, blocs and regions left out,
-// so the readout always names a place on the ground). Local time is given only for
+// The globe readout's place names: the country a point is in, from world-atlas
+// countries-110m (the data the land points come from). Local time is given only for
 // single-zone countries; a multi-zone country gets null rather than a guessed time.
+// Points off the coarse 110m coastlines, and very small states, name nothing.
+import { feature } from 'topojson-client'
+import type { GeometryCollection, Topology } from 'topojson-specification'
+import countries110m from 'world-atlas/countries-110m.json'
 
-const RADIUS_KM = 800
-const EARTH_KM = 6371
+type Ring = [number, number][]
+type Poly = { name: string; rings: Ring[]; bbox: [number, number, number, number] }
 
-// [name, lat, lng, IANA zone or null for multi-zone countries]
-const COUNTRIES: [string, number, number, string | null][] = [
-  ['Afghanistan', 33.9, 67.7, 'Asia/Kabul'],
-  ['Albania', 41.2, 20.2, 'Europe/Tirane'],
-  ['Algeria', 28.0, 1.7, 'Africa/Algiers'],
-  ['Angola', -11.2, 17.9, 'Africa/Luanda'],
-  ['Argentina', -38.4, -63.6, null],
-  ['Armenia', 40.1, 45.0, 'Asia/Yerevan'],
-  ['Australia', -25.3, 133.8, null],
-  ['Austria', 47.5, 14.6, 'Europe/Vienna'],
-  ['Azerbaijan', 40.1, 47.6, 'Asia/Baku'],
-  ['Bangladesh', 23.7, 90.4, 'Asia/Dhaka'],
-  ['Belarus', 53.7, 27.9, 'Europe/Minsk'],
-  ['Belgium', 50.5, 4.5, 'Europe/Brussels'],
-  ['Bolivia', -16.3, -63.6, 'America/La_Paz'],
-  ['Bosnia', 43.9, 17.7, 'Europe/Sarajevo'],
-  ['Brazil', -14.2, -51.9, null],
-  ['Bulgaria', 42.7, 25.5, 'Europe/Sofia'],
-  ['Burkina Faso', 12.2, -1.6, 'Africa/Ouagadougou'],
-  ['Myanmar', 21.9, 95.9, 'Asia/Yangon'],
-  ['Cambodia', 12.6, 105.0, 'Asia/Phnom_Penh'],
-  ['Cameroon', 7.4, 12.4, 'Africa/Douala'],
-  ['Canada', 56.1, -106.3, null],
-  ['Chad', 15.5, 18.7, 'Africa/Ndjamena'],
-  ['Chile', -35.7, -71.5, null],
-  ['China', 35.9, 104.2, 'Asia/Shanghai'],
-  ['Colombia', 4.6, -74.3, 'America/Bogota'],
-  ['Congo', -0.7, 15.8, 'Africa/Brazzaville'],
-  ['Democratic Republic of the Congo', -4.0, 21.8, null],
-  ['Costa Rica', 9.7, -83.8, 'America/Costa_Rica'],
-  ['Croatia', 45.1, 15.2, 'Europe/Zagreb'],
-  ['Cuba', 21.5, -77.8, 'America/Havana'],
-  ['Cyprus', 35.1, 33.4, 'Asia/Nicosia'],
-  ['Czechia', 49.8, 15.5, 'Europe/Prague'],
-  ['Denmark', 56.3, 9.5, 'Europe/Copenhagen'],
-  ['Ecuador', -1.8, -78.2, 'America/Guayaquil'],
-  ['Egypt', 26.8, 30.8, 'Africa/Cairo'],
-  ['El Salvador', 13.8, -88.9, 'America/El_Salvador'],
-  ['Eritrea', 15.2, 39.8, 'Africa/Asmara'],
-  ['Estonia', 58.6, 25.0, 'Europe/Tallinn'],
-  ['Ethiopia', 9.1, 40.5, 'Africa/Addis_Ababa'],
-  ['Finland', 61.9, 25.7, 'Europe/Helsinki'],
-  ['France', 46.2, 2.2, 'Europe/Paris'],
-  ['Georgia', 42.3, 43.4, 'Asia/Tbilisi'],
-  ['Germany', 51.2, 10.5, 'Europe/Berlin'],
-  ['Ghana', 7.9, -1.0, 'Africa/Accra'],
-  ['Greece', 39.1, 21.8, 'Europe/Athens'],
-  ['Guatemala', 15.8, -90.2, 'America/Guatemala'],
-  ['Guinea', 9.9, -9.7, 'Africa/Conakry'],
-  ['Haiti', 19.0, -72.3, 'America/Port-au-Prince'],
-  ['Honduras', 15.2, -86.2, 'America/Tegucigalpa'],
-  ['Hungary', 47.2, 19.5, 'Europe/Budapest'],
-  ['Iceland', 64.9, -19.0, 'Atlantic/Reykjavik'],
-  ['India', 20.6, 79.0, 'Asia/Kolkata'],
-  ['Indonesia', -0.8, 113.9, null],
-  ['Iran', 32.4, 53.7, 'Asia/Tehran'],
-  ['Iraq', 33.2, 43.7, 'Asia/Baghdad'],
-  ['Ireland', 53.4, -8.2, 'Europe/Dublin'],
-  ['Israel', 31.0, 34.9, 'Asia/Jerusalem'],
-  ['Italy', 41.9, 12.6, 'Europe/Rome'],
-  ['Ivory Coast', 7.5, -5.5, 'Africa/Abidjan'],
-  ['Jamaica', 18.1, -77.3, 'America/Jamaica'],
-  ['Japan', 36.2, 138.3, 'Asia/Tokyo'],
-  ['Jordan', 30.6, 36.2, 'Asia/Amman'],
-  ['Kazakhstan', 48.0, 66.9, null],
-  ['Kenya', -0.02, 37.9, 'Africa/Nairobi'],
-  ['Kosovo', 42.6, 20.9, 'Europe/Belgrade'],
-  ['Kuwait', 29.3, 47.5, 'Asia/Kuwait'],
-  ['Kyrgyzstan', 41.2, 74.8, 'Asia/Bishkek'],
-  ['Laos', 19.9, 102.5, 'Asia/Vientiane'],
-  ['Latvia', 56.9, 24.6, 'Europe/Riga'],
-  ['Lebanon', 33.9, 35.9, 'Asia/Beirut'],
-  ['Libya', 26.3, 17.2, 'Africa/Tripoli'],
-  ['Lithuania', 55.2, 23.9, 'Europe/Vilnius'],
-  ['Madagascar', -18.8, 47.0, 'Indian/Antananarivo'],
-  ['Malawi', -13.3, 34.3, 'Africa/Blantyre'],
-  ['Malaysia', 4.2, 101.9, 'Asia/Kuala_Lumpur'],
-  ['Mali', 17.6, -4.0, 'Africa/Bamako'],
-  ['Mauritania', 21.0, -10.9, 'Africa/Nouakchott'],
-  ['Mexico', 23.6, -102.6, null],
-  ['Moldova', 47.4, 28.4, 'Europe/Chisinau'],
-  ['Mongolia', 46.9, 103.8, null],
-  ['Montenegro', 42.7, 19.4, 'Europe/Podgorica'],
-  ['Morocco', 31.8, -7.1, 'Africa/Casablanca'],
-  ['Mozambique', -18.7, 35.5, 'Africa/Maputo'],
-  ['Namibia', -22.6, 18.5, 'Africa/Windhoek'],
-  ['Nepal', 28.4, 84.1, 'Asia/Kathmandu'],
-  ['Netherlands', 52.1, 5.3, 'Europe/Amsterdam'],
-  ['New Zealand', -40.9, 174.9, 'Pacific/Auckland'],
-  ['Nicaragua', 12.9, -85.2, 'America/Managua'],
-  ['Niger', 17.6, 8.1, 'Africa/Niamey'],
-  ['Nigeria', 9.1, 8.7, 'Africa/Lagos'],
-  ['North Korea', 40.3, 127.5, 'Asia/Pyongyang'],
-  ['North Macedonia', 41.6, 21.7, 'Europe/Skopje'],
-  ['Norway', 60.5, 8.5, 'Europe/Oslo'],
-  ['Oman', 21.5, 55.9, 'Asia/Muscat'],
-  ['Pakistan', 30.4, 69.3, 'Asia/Karachi'],
-  ['Palestine', 31.9, 35.2, 'Asia/Gaza'],
-  ['Panama', 8.5, -80.8, 'America/Panama'],
-  ['Papua New Guinea', -6.3, 143.9, 'Pacific/Port_Moresby'],
-  ['Paraguay', -23.4, -58.4, 'America/Asuncion'],
-  ['Peru', -9.2, -75.0, 'America/Lima'],
-  ['Philippines', 12.9, 121.8, 'Asia/Manila'],
-  ['Poland', 51.9, 19.1, 'Europe/Warsaw'],
-  ['Portugal', 39.4, -8.2, 'Europe/Lisbon'],
-  ['Qatar', 25.4, 51.2, 'Asia/Qatar'],
-  ['Romania', 45.9, 25.0, 'Europe/Bucharest'],
-  ['Russia', 61.5, 105.3, null],
-  ['Rwanda', -1.9, 29.9, 'Africa/Kigali'],
-  ['Saudi Arabia', 23.9, 45.1, 'Asia/Riyadh'],
-  ['Senegal', 14.5, -14.5, 'Africa/Dakar'],
-  ['Serbia', 44.0, 21.0, 'Europe/Belgrade'],
-  ['Sierra Leone', 8.5, -11.8, 'Africa/Freetown'],
-  ['Singapore', 1.35, 103.8, 'Asia/Singapore'],
-  ['Slovakia', 48.7, 19.7, 'Europe/Bratislava'],
-  ['Slovenia', 46.2, 15.0, 'Europe/Ljubljana'],
-  ['Somalia', 5.2, 46.2, 'Africa/Mogadishu'],
-  ['South Africa', -30.6, 22.9, 'Africa/Johannesburg'],
-  ['South Korea', 35.9, 127.8, 'Asia/Seoul'],
-  ['South Sudan', 6.9, 31.3, 'Africa/Juba'],
-  ['Spain', 40.5, -3.7, 'Europe/Madrid'],
-  ['Sri Lanka', 7.9, 80.8, 'Asia/Colombo'],
-  ['Sudan', 12.9, 30.2, 'Africa/Khartoum'],
-  ['Sweden', 60.1, 18.6, 'Europe/Stockholm'],
-  ['Switzerland', 46.8, 8.2, 'Europe/Zurich'],
-  ['Syria', 34.8, 38.997, 'Asia/Damascus'],
-  ['Taiwan', 23.7, 121.0, 'Asia/Taipei'],
-  ['Tajikistan', 38.9, 71.3, 'Asia/Dushanbe'],
-  ['Tanzania', -6.4, 34.9, 'Africa/Dar_es_Salaam'],
-  ['Thailand', 15.9, 101.0, 'Asia/Bangkok'],
-  ['Tunisia', 33.9, 9.5, 'Africa/Tunis'],
-  ['Turkey', 39.0, 35.2, 'Europe/Istanbul'],
-  ['Turkmenistan', 38.97, 59.6, 'Asia/Ashgabat'],
-  ['Uganda', 1.4, 32.3, 'Africa/Kampala'],
-  ['Ukraine', 48.4, 31.2, 'Europe/Kyiv'],
-  ['United Arab Emirates', 23.4, 53.8, 'Asia/Dubai'],
-  ['United Kingdom', 55.4, -3.4, 'Europe/London'],
-  ['United States', 37.1, -95.7, null],
-  ['Uruguay', -32.5, -55.8, 'America/Montevideo'],
-  ['Uzbekistan', 41.4, 64.6, 'Asia/Tashkent'],
-  ['Venezuela', 6.4, -66.6, 'America/Caracas'],
-  ['Vietnam', 14.1, 108.3, 'Asia/Ho_Chi_Minh'],
-  ['Yemen', 15.6, 48.5, 'Asia/Aden'],
-  ['Zambia', -13.1, 27.8, 'Africa/Lusaka'],
-  ['Zimbabwe', -19.0, 29.2, 'Africa/Harare'],
-]
-
-const rad = (d: number) => (d * Math.PI) / 180
-
-function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const a = Math.sin(rad(lat2 - lat1) / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(rad(lng2 - lng1) / 2) ** 2
-  return 2 * EARTH_KM * Math.asin(Math.min(1, Math.sqrt(a)))
+// world-atlas's abbreviated names, as the readout shows them.
+const DISPLAY: Record<string, string> = {
+  'United States of America': 'United States',
+  'Dem. Rep. Congo': 'Democratic Republic of the Congo',
+  "Côte d'Ivoire": 'Ivory Coast',
+  'Bosnia and Herz.': 'Bosnia',
+  Macedonia: 'North Macedonia',
+  'S. Sudan': 'South Sudan',
+  'Dominican Rep.': 'Dominican Republic',
+  'Central African Rep.': 'Central African Republic',
+  'Eq. Guinea': 'Equatorial Guinea',
+  'Solomon Is.': 'Solomon Islands',
+  'Falkland Is.': 'Falkland Islands',
+  'W. Sahara': 'Western Sahara',
+  'N. Cyprus': 'Northern Cyprus',
+  'Fr. S. Antarctic Lands': 'French Southern Lands',
+  eSwatini: 'Eswatini',
 }
 
-/** The nearest country within 800 km of the point, or null (open ocean, the poles). */
-export function nearestCountry(lat: number, lng: number): { name: string; timeZone: string | null } | null {
-  let best: { name: string; timeZone: string | null } | null = null
-  let bestKm = RADIUS_KM
-  for (const [name, cLat, cLng, timeZone] of COUNTRIES) {
-    const km = distanceKm(lat, lng, cLat, cLng)
-    if (km < bestKm) {
-      bestKm = km
-      best = { name, timeZone }
+// IANA zone by display name, or null for multi-zone countries. A name missing here also gets null.
+const ZONES: Record<string, string | null> = {
+  Afghanistan: 'Asia/Kabul', Albania: 'Europe/Tirane', Algeria: 'Africa/Algiers', Angola: 'Africa/Luanda',
+  Antarctica: null, Argentina: null, Armenia: 'Asia/Yerevan', Australia: null, Austria: 'Europe/Vienna',
+  Azerbaijan: 'Asia/Baku', Bahamas: 'America/Nassau', Bangladesh: 'Asia/Dhaka', Belarus: 'Europe/Minsk',
+  Belgium: 'Europe/Brussels', Belize: 'America/Belize', Benin: 'Africa/Porto-Novo', Bhutan: 'Asia/Thimphu',
+  Bolivia: 'America/La_Paz', Bosnia: 'Europe/Sarajevo', Botswana: 'Africa/Gaborone', Brazil: null,
+  Brunei: 'Asia/Brunei', Bulgaria: 'Europe/Sofia', 'Burkina Faso': 'Africa/Ouagadougou',
+  Burundi: 'Africa/Bujumbura', Cambodia: 'Asia/Phnom_Penh', Cameroon: 'Africa/Douala', Canada: null,
+  'Central African Republic': 'Africa/Bangui', Chad: 'Africa/Ndjamena', Chile: null, China: 'Asia/Shanghai',
+  Colombia: 'America/Bogota', Congo: 'Africa/Brazzaville', 'Costa Rica': 'America/Costa_Rica',
+  Croatia: 'Europe/Zagreb', Cuba: 'America/Havana', Cyprus: 'Asia/Nicosia', Czechia: 'Europe/Prague',
+  'Democratic Republic of the Congo': null, Denmark: 'Europe/Copenhagen', Djibouti: 'Africa/Djibouti',
+  'Dominican Republic': 'America/Santo_Domingo', Ecuador: 'America/Guayaquil', Egypt: 'Africa/Cairo',
+  'El Salvador': 'America/El_Salvador', 'Equatorial Guinea': 'Africa/Malabo', Eritrea: 'Africa/Asmara',
+  Estonia: 'Europe/Tallinn', Eswatini: 'Africa/Mbabane', Ethiopia: 'Africa/Addis_Ababa',
+  'Falkland Islands': 'Atlantic/Stanley', Fiji: 'Pacific/Fiji', Finland: 'Europe/Helsinki',
+  France: 'Europe/Paris', 'French Southern Lands': null, Gabon: 'Africa/Libreville', Gambia: 'Africa/Banjul',
+  Georgia: 'Asia/Tbilisi', Germany: 'Europe/Berlin', Ghana: 'Africa/Accra', Greece: 'Europe/Athens',
+  Greenland: null, Guatemala: 'America/Guatemala', Guinea: 'Africa/Conakry', 'Guinea-Bissau': 'Africa/Bissau',
+  Guyana: 'America/Guyana', Haiti: 'America/Port-au-Prince', Honduras: 'America/Tegucigalpa',
+  Hungary: 'Europe/Budapest', Iceland: 'Atlantic/Reykjavik', India: 'Asia/Kolkata', Indonesia: null,
+  Iran: 'Asia/Tehran', Iraq: 'Asia/Baghdad', Ireland: 'Europe/Dublin', Israel: 'Asia/Jerusalem',
+  Italy: 'Europe/Rome', 'Ivory Coast': 'Africa/Abidjan', Jamaica: 'America/Jamaica', Japan: 'Asia/Tokyo',
+  Jordan: 'Asia/Amman', Kazakhstan: null, Kenya: 'Africa/Nairobi', Kosovo: 'Europe/Belgrade',
+  Kuwait: 'Asia/Kuwait', Kyrgyzstan: 'Asia/Bishkek', Laos: 'Asia/Vientiane', Latvia: 'Europe/Riga',
+  Lebanon: 'Asia/Beirut', Lesotho: 'Africa/Maseru', Liberia: 'Africa/Monrovia', Libya: 'Africa/Tripoli',
+  Lithuania: 'Europe/Vilnius', Luxembourg: 'Europe/Luxembourg', Madagascar: 'Indian/Antananarivo',
+  Malawi: 'Africa/Blantyre', Malaysia: 'Asia/Kuala_Lumpur', Mali: 'Africa/Bamako',
+  Mauritania: 'Africa/Nouakchott', Mexico: null, Moldova: 'Europe/Chisinau', Mongolia: null,
+  Montenegro: 'Europe/Podgorica', Morocco: 'Africa/Casablanca', Mozambique: 'Africa/Maputo',
+  Myanmar: 'Asia/Yangon', Namibia: 'Africa/Windhoek', Nepal: 'Asia/Kathmandu', Netherlands: 'Europe/Amsterdam',
+  'New Caledonia': 'Pacific/Noumea', 'New Zealand': 'Pacific/Auckland', Nicaragua: 'America/Managua',
+  Niger: 'Africa/Niamey', Nigeria: 'Africa/Lagos', 'North Korea': 'Asia/Pyongyang',
+  'North Macedonia': 'Europe/Skopje', 'Northern Cyprus': 'Asia/Famagusta', Norway: 'Europe/Oslo',
+  Oman: 'Asia/Muscat', Pakistan: 'Asia/Karachi', Palestine: 'Asia/Gaza', Panama: 'America/Panama',
+  'Papua New Guinea': 'Pacific/Port_Moresby', Paraguay: 'America/Asuncion', Peru: 'America/Lima',
+  Philippines: 'Asia/Manila', Poland: 'Europe/Warsaw', Portugal: 'Europe/Lisbon',
+  'Puerto Rico': 'America/Puerto_Rico', Qatar: 'Asia/Qatar', Romania: 'Europe/Bucharest', Russia: null,
+  Rwanda: 'Africa/Kigali', 'Saudi Arabia': 'Asia/Riyadh', Senegal: 'Africa/Dakar', Serbia: 'Europe/Belgrade',
+  'Sierra Leone': 'Africa/Freetown', Slovakia: 'Europe/Bratislava', Slovenia: 'Europe/Ljubljana',
+  'Solomon Islands': 'Pacific/Guadalcanal', Somalia: 'Africa/Mogadishu', Somaliland: 'Africa/Mogadishu',
+  'South Africa': 'Africa/Johannesburg', 'South Korea': 'Asia/Seoul', 'South Sudan': 'Africa/Juba',
+  Spain: 'Europe/Madrid', 'Sri Lanka': 'Asia/Colombo', Sudan: 'Africa/Khartoum',
+  Suriname: 'America/Paramaribo', Sweden: 'Europe/Stockholm', Switzerland: 'Europe/Zurich',
+  Syria: 'Asia/Damascus', Taiwan: 'Asia/Taipei', Tajikistan: 'Asia/Dushanbe', Tanzania: 'Africa/Dar_es_Salaam',
+  Thailand: 'Asia/Bangkok', 'Timor-Leste': 'Asia/Dili', Togo: 'Africa/Lome',
+  'Trinidad and Tobago': 'America/Port_of_Spain', Tunisia: 'Africa/Tunis', Turkey: 'Europe/Istanbul',
+  Turkmenistan: 'Asia/Ashgabat', Uganda: 'Africa/Kampala', Ukraine: 'Europe/Kyiv',
+  'United Arab Emirates': 'Asia/Dubai', 'United Kingdom': 'Europe/London', 'United States': null,
+  Uruguay: 'America/Montevideo', Uzbekistan: 'Asia/Tashkent', Vanuatu: 'Pacific/Efate',
+  Venezuela: 'America/Caracas', Vietnam: 'Asia/Ho_Chi_Minh', 'Western Sahara': 'Africa/El_Aaiun',
+  Yemen: 'Asia/Aden', Zambia: 'Africa/Lusaka', Zimbabwe: 'Africa/Harare',
+}
+
+let polys: Poly[] | null = null
+
+function load(): Poly[] {
+  const topo = countries110m as unknown as Topology<{ countries: GeometryCollection<{ name: string }> }>
+  const out: Poly[] = []
+  for (const f of feature(topo, topo.objects.countries).features) {
+    const g = f.geometry
+    if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) continue
+    const name = DISPLAY[f.properties.name] ?? f.properties.name
+    for (const rings of (g.type === 'Polygon' ? [g.coordinates] : g.coordinates) as Ring[][]) {
+      let minX = 180, maxX = -180, minY = 90, maxY = -90
+      for (const [x, y] of rings[0]) {
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x)
+        minY = Math.min(minY, y); maxY = Math.max(maxY, y)
+      }
+      out.push({ name, rings, bbox: [minX, minY, maxX, maxY] })
     }
   }
-  return best
+  return out
+}
+
+function inRing(x: number, y: number, ring: Ring): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j]
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+
+/** The country the point is in, with its zone when it has only one; null over sea. */
+export function countryAt(lat: number, lng: number): { name: string; timeZone: string | null } | null {
+  polys ??= load()
+  for (const { name, rings, bbox } of polys) {
+    if (lng < bbox[0] || lng > bbox[2] || lat < bbox[1] || lat > bbox[3]) continue
+    if (inRing(lng, lat, rings[0]) && !rings.slice(1).some((hole) => inRing(lng, lat, hole))) {
+      return { name, timeZone: ZONES[name] ?? null }
+    }
+  }
+  return null
 }

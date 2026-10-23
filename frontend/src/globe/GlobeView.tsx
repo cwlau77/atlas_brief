@@ -236,7 +236,8 @@ export default function GlobeView({
       .map((c) => ({ key: `feed:${c.lat},${c.lng}`, color: ACCENT_HEX, dashed: false, points: slerpArc(toVec3(c.lat, c.lng), to, 48, 0.12) }))
   }, [feedCities, targetLat, targetLng])
   const shownArcs = mode === 'briefing' ? arcs : loadingArcs
-  useEffect(() => { engineRef.current?.setArcs(shownArcs) }, [shownArcs, engineVersion])
+  // The loading screen's arcs draw in from the newsrooms ("watch the sweep"); route arcs appear whole.
+  useEffect(() => { engineRef.current?.setArcs(shownArcs, mode === 'hero') }, [shownArcs, mode, engineVersion])
   useEffect(() => { engineRef.current?.setLitArcs(litArcs) }, [litArcs, engineVersion])
   const arcHoverRef = useRef(onArcHover)
   useEffect(() => {

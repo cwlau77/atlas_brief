@@ -118,4 +118,13 @@ describe('HomePage loading screen', () => {
     await render()
     expect(lastGlobe().loading?.target).toBeNull()
   })
+
+  it('returns focus to the ask box when loading ends without a briefing', async () => {
+    hook.state = { loading: true, ledger: initialLedger('Sudan ceasefire talks') }
+    await render()
+    hook.state = { loading: false, ledger: null }
+    await render()
+    expect(document.activeElement?.id).toBe('home-ask')
+  })
 })
+

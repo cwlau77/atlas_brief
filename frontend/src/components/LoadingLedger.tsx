@@ -1,6 +1,6 @@
 // The loading screen's left column: what Atlas is doing for this briefing, from real
 // stream events only. With no stream (an older backend) the rows just say "Working…".
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import type { LedgerState, SectionName } from '../lib/ledger'
 import './loadingLedger.css'
 
@@ -52,11 +52,22 @@ export function LoadingLedger({ ledger, labels, reduced, onCancel }: {
   const rankState: RowState = ranked ? 'done' : allIn ? 'current' : 'waiting'
   const writeState: RowState = ranked ? 'current' : 'waiting'
   const label = (name: string) => (name === 'rss' ? 'Newsroom feeds' : labels[name] ?? name)
+  // Screen readers hear each stage once, not every count.
+  const stage = !streaming ? 'Working on your briefing'
+    : written ? 'Adding context and photos'
+    : ranked ? 'Writing the briefing'
+    : plan ? 'Gathering sources'
+    : 'Planning the search'
+
+  // The ask box that had focus is gone; the heading takes it.
+  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => { heading.current?.focus({ preventScroll: true }) }, [])
 
   return (
     <div className={`ledger ${reduced ? '' : 'ledger-enter'}`}>
       <p className="ledger-kicker label">Preparing your briefing</p>
-      <h1 className="ledger-focus">{ledger.focus}</h1>
+      <h1 className="ledger-focus" tabIndex={-1} ref={heading}>{ledger.focus}</h1>
+      <p className="ledger-announce visually-hidden" role="status">{stage}</p>
       <ol className="ledger-rows">
         <Row
           step="Plan"
@@ -68,7 +79,7 @@ export function LoadingLedger({ ledger, labels, reduced, onCancel }: {
           state={sourcesState}
           detail={plan ? `${sourcesIn} of ${plural(sourceNames.length, 'source')} in · ${plural(ledger.articles, 'article')} from ${plural(ledger.outlets.size, 'outlet')}` : streaming ? '' : WORKING}
         >
-          {ledger.coldStart && <p className="ledger-cold" role="status">{COLD_NOTE}</p>}
+          {ledger.coldStart && <p className="ledger-cold">{COLD_NOTE}</p>}
           {plan && (
             <ul className="ledger-sources">
               {sourceNames.map((name) => (

@@ -25,6 +25,14 @@ export function slerpArc(a: Vec3, b: Vec3, segments: number, lift: number): Vec3
   return out
 }
 
+export const ARC_DRAW_MS = 700
+
+/** How many of an arc's points are drawn `elapsed` ms after it starts drawing in (ease-out). */
+export function drawnPoints(elapsed: number, total: number): number {
+  const t = Math.min(1, Math.max(0, elapsed / ARC_DRAW_MS))
+  return t >= 1 ? total : Math.round((1 - (1 - t) ** 3) * total)
+}
+
 /** One arc per route that joins at least two distinct places; repeated places are skipped. */
 export function buildArcs(b: Pick<SavedBriefing, 'keyDevelopments'>, routes: Route[], segments = 48, lift = 0.12): GlobeArc[] {
   const arcs: GlobeArc[] = []

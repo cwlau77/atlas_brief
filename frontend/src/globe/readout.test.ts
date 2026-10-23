@@ -18,7 +18,7 @@ describe('applyReadout', () => {
 
 describe('formatReadout', () => {
   it('names the country and its local time where it has one zone', () => {
-    expect(formatReadout(15.5, 41.8, new Date('2026-10-22T11:32:00Z'))).toBe('Eritrea · 14:32 local · 15.50° N  41.80° E')
+    expect(formatReadout(15.33, 38.93, new Date('2026-10-22T11:32:00Z'))).toBe('Eritrea · 14:32 local · 15.33° N  38.93° E')
   })
 
   it('shows coordinates only over open ocean', () => {

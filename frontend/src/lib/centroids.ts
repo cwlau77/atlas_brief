@@ -82,14 +82,27 @@ export interface GeoPoint {
   lng: number
 }
 
+// Names that aren't a place on the ground, or that read as ordinary words in a phrase ("tell us").
+const NOT_GROUND = new Set(['us', 'america', 'eu', 'european union', 'nato', 'global south'])
+
 export function resolveRegion(name: string): GeoPoint | null {
   const key = name.trim().toLowerCase()
   if (!key) return null
   const direct = CENTROIDS[key]
   if (direct) return { lat: direct[0], lng: direct[1] }
+  return containedPlace(key, KEYS_BY_LENGTH)
+}
+
+/** A place on the ground named inside a free phrase such as a briefing focus; never a bloc or "us". */
+export function findPlaceIn(phrase: string): GeoPoint | null {
+  return containedPlace(phrase.trim().toLowerCase(), KEYS_BY_LENGTH.filter((k) => !NOT_GROUND.has(k)))
+}
+
+function containedPlace(key: string, keys: string[]): GeoPoint | null {
+  if (!key) return null
   // "northern Nigeria", "US-China relations" → longest contained known name.
   // Guard with word boundaries so "usa" never matches inside "sausage".
-  for (const candidate of KEYS_BY_LENGTH) {
+  for (const candidate of keys) {
     const idx = key.indexOf(candidate)
     if (idx === -1) continue
     const before = idx === 0 ? '' : key[idx - 1]

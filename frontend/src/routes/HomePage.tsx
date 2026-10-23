@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AskForm } from '../components/AskForm'
 import { Contours, type ContourCenter } from '../components/Contours'
 import { HomeLede } from '../components/HomeLede'
@@ -7,7 +7,7 @@ import { LoadingLedger } from '../components/LoadingLedger'
 import { RotatingHeadline } from '../components/RotatingHeadline'
 import { TopicWire } from '../components/TopicWire'
 import { Globe } from '../globe/Globe'
-import { resolveRegion } from '../lib/centroids'
+import { findPlaceIn, resolveRegion } from '../lib/centroids'
 import { markIntroPlayed, shouldPlayIntro } from '../lib/intro'
 import { liveServiceCount, useSources } from '../lib/sources'
 import { useClock } from '../lib/useClock'
@@ -46,6 +46,17 @@ export function HomePage() {
     setWasLoading(loadingScreen)
     setCopyLeaving(loadingScreen && !reduced)
   }
+  // A run that ends here (cancel, Back or an error) gives focus back to the ask box.
+  const loadedBefore = useRef(false)
+  useEffect(() => {
+    if (loadingScreen) {
+      loadedBefore.current = true
+      return
+    }
+    if (!loadedBefore.current) return
+    loadedBefore.current = false
+    if (document.activeElement === document.body) document.getElementById('home-ask')?.focus({ preventScroll: true })
+  }, [loadingScreen])
   useEffect(() => {
     if (!copyLeaving) return
     const t = window.setTimeout(() => setCopyLeaving(false), COPY_EXIT_MS)
@@ -61,7 +72,7 @@ export function HomePage() {
   // Fly only once the plan has named (or failed to name) a place, never on a guess from the focus alone.
   const globeLoading = loadingScreen && ledger.plan
     ? {
-        target: resolveRegion(ledger.plan.place ?? '') ?? (ledger.plan.place ? resolveRegion(ledger.focus) : null),
+        target: resolveRegion(ledger.plan.place ?? '') ?? (ledger.plan.place ? findPlaceIn(ledger.focus) : null),
         feedOutlets: Object.keys(ledger.feedOutlets),
       }
     : undefined

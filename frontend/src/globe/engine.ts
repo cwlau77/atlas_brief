@@ -3,9 +3,10 @@
 // owns its lifecycle and reads hotspot screen positions via onFrame.
 import * as THREE from 'three'
 import { LAND_POINTS_B64 } from './landPoints'
-import type { GlobeArc } from './arcs'
+import { drawnPoints, type GlobeArc } from './arcs'
 import { frameOf, type LatLng } from './follow'
 import { decodeLandPoints, toVec3 } from './regions'
+import { spinTarget } from './spin'
 
 export interface GlobeHotspot { lat: number; lng: number; count: number }
 export interface HotspotScreen { x: number; y: number; visible: boolean }
@@ -127,7 +128,12 @@ const ARC_DIM = 0.3
 // Raycast slack for hovering a 1px arc, in globe radii.
 const ARC_PICK = 0.02
 
-interface ArcLine { key: string; color: number; line: THREE.Line; mat: THREE.ShaderMaterial }
+interface ArcLine {
+  key: string; color: number; line: THREE.Line; mat: THREE.ShaderMaterial
+  /** When it started drawing in, or null once whole. */
+  drawFrom: number | null
+  total: number
+}
 
 interface Shared {
   uTime: THREE.IUniform<number>
@@ -276,8 +282,13 @@ export class GlobeEngine {
     this.pointerMoved = true
   }
 
-  /** Replace the route arcs. They live on the globe, so they turn and zoom with it. */
-  setArcs(list: GlobeArc[]): void {
+  /**
+   * Replace the route arcs. They live on the globe, so they turn and zoom with it.
+   * With drawIn, arcs not already shown draw in from their start (whole under reduced motion).
+   */
+  setArcs(list: GlobeArc[], drawIn = false): void {
+    const shown = new Set(this.arcs.map((a) => a.key))
+    const now = performance.now()
     for (const a of this.arcs) {
       this.globe.remove(a.line)
       a.line.geometry.dispose()
@@ -303,7 +314,9 @@ export class GlobeEngine {
       const line = new THREE.Line(geo, mat)
       line.userData.key = arc.key
       this.globe.add(line)
-      return { key: arc.key, color, line, mat }
+      const drawFrom = drawIn && !this.opts.reducedMotion && !shown.has(arc.key) ? now : null
+      if (drawFrom !== null) geo.setDrawRange(0, 0)
+      return { key: arc.key, color, line, mat, drawFrom, total: arc.points.length }
     })
     this.paintArcs()
   }
@@ -521,7 +534,8 @@ export class GlobeEngine {
     // The cursor ripple is sized for the whole globe; zoomed in it would swamp the view.
     u.uLiquid.value = this.opts.reducedMotion ? 0 : this.dragScale * this.dragScale
 
-    const idle = !this.hold && !this.zoomed && !this.overSphere && now - this.lastInteraction > IDLE_RESUME_MS
+    const engaged = this.overSphere || now - this.lastInteraction <= IDLE_RESUME_MS
+    const idle = !this.hold && !this.zoomed && !engaged
     if (this.target) {
       const k = Math.min(1, dt * 3)
       const dy = wrapAngle(this.target.yaw - this.yaw)
@@ -534,7 +548,9 @@ export class GlobeEngine {
       const decay = Math.pow(0.05, dt)
       this.vyaw *= decay
       this.vpitch *= decay
-      const want = this.opts.reducedMotion ? 0 : this.scanning ? 0.6 : idle ? this.opts.baseSpin : 0
+      const want = spinTarget({
+        reduced: this.opts.reducedMotion, hold: this.hold, scanning: this.scanning, idle, engaged, baseSpin: this.opts.baseSpin,
+      })
       this.spinVel += (want - this.spinVel) * Math.min(1, dt * 2)
       this.yaw += this.spinVel * dt
     }
@@ -552,6 +568,12 @@ export class GlobeEngine {
         this.mouseLocal.lerp(local, 0.18)
         pointer = { lat: Math.asin(local.y) / DEG, lng: Math.atan2(local.x, local.z) / DEG }
       }
+    }
+    for (const a of this.arcs) {
+      if (a.drawFrom === null) continue
+      const count = drawnPoints(now - a.drawFrom, a.total)
+      a.line.geometry.setDrawRange(0, count)
+      if (count >= a.total) a.drawFrom = null
     }
     if (this.pointerMoved && this.arcs.length) this.pickArc()
     this.pointerMoved = false

@@ -1,4 +1,4 @@
-import { nearestCountry } from '../lib/places'
+import { countryAt } from '../lib/places'
 
 const fmtCoord = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(2)}° ${v >= 0 ? pos : neg}`
 
@@ -15,7 +15,7 @@ function localTime(timeZone: string, now: Date): string {
 /** "Eritrea · 14:32 local · 15.50° N  41.80° E": the place and its time only where they're certain. */
 export function formatReadout(lat: number, lng: number, now: Date): string {
   const coords = `${fmtCoord(lat, 'N', 'S')}  ${fmtCoord(lng, 'E', 'W')}`
-  const place = nearestCountry(lat, lng)
+  const place = countryAt(lat, lng)
   if (!place) return coords
   return place.timeZone ? `${place.name} · ${localTime(place.timeZone, now)} local · ${coords}` : `${place.name} · ${coords}`
 }
