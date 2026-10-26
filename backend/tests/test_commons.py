@@ -148,6 +148,18 @@ async def test_backfill_client_waits_as_long_as_a_cold_search():
 
 
 @pytest.mark.asyncio
+async def test_expired_cache_entry_still_gets_backfilled(monkeypatch):
+    monkeypatch.setattr(commons, "_new_client", lambda: client_for([page("File:A.jpg")]))
+    commons._cache["Cairo"] = (time.monotonic() - commons.TTL_S - 1, [])
+    async with client_for([page("File:A.jpg")], search_delay=3) as c:
+        await commons.fetch_candidates(["Cairo"], c, budget_s=0.1)
+    await asyncio.gather(*list(commons._tasks))
+    fetched_at, found = commons._cache["Cairo"]
+    assert time.monotonic() - fetched_at < commons.TTL_S
+    assert names(found) == ["File:A.jpg"]
+
+
+@pytest.mark.asyncio
 async def test_one_backfill_per_query(monkeypatch):
     made = []
 

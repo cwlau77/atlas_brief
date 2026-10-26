@@ -149,7 +149,8 @@ async def _backfill(query: str) -> None:
 
 
 def _schedule_backfill(query: str) -> None:
-    if query in _backfilling or query in _cache:
+    hit = _cache.get(query)
+    if query in _backfilling or (hit and time.monotonic() - hit[0] < TTL_S):
         return
     _backfilling.add(query)
     task = asyncio.create_task(_backfill(query))
