@@ -131,6 +131,14 @@ async def test_overrun_backfills_the_cache(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_backfill_client_waits_as_long_as_a_cold_search():
+    # A cold Commons search can take ~7s; a shorter read timeout would make every backfill fail.
+    async with commons._new_client() as c:
+        assert c.timeout.read >= commons.BACKFILL_S
+        assert c.headers["user-agent"] == USER_AGENT
+
+
+@pytest.mark.asyncio
 async def test_one_backfill_per_query(monkeypatch):
     made = []
 

@@ -127,7 +127,8 @@ async def _lookup(query: str, client: httpx.AsyncClient) -> tuple[list[CommonsIm
 
 
 def _new_client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(timeout=3.0, headers={"User-Agent": USER_AGENT})
+    # As long as the whole backfill: a cold Commons search can take ~7s.
+    return httpx.AsyncClient(timeout=BACKFILL_S, headers={"User-Agent": USER_AGENT})
 
 
 async def _backfill(query: str) -> None:
