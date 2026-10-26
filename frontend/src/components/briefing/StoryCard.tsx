@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { cardImages } from '../../lib/cardImage'
 import type { ViewDevelopment } from '../../lib/normalize'
 import { plural } from '../../lib/plural'
 import { formatTime } from '../../lib/time'
@@ -9,7 +10,7 @@ import './cards.css'
 // Keyed by development index: stable per story, and no repeats within any five stories.
 const GRADIENTS = 5
 
-/** A photo card for one development; a missing or failed image shows a grainy gradient instead. */
+/** A photo card for one development: its outlet photos, then its Commons file photo; with none left, a grainy gradient. */
 export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
   dev: ViewDevelopment
   index: number
@@ -17,18 +18,28 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
   onOpen: (anchorId: string) => void
   variant?: 'strip' | 'compact'
 }) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null)
-  const image = dev.leadImage && dev.leadImage !== failedSrc ? dev.leadImage : null
-  const imageSource = image ? dev.sources.find((s) => s.image_url === image) : undefined
-  const credit = imageSource ? imageSource.image_outlet || imageSource.outlet : undefined
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set())
+  const images = useMemo(() => cardImages(dev.sources, dev.commonsImage), [dev.sources, dev.commonsImage])
+  const image = images.find((i) => !failed.has(i.src))
   const where = dev.place?.name ?? dev.regions[0] ?? ''
   return (
     <article className={`story-card story-card-${variant}`}>
       <div className="story-card-media">
         {image
-          ? <img src={image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailedSrc(image)} />
+          ? <img
+              src={image.src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer"
+              onError={() => setFailed((prev) => new Set(prev).add(image.src))}
+            />
           : <div className="story-card-grain" data-image-fallback={index % GRADIENTS} aria-hidden="true" />}
-        {credit && <span className="story-card-credit label"><span className="story-card-credit-prefix">Photo · </span>{credit}</span>}
+        {/* Not a link: the whole card is the open button. The file photo's linked credit is on its timeline card. */}
+        {image && (
+          <span
+            className={`story-card-credit label${image.filePhoto ? ' story-card-credit-file' : ''}`}
+            title={image.filePhoto ? image.credit : undefined}
+          >
+            <span className="story-card-credit-prefix">{image.filePhoto ? 'File photo · ' : 'Photo · '}</span>{image.by}
+          </span>
+        )}
       </div>
       <div className="story-card-body">
         <div className="story-card-meta">

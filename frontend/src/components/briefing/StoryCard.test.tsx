@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeBriefing } from '../../test/fixtures'
 import { StoryCard } from './StoryCard'
+import cardsCss from './cards.css?raw'
 
 const briefing = makeBriefing()
 
@@ -85,5 +86,42 @@ describe('StoryCard', () => {
     expect(one).toMatch(/^\d+$/)
     expect(two).toMatch(/^\d+$/)
     expect(one).not.toBe(two)
+  })
+
+  const COMMONS = {
+    url: 'https://upload.wikimedia.org/a.jpg', page_url: 'https://commons.wikimedia.org/wiki/File:A.jpg',
+    author: 'Jane Doe', license: 'CC BY-SA 4.0', source: 'commons' as const,
+  }
+
+  it('shows the Commons file photo, credited as one, when there is no outlet photo', () => {
+    act(() => root.render(<StoryCard dev={{ ...briefing.keyDevelopments[1], commonsImage: COMMONS }} index={1} timeZone="UTC" onOpen={() => {}} />))
+    expect(container.querySelector('img')!.getAttribute('src')).toBe(COMMONS.url)
+    const credit = container.querySelector('.story-card-credit')!
+    expect(credit.textContent).toBe('File photo · Jane Doe, CC BY-SA 4.0, Wikimedia Commons')
+    expect(credit.getAttribute('title')).toBe('File photo: Jane Doe, CC BY-SA 4.0, Wikimedia Commons')
+    expect(credit.classList.contains('story-card-credit-file')).toBe(true)
+  })
+
+  it('falls back from a failed outlet photo to the file photo', () => {
+    act(() => root.render(<StoryCard dev={{ ...briefing.keyDevelopments[0], commonsImage: COMMONS }} index={0} timeZone="UTC" onOpen={() => {}} />))
+    act(() => { container.querySelector('img')!.dispatchEvent(new Event('error')) })
+    expect(container.querySelector('img')!.getAttribute('src')).toBe(COMMONS.url)
+    expect(container.querySelector('.story-card-credit')!.textContent).toContain('File photo')
+    expect(fallback()).toBeNull()
+  })
+})
+
+describe('StoryCard credit css', () => {
+  const flat = cardsCss.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ')
+
+  it('keeps the File photo prefix in the compact variant, where the outlet prefix is hidden', () => {
+    expect(flat).toContain('.story-card-compact .story-card-credit-prefix { display: none; }')
+    expect(flat).toMatch(/\.story-card-compact \.story-card-credit-file \.story-card-credit-prefix \{ display: inline; \}/)
+  })
+
+  it('trims a long credit with an ellipsis', () => {
+    const base = flat.match(/(^| )\.story-card-credit \{([^}]*)\}/)?.[2] ?? ''
+    expect(base).toContain('text-overflow: ellipsis')
+    expect(base).toContain('white-space: nowrap')
   })
 })
