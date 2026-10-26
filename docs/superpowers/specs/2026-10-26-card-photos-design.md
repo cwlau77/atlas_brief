@@ -118,3 +118,26 @@ Re-run the measurement over the same five focuses after building. Report the out
 - Tavily's image filter list (above).
 - The background search cap (about 10s) and the two-pass Commons assignment.
 - `referrerPolicy="no-referrer"` on `CardImage`.
+
+## After (2026-10-26, measured on the built branch)
+
+Seven live briefings: the original five focuses, plus "Ukraine grain exports" and "Venezuela election" as fresh topics whose Commons lookups were cold. "Shows" means the first picture in the card's chain that actually loads.
+
+| Card shows | Before (50 devs) | After (39 devs) | After, original five only (33 devs) |
+|---|---|---|---|
+| Outlet photo | 13 (26%) | 31 (79%) | 26 (79%) |
+| Commons file photo | 15 (30%) | 3 (8%) | 6 (18%)* |
+| Nothing | 22 (44%) | 5 (13%) | 1 (3%) |
+
+*In the original five, 3 cards showed a Commons photo and every development but two had a Commons fallback ready. Most cards now get an outlet photo first.
+
+- **Top stories:** 26 of 33 top-story cards show an outlet photo, 3 a file photo and 4 nothing. Before, every top story without an outlet photo showed the gradient.
+- **Where the gaps remain:** cards that cite only Google News, for a place whose Commons lookup was cold. Country-level queries ("Ukraine") often lose their lead image to the flag/map filter, so they depend on the search. The search finishes in the background and is cached for the next briefing.
+- **Briefing time:** 21.7–27.2s end to end, the same as before (22–29s). Ingest is still bounded by GDELT, and Commons stays inside its 1.5s budget.
+- **Tavily images:** spot-checked 12 by URL. They are article photos (UN, Taipei Times, The Diplomat, Scotsman, agency stock photos). One generic site image slipped through in an earlier run (`gov.uk/.../govuk-opengraph-image-….png`). There were no logos or banners in this run.
+
+**Two bugs the measurement found, both fixed on this branch with tests:**
+1. **The backfill client had a 3s timeout.** That is shorter than a cold Commons search, so every backfill hit `ReadTimeout`. It now allows the full `BACKFILL_S` (10s).
+2. **Lead images were starved.** One shared `Semaphore(4)` let hanging searches hold every request slot, so lead-image lookups never ran within the budget (0 of 6 cold places). Lead and search now have separate slots; 5 of 6 cold places keep their lead image.
+
+**Unrelated finding:** in one run a synthesis call to Anthropic hung for the SDK's 600s default timeout and was retried (`synthesis_ms=613427`). Section calls have no explicit timeout. That predates this branch and is out of scope here.

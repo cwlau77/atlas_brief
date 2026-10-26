@@ -26,7 +26,8 @@ Shipped per `docs/superpowers/specs/2026-10-22-home-wire-design.md`: "On the wir
 ### ~~Archive: select, delete and star in bulk~~ (done 2026-10-19)
 Add a select mode to the Archive (`routes/ArchivePage.tsx`): a "Select" toggle that puts a checkbox on each briefing, plus "Select all" per topic thread. A toolbar acting on the selection offers **Delete** and **Star / Unstar**. Today each briefing can only be starred or deleted one at a time through its bead actions. Keep spec 2's rules: real buttons and checkboxes with names, no `window.confirm` (use `ConfirmDialog`, saying how many will be deleted), one failure toast if the storage write fails, and starred briefings are never dropped silently. Owner request, 2026-10-19.
 
-### Card photos: fall back to Commons when the outlet photo fails
+### ~~Card photos: fall back to Commons when the outlet photo fails~~ (done 2026-10-26)
+Shipped, widened to "more cards show a photo", per `docs/superpowers/specs/2026-10-26-card-photos-design.md`: Tavily results carry their own photo, Commons keeps lead images when a search overruns (and backfills the cache), every development and alert gets a Commons fallback, and timeline, alert and Top-stories cards fall through outlet photos, then the file photo. Original note:
 When an outlet's photo fails to load, `CardImage` hides the picture, and the card shows no photo at all. The backend only looks up a Commons "File photo" (`synthesis/commons.py`) for developments that have no outlet image, so there's nothing to fall back to. Proposed fix:
 - **Backend:** look up a Commons candidate for every development, inside the existing 1.5s budget and 24h cache. That's up to about six extra Wikimedia requests per briefing on a cold cache.
 - **Frontend:** `lib/cardImage.ts` returns the Commons photo as a fallback, and `CardImage` swaps to it on error.
