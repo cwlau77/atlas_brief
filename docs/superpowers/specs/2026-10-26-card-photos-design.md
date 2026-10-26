@@ -123,13 +123,13 @@ Re-run the measurement over the same five focuses after building. Report the out
 
 Seven live briefings: the original five focuses, plus "Ukraine grain exports" and "Venezuela election" as fresh topics whose Commons lookups were cold. "Shows" means the first picture in the card's chain that actually loads.
 
-| Card shows | Before (50 devs) | After (39 devs) | After, original five only (33 devs) |
+| Card shows | Before (50 devs) | After (39 devs) | After, original five only (27 devs) |
 |---|---|---|---|
-| Outlet photo | 13 (26%) | 31 (79%) | 26 (79%) |
-| Commons file photo | 15 (30%) | 3 (8%) | 6 (18%)* |
-| Nothing | 22 (44%) | 5 (13%) | 1 (3%) |
+| Outlet photo | 13 (26%) | 31 (79%) | 23 (85%) |
+| Commons file photo | 15 (30%) | 3 (8%) | 3 (11%) |
+| Nothing | 22 (44%) | 5 (13%) | 1 (4%) |
 
-*In the original five, 3 cards showed a Commons photo and every development but two had a Commons fallback ready. Most cards now get an outlet photo first.
+The Commons share fell because most cards now get an outlet photo first. In the original five, 24 of 27 developments also had a Commons fallback ready behind it.
 
 - **Top stories:** 26 of 33 top-story cards show an outlet photo, 3 a file photo and 4 nothing. Before, every top story without an outlet photo showed the gradient.
 - **Where the gaps remain:** cards that cite only Google News, for a place whose Commons lookup was cold. Country-level queries ("Ukraine") often lose their lead image to the flag/map filter, so they depend on the search. The search finishes in the background and is cached for the next briefing.
