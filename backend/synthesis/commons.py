@@ -201,7 +201,9 @@ async def fetch_candidates(
 
 
 def assign_images(briefing: Briefing, candidates: dict[str, list[CommonsImage]]) -> None:
-    """Fill commons_image in place. Developments first, then alerts borrowing a development's place."""
+    """Fill commons_image in place, never the same photo twice. Developments first, then alerts
+    borrowing a development's place. Within each, items with no outlet photo pick first; items
+    with one get what's left as a fallback for when the outlet photo fails to load."""
     used: set[str] = set()
 
     def take(query: Optional[str]) -> Optional[CommonsImage]:
@@ -211,16 +213,13 @@ def assign_images(briefing: Briefing, candidates: dict[str, list[CommonsImage]])
                 return cand
         return None
 
-    def has_outlet_image(item) -> bool:
-        return any(s.image_url for s in item.sources)
+    def bare_first(items):
+        return sorted(items, key=lambda item: any(s.image_url for s in item.sources))
 
-    for dev in briefing.key_developments:
-        if not has_outlet_image(dev):
-            dev.commons_image = take(query_for(dev))
+    for dev in bare_first(briefing.key_developments):
+        dev.commons_image = take(query_for(dev))
 
-    for alert in briefing.priority_alerts:
-        if has_outlet_image(alert):
-            continue
+    for alert in bare_first(briefing.priority_alerts):
         urls = {s.url for s in alert.sources}
         for dev in briefing.key_developments:
             if urls & {s.url for s in dev.sources}:

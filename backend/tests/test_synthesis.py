@@ -330,6 +330,23 @@ async def test_commons_runs_alongside_context(monkeypatch, make_article):
 
 
 @pytest.mark.asyncio
+async def test_commons_queries_include_developments_with_outlet_photos(monkeypatch, make_article):
+    import backend.synthesis.briefing as mod
+    _keyed(monkeypatch)
+    _fast_llm(monkeypatch)
+    monkeypatch.setattr(settings, "commons_images_enabled", True)
+    seen = []
+
+    async def fetch(queries, client, budget_s=1.5):
+        seen.extend(queries)
+        return {}
+
+    monkeypatch.setattr(mod, "fetch_candidates", fetch)
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1", image_url="https://img.ex/1.jpg")])
+    assert seen == ["Egypt"]
+
+
+@pytest.mark.asyncio
 async def test_commons_disabled_flag(monkeypatch, make_article):
     import backend.synthesis.briefing as mod
     _keyed(monkeypatch)

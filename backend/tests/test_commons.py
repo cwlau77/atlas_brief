@@ -299,9 +299,27 @@ def test_assign_distinct_and_alert_borrows_place():
     d0, d1, d2 = dev("Cairo", "u0"), dev("Cairo", "u1"), dev("Cairo", "u2", image_url="https://o/i.jpg")
     a_shared, a_none = alert("u0"), alert("nope")
     b = briefing([d0, d1, d2], [a_shared, a_none])
-    commons.assign_images(b, {"Cairo": [img(1), img(2), img(3)]})
+    commons.assign_images(b, {"Cairo": [img(1), img(2), img(3), img(4)]})
     assert d0.commons_image.url.endswith("/1.jpg")
     assert d1.commons_image.url.endswith("/2.jpg")
-    assert d2.commons_image is None
-    assert a_shared.commons_image.url.endswith("/3.jpg")
+    assert d2.commons_image.url.endswith("/3.jpg")  # a fallback behind its outlet photo
+    assert a_shared.commons_image.url.endswith("/4.jpg")
     assert a_none.commons_image is None
+
+
+def test_photo_less_developments_pick_first():
+    with_photo = dev("Cairo", "u0", image_url="https://o/i.jpg")
+    bare = dev("Cairo", "u1")
+    commons.assign_images(briefing([with_photo, bare], []), {"Cairo": [img(1), img(2)]})
+    assert bare.commons_image.url.endswith("/1.jpg")
+    assert with_photo.commons_image.url.endswith("/2.jpg")
+
+
+def test_alert_with_outlet_photo_gets_a_fallback_after_bare_alerts():
+    d0 = dev("Cairo", "u0")
+    a_photo = PriorityAlert(severity="high", headline="h", rationale="r", sources=[cite("u0", "https://o/a.jpg")])
+    a_bare = alert("u0")
+    commons.assign_images(briefing([d0], [a_photo, a_bare]), {"Cairo": [img(1), img(2), img(3)]})
+    assert d0.commons_image.url.endswith("/1.jpg")
+    assert a_bare.commons_image.url.endswith("/2.jpg")
+    assert a_photo.commons_image.url.endswith("/3.jpg")

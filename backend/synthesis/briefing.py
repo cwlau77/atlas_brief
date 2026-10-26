@@ -460,12 +460,11 @@ async def synthesize_briefing(
         raise SynthesisUnavailableError("ANTHROPIC_API_KEY is not configured")
 
     async def commons_candidates(devs: list[KeyDevelopment]) -> dict[str, list[CommonsImage]]:
-        # Place photos for developments with no outlet image; never allowed to fail the briefing.
+        # Place photos for every development: the photo when there's no outlet image, a fallback
+        # when there is. Never allowed to fail the briefing.
         if not settings.commons_images_enabled:
             return {}
-        queries = list(dict.fromkeys(
-            q for d in devs if not any(s.image_url for s in d.sources) if (q := query_for(d))
-        ))
+        queries = list(dict.fromkeys(q for d in devs if (q := query_for(d))))
         if not queries:
             return {}
         try:
