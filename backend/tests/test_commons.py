@@ -15,8 +15,19 @@ from backend.synthesis import commons
 @pytest.fixture(autouse=True)
 def clear_cache():
     commons._cache.clear()
+    commons._backfilling.clear()
     yield
+    commons._tasks.clear()  # tests that start backfills await them; the loop is gone by now
     commons._cache.clear()
+    commons._backfilling.clear()
+
+
+@pytest.fixture
+def no_backfill(monkeypatch):
+    """No background lookups, so no test reaches the network or outlives its event loop."""
+    scheduled = []
+    monkeypatch.setattr(commons, "_schedule_backfill", scheduled.append)
+    return scheduled
 
 
 def page(title, width=1024, mime="image/jpeg", artist="<a href='x'>Jane Doe</a>", lic="CC BY 4.0"):
@@ -36,14 +47,17 @@ def page(title, width=1024, mime="image/jpeg", artist="<a href='x'>Jane Doe</a>"
     }
 
 
-def client_for(pages, calls=None, delay=0.0, lead=None, lead_page=None):
+def client_for(pages, calls=None, delay=0.0, lead=None, lead_page=None, search_delay=0.0):
     """Mock Wikipedia and Commons. `pages` answers the Commons search; `lead` is the Wikipedia
-    pageimage file name (None: the article has none) and `lead_page` its Commons imageinfo page."""
+    pageimage file name (None: the article has none) and `lead_page` its Commons imageinfo page.
+    `delay` slows every request, `search_delay` only the Commons search."""
     async def handler(request):
         if calls is not None:
             calls.append(request)
         if delay:
             await asyncio.sleep(delay)
+        if search_delay and "gsrsearch" in request.url.params:
+            await asyncio.sleep(search_delay)
         if request.url.host == "en.wikipedia.org":
             title = request.url.params["titles"]
             found = {"1": {"pageid": 1, "title": title, "pageimage": lead}} if lead else {"-1": {"title": title, "missing": ""}}
@@ -86,12 +100,60 @@ async def test_requires_author_and_license():
 
 
 @pytest.mark.asyncio
-async def test_budget_exceeded_returns_empty():
+async def test_budget_exceeded_returns_empty(no_backfill):
     async with client_for([page("File:A.jpg")], delay=3) as c:
         t = time.monotonic()
         out = await commons.fetch_candidates(["Cairo", "Paris"], c, budget_s=0.2)
     assert time.monotonic() - t < 0.5
     assert out == {"Cairo": [], "Paris": []}
+
+
+@pytest.mark.asyncio
+async def test_slow_search_keeps_the_lead_image(no_backfill):
+    async with client_for([page("File:A.jpg")], lead="B.jpg", lead_page=page("File:B.jpg"), search_delay=3) as c:
+        t = time.monotonic()
+        out = await commons.fetch_candidates(["Cairo"], c, budget_s=0.3)
+    assert time.monotonic() - t < 0.6
+    assert names(out["Cairo"]) == ["File:B.jpg"]
+    assert "Cairo" not in commons._cache  # partial, so not cached
+    assert no_backfill == ["Cairo"]
+
+
+@pytest.mark.asyncio
+async def test_overrun_backfills_the_cache(monkeypatch):
+    monkeypatch.setattr(commons, "_new_client", lambda: client_for(
+        [page("File:A.jpg")], lead="B.jpg", lead_page=page("File:B.jpg")))
+    async with client_for([page("File:A.jpg")], lead="B.jpg", lead_page=page("File:B.jpg"), search_delay=3) as c:
+        await commons.fetch_candidates(["Cairo"], c, budget_s=0.2)
+    await asyncio.gather(*list(commons._tasks))
+    assert names(commons._cache["Cairo"][1]) == ["File:B.jpg", "File:A.jpg"]
+    assert "Cairo" not in commons._backfilling
+
+
+@pytest.mark.asyncio
+async def test_one_backfill_per_query(monkeypatch):
+    made = []
+
+    def factory():
+        made.append(1)
+        return client_for([page("File:A.jpg")], search_delay=0.2)
+    monkeypatch.setattr(commons, "_new_client", factory)
+    async with client_for([], search_delay=3) as c:
+        await asyncio.gather(commons.fetch_candidates(["Cairo"], c, budget_s=0.1),
+                             commons.fetch_candidates(["Cairo"], c, budget_s=0.1))
+    await asyncio.gather(*list(commons._tasks))
+    assert len(made) == 1
+
+
+@pytest.mark.asyncio
+async def test_backfill_failure_is_swallowed(monkeypatch):
+    def boom():
+        raise RuntimeError("down")
+    monkeypatch.setattr(commons, "_new_client", boom)
+    async with client_for([], search_delay=3) as c:
+        await commons.fetch_candidates(["Cairo"], c, budget_s=0.1)
+    await asyncio.gather(*list(commons._tasks))
+    assert "Cairo" not in commons._cache and "Cairo" not in commons._backfilling
 
 
 @pytest.mark.asyncio
