@@ -1,5 +1,5 @@
 import { useRef, useState, type CSSProperties } from 'react'
-import { cardImage } from '../../lib/cardImage'
+import { cardImages } from '../../lib/cardImage'
 import type { ViewDevelopment } from '../../lib/normalize'
 import { formatTime, UNKNOWN_TIME } from '../../lib/time'
 import { CardImage } from './CardImage'
@@ -36,7 +36,7 @@ export function DevelopmentCard({
   const pressedAt = useRef(-Infinity)
   const titleId = `dev-${index}-title`
   const contextId = `dev-${index}-context`
-  const image = cardImage(dev.sources, dev.commonsImage)
+  const images = cardImages(dev.sources, dev.commonsImage)
   const timed = !Number.isNaN(Date.parse(dev.timestamp))
   const className = ['dev', highlight === 'lit' && 'is-lit', highlight === 'dim' && 'is-dim'].filter(Boolean).join(' ')
   return (
@@ -57,7 +57,7 @@ export function DevelopmentCard({
       }}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onFocusChange?.(false) }}
     >
-      <CardImage image={image} variant="side" />
+      <CardImage images={images} variant="side" />
       <div className="dev-main">
         <div className="dev-top">
           <PriorityMark priority={dev.priority} />

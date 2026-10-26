@@ -1,31 +1,26 @@
-// Picks the picture for a story card: the outlet's own photo when a source has
-// one, else a Wikimedia Commons file photo, else nothing. Pure.
+// The pictures a story card can show, best first: each distinct outlet photo in citation
+// order, then the Wikimedia Commons file photo. The card falls through them as they fail. Pure.
 import type { CommonsImage, SourceCitation } from './types'
 
 export interface CardImage {
   src: string
   credit: string
+  /** The credit without its "Photo"/"File photo" prefix. */
+  by: string
   href: string | null
   filePhoto: boolean
 }
 
-export function cardImage(sources: SourceCitation[], commons: CommonsImage | null): CardImage | null {
-  const withImage = sources.find((s) => s.image_url)
-  if (withImage?.image_url) {
-    return {
-      src: withImage.image_url,
-      credit: `Photo: ${withImage.image_outlet ?? withImage.outlet}`,
-      href: withImage.url,
-      filePhoto: false,
-    }
+export function cardImages(sources: SourceCitation[], commons: CommonsImage | null): CardImage[] {
+  const out: CardImage[] = []
+  for (const s of sources) {
+    if (!s.image_url || out.some((i) => i.src === s.image_url)) continue
+    const by = s.image_outlet ?? s.outlet
+    out.push({ src: s.image_url, credit: `Photo: ${by}`, by, href: s.url, filePhoto: false })
   }
-  if (commons) {
-    return {
-      src: commons.url,
-      credit: `File photo: ${commons.author}, ${commons.license}, Wikimedia Commons`,
-      href: commons.page_url,
-      filePhoto: true,
-    }
+  if (commons && !out.some((i) => i.src === commons.url)) {
+    const by = `${commons.author}, ${commons.license}, Wikimedia Commons`
+    out.push({ src: commons.url, credit: `File photo: ${by}`, by, href: commons.page_url, filePhoto: true })
   }
-  return null
+  return out
 }

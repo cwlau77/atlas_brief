@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardImage } from './cardImage'
+import { cardImages } from './cardImage'
 import type { CommonsImage, SourceCitation } from './types'
 
 const src = (over: Partial<SourceCitation> = {}): SourceCitation =>
@@ -12,27 +12,39 @@ const commons: CommonsImage = {
   source: 'commons',
 }
 
-describe('cardImage', () => {
-  it('prefers outlet image with outlet credit', () => {
-    const img = cardImage([src(), src({ outlet: 'BBC', url: 'https://b.bc/1', image_url: 'https://img/1.jpg' })], commons)
-    expect(img).toEqual({ src: 'https://img/1.jpg', credit: 'Photo: BBC', href: 'https://b.bc/1', filePhoto: false })
+describe('cardImages', () => {
+  it('puts the outlet image first with outlet credit', () => {
+    const [img] = cardImages([src(), src({ outlet: 'BBC', url: 'https://b.bc/1', image_url: 'https://img/1.jpg' })], commons)
+    expect(img).toEqual({ src: 'https://img/1.jpg', credit: 'Photo: BBC', by: 'BBC', href: 'https://b.bc/1', filePhoto: false })
   })
 
   it('falls back to commons with file-photo credit', () => {
-    expect(cardImage([src()], commons)).toEqual({
+    expect(cardImages([src()], commons)).toEqual([{
       src: commons.url,
       credit: 'File photo: Jane Doe, CC BY-SA 4.0, Wikimedia Commons',
+      by: 'Jane Doe, CC BY-SA 4.0, Wikimedia Commons',
       href: commons.page_url,
       filePhoto: true,
-    })
+    }])
   })
 
-  it('returns null with neither', () => {
-    expect(cardImage([src()], null)).toBeNull()
+  it('is empty with neither', () => {
+    expect(cardImages([src()], null)).toEqual([])
   })
 
   it('uses image_outlet over outlet when present', () => {
-    const img = cardImage([src({ image_url: 'https://img/1.jpg', image_outlet: 'AP' })], null)
-    expect(img?.credit).toBe('Photo: AP')
+    const [img] = cardImages([src({ image_url: 'https://img/1.jpg', image_outlet: 'AP' })], null)
+    expect(img.credit).toBe('Photo: AP')
+    expect(img.by).toBe('AP')
+  })
+
+  it('lists every distinct outlet photo in citation order, then the Commons photo', () => {
+    const list = cardImages([
+      src({ image_url: 'https://img/1.jpg' }),
+      src({ outlet: 'BBC', url: 'https://b.bc/1', image_url: 'https://img/1.jpg' }),
+      src({ outlet: 'AP', url: 'https://ap/1', image_url: 'https://img/2.jpg' }),
+    ], commons)
+    expect(list.map((i) => i.src)).toEqual(['https://img/1.jpg', 'https://img/2.jpg', commons.url])
+    expect(list.map((i) => i.by)).toEqual(['Reuters', 'AP', 'Jane Doe, CC BY-SA 4.0, Wikimedia Commons'])
   })
 })

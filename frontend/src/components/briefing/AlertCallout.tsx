@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { cardImage } from '../../lib/cardImage'
+import { cardImages } from '../../lib/cardImage'
 import type { ViewAlert } from '../../lib/normalize'
 import { CardImage } from './CardImage'
 import { PriorityMark } from './PriorityMark'
@@ -21,7 +21,7 @@ export function AlertCallout({ alerts }: { alerts: ViewAlert[] }) {
       <ul className="alert-list">
         {alerts.map((a, i) => (
           <li key={`${a.title}-${i}`} className={`alert alert-${a.type}${hidden && i >= TOP ? ' is-overflow' : ''}`}>
-            <CardImage image={cardImage(a.sources, a.commonsImage)} variant="top" />
+            <CardImage images={cardImages(a.sources, a.commonsImage)} variant="top" />
             <PriorityMark priority={PRIORITY[a.type]} label={a.label} />
             <h3 className="alert-title">{a.title}</h3>
             <p className="alert-body clamp-2">{a.description}</p>
