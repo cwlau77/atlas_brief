@@ -120,6 +120,15 @@ async def test_slow_search_keeps_the_lead_image(no_backfill):
 
 
 @pytest.mark.asyncio
+async def test_slow_searches_do_not_starve_lead_images(no_backfill):
+    # More hanging searches than request slots: the quick lead lookups must still get through.
+    places = ["Aden", "Mukalla", "Hodeidah", "Kassala", "Tainan", "Kaohsiung"]
+    async with client_for([page("File:A.jpg")], lead="B.jpg", lead_page=page("File:B.jpg"), search_delay=3) as c:
+        out = await commons.fetch_candidates(places, c, budget_s=0.5)
+    assert all(names(out[p]) == ["File:B.jpg"] for p in places)
+
+
+@pytest.mark.asyncio
 async def test_overrun_backfills_the_cache(monkeypatch):
     monkeypatch.setattr(commons, "_new_client", lambda: client_for(
         [page("File:A.jpg")], lead="B.jpg", lead_page=page("File:B.jpg")))

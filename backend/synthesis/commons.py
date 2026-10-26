@@ -36,7 +36,10 @@ TAG = re.compile(r"<[^>]+>")
 BACKFILL_S = 10.0
 
 _cache: dict[str, tuple[float, list[CommonsImage]]] = {}
-_sem = asyncio.Semaphore(4)
+# Separate request slots: cold searches can hang for seconds and must not queue the quick
+# lead-image lookups behind them.
+_lead_sem = asyncio.Semaphore(4)
+_search_sem = asyncio.Semaphore(4)
 _backfilling: set[str] = set()  # queries with a backfill in flight
 _tasks: set[asyncio.Task] = set()  # strong refs so running backfills aren't garbage-collected
 
@@ -76,8 +79,8 @@ def _parse(data: dict) -> list[CommonsImage]:
     return out
 
 
-async def _get(url: str, params: dict, client: httpx.AsyncClient) -> dict:
-    async with _sem:
+async def _get(url: str, params: dict, client: httpx.AsyncClient, sem: asyncio.Semaphore) -> dict:
+    async with sem:
         resp = await client.get(url, params=params, headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()
     return resp.json()
@@ -88,12 +91,12 @@ async def _lead_image(query: str, client: httpx.AsyncClient) -> list[CommonsImag
     data = await _get(WIKI_URL, {
         "action": "query", "prop": "pageimages", "piprop": "name", "titles": query,
         "redirects": 1, "format": "json",
-    }, client)
+    }, client, _lead_sem)
     pages = (data.get("query") or {}).get("pages") or {}
     name = next((p["pageimage"] for p in pages.values() if p.get("pageimage")), None)
     if not name:
         return []
-    return _parse(await _get(API_URL, {"action": "query", "format": "json", "titles": f"File:{name}", **IMAGEINFO}, client))
+    return _parse(await _get(API_URL, {"action": "query", "format": "json", "titles": f"File:{name}", **IMAGEINFO}, client, _lead_sem))
 
 
 async def _search(query: str, client: httpx.AsyncClient) -> list[CommonsImage]:
@@ -101,7 +104,7 @@ async def _search(query: str, client: httpx.AsyncClient) -> list[CommonsImage]:
         "action": "query", "format": "json", "generator": "search",
         "gsrsearch": f"{query} {SEARCH_BIAS} filetype:bitmap", "gsrnamespace": 6, "gsrlimit": 8,
         **IMAGEINFO,
-    }, client))
+    }, client, _search_sem))
 
 
 def _merge(*steps: object) -> list[CommonsImage]:
