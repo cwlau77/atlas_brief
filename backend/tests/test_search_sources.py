@@ -16,7 +16,8 @@ BRAVE = {"results": [{"title": "Data center privacy fight", "url": "https://www.
                       "profile": {"name": "Example"}, "meta_url": {"hostname": "www.example.com"},
                       "thumbnail": {"src": "https://img.ex/1.jpg"}}]}
 TAVILY = {"results": [{"title": "Privacy and data centers", "url": "https://news.example.org/t",
-                       "content": "Story text", "published_date": "Fri, 16 Oct 2026 12:00:00 GMT"}]}
+                       "content": "Story text", "published_date": "Fri, 16 Oct 2026 12:00:00 GMT",
+                       "images": ["https://img.ex/t.jpg"]}]}
 EXA = {"results": [{"title": "Hyperscale privacy concerns", "url": "https://exa.example.net/e",
                     "publishedDate": "2026-10-15T07:00:00.000Z", "image": "https://img.ex/1.jpg"}]}
 
@@ -55,6 +56,20 @@ async def test_tavily_posts_news_topic_with_bearer_key(keys):
     assert req.headers["Authorization"] == "Bearer t-key"
     body = json.loads(req.content)
     assert body["topic"] == "news" and body["days"] == 7 and body["query"] == '"data centers" privacy'
+    assert body["include_images"] is True and body["search_depth"] == "basic"
+    assert (a.image_url, a.image_outlet) == ("https://img.ex/t.jpg", "news.example.org")
+
+
+def test_tavily_first_photo_skips_non_photos():
+    assert tavily_source.first_photo([
+        "https://cdn.ex/site-logo.png", {"url": "https://cdn.ex/icons/x.jpg"}, "https://cdn.ex/a.svg",
+        {"url": "https://cdn.ex/photo.jpg?w=800"}, "https://cdn.ex/later.jpg",
+    ]) == "https://cdn.ex/photo.jpg?w=800"
+
+
+@pytest.mark.parametrize("images", [None, "https://x/a.jpg", {}, [None, 3, {"nourl": 1}], []])
+def test_tavily_first_photo_tolerates_junk(images):
+    assert tavily_source.first_photo(images) is None
 
 
 @pytest.mark.asyncio
