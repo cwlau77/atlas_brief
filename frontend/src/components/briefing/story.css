@@ -317,6 +317,32 @@
 .dev-context .label { color: var(--ink); font-weight: 600; }
 .dev-context-teaser { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .dev-context-full { max-width: 72ch; }
+/* Key figures: verbatim figures with their sources. Comparable ones get ink bars on one scale
+   from zero, or 0–100% meters, in the same rows. Never accent (bars aren't controls), never heat. */
+.kf { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--rule); }
+.kf-h { color: var(--ink); font-weight: 600; }
+.kf-list { list-style: none; display: grid; gap: var(--space-3); }
+.kf-row { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); column-gap: 14px; row-gap: 2px; align-items: center; }
+.kf-row.plain { grid-template-columns: minmax(0, 1fr); }
+.kf-fig { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.kf-what { grid-column: 1 / -1; color: var(--ink-2); font-size: 0.9rem; overflow-wrap: anywhere; }
+.kf-period { color: var(--ink-3); }
+.kf-src { color: var(--ink-3); text-decoration: none; border-bottom: 1px solid var(--rule-strong); }
+.kf-src:hover, .kf-src:focus-visible { color: var(--accent); border-color: var(--accent); }
+.kf-src:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kf-bar { position: relative; height: 10px; }
+.kf-bar > b { position: absolute; inset: 0 auto 0 0; background: var(--ink-2); }
+.kf-bar.meter { background: var(--rule); }
+/* The zero baseline the bars share. */
+.kf-chart .kf-bar:not(.meter):not(.none)::before { content: ""; position: absolute; left: 0; top: -4px; bottom: -4px; width: 1px; background: var(--ink-3); }
+.kf-bar.none { height: auto; color: var(--ink-3); font-size: 0.78rem; font-style: italic; }
+.kf-cap { color: var(--ink-3); font-size: 0.8rem; }
+.dev.is-dim .kf-fig, .dev.is-dim .kf-what { color: var(--ink-3); }
+.dev.is-dim .kf-bar > b { background: var(--rule-strong); }
+@media (max-width: 640px) {
+  .kf-row { grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr); }
+}
+
 /* The one connection tag: a chip that takes the reader to the tension index. */
 .dev-conn { justify-self: start; min-width: 0; max-width: 100%; }
 .dev.is-lit .dev-conn { border-color: var(--accent); color: var(--accent); }

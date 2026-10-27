@@ -3,6 +3,7 @@ import { cardImages } from '../../lib/cardImage'
 import type { ViewDevelopment } from '../../lib/normalize'
 import { formatTime, UNKNOWN_TIME } from '../../lib/time'
 import { CardImage } from './CardImage'
+import { KeyFigures } from './KeyFigures'
 import { PriorityMark } from './PriorityMark'
 import { SourceChips } from './SourceChips'
 import { TextButton } from './TextButton'
@@ -74,6 +75,7 @@ export function DevelopmentCard({
         </div>
         <h3 id={titleId} className="dev-title">{dev.title}</h3>
         <p className="dev-body">{dev.content}</p>
+        <KeyFigures figures={dev.keyFigures} timeZone={timeZone} />
         {showContext && dev.historicalContext && (
           <div className="dev-context">
             <span className="label">From the archive</span>

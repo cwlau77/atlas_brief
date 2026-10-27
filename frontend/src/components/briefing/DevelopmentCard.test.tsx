@@ -48,6 +48,17 @@ describe('DevelopmentCard', () => {
     expect(container.querySelector('.dev-context')).toBeNull()
   })
 
+  it('renders no key figures block when the development has none', () => {
+    render()
+    expect(container.querySelector('.kf')).toBeNull()
+  })
+
+  it('renders key figures right after the summary', () => {
+    const source = { outlet: 'cepr.org', url: 'https://cepr.org/a', published_at: null }
+    render({ dev: { ...briefing.keyDevelopments[0], keyFigures: [{ figure: 'around 8%', label: 'tariff', kind: 'share', period: null, source }] } })
+    expect(container.querySelector('.dev-body')?.nextElementSibling?.classList.contains('kf')).toBe(true)
+  })
+
   it('shows its time in the card', () => {
     render()
     expect(container.querySelector('.dev-top time')!.textContent).toBe('02:10 UTC')
