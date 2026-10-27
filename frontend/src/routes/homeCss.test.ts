@@ -37,6 +37,10 @@ describe('home styles', () => {
     }
   })
 
+  it('masks the contour rings behind the wire, like the ask box', () => {
+    expect(rulesFor(homeCss, '.wire').join(';')).toMatch(/background:\s*var\(--paper\)/)
+  })
+
   it('drops the time column when the wire shows suggestions', () => {
     const wide = rulesFor(homeCss, '.wire-suggested .wire-line').join(';')
     expect(wide).toMatch(/grid-template-columns:\s*1fr auto/)

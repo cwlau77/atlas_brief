@@ -46,8 +46,9 @@
 .home-lede { max-width: 34em; font-size: 1.12rem; color: var(--ink-2); text-wrap: pretty; }
 .home-lede em { color: var(--ink); font-style: normal; }
 .home-ask { display: grid; gap: 12px; }
-/* "On the wire" under the ask box: hairline-ruled lines, newest first. */
-.wire { border-top: 1px solid var(--ink); }
+/* "On the wire" under the ask box: hairline-ruled lines, newest first. Paper, like the ask
+   box, so the contour rings don't run through the text. */
+.wire { border-top: 1px solid var(--ink); background: var(--paper); }
 .wire-head {
   display: flex;
   align-items: baseline;
