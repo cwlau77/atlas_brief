@@ -153,6 +153,23 @@ Constraints:
 - basis "assessment": your own reading, when no article states it. Never present it as an outlet's view.
   Cite the articles you reason from.
 - Prefer "reported" whenever an article supports it.""",
+    "figures": """{
+  "key_figures": [
+    {
+      "figure": "the number with its unit, copied exactly from the article's title or snippet, including any word like 'nearly', 'about', 'more than' or 'below' just before it",
+      "label": "what it measures, <= 8 words, in your words",
+      "kind": "people | money | share | change | count | other",
+      "period": "the time it covers, copied exactly from the same article, or null",
+      "source": article number
+    }
+  ]
+}
+
+Constraints:
+- 0-12 key_figures, the most important to the area of focus first.
+- Copy each figure exactly as written. Never compute, convert, round, combine or restate a number; skip a figure you cannot copy exactly.
+- kind: people = numbers of people; money = sums of money; share = a percentage level or share of a whole;
+  change = a rise or fall; count = other counted things; other = anything else.""",
 }
 
 # Outlook is optional and must not hold the briefing up: once everything else is done it gets
@@ -787,6 +804,25 @@ async def synthesize_briefing(
         return data
 
     outlook_task = asyncio.create_task(outlook())
+
+    async def figures() -> tuple[int, list[KeyFigure]]:
+        # Optional like outlook, and quiet: no progress event. A failure means cards without figures.
+        asked = 0
+
+        def parse(data: dict) -> list[KeyFigure]:
+            nonlocal asked
+            raw = data["key_figures"]
+            asked = len(raw) if isinstance(raw, list) else 0
+            return _parse_figures(raw, articles)
+
+        try:
+            found = await _write_section("figures", focus, articles, parse, model=settings.figures_model, max_tokens=1200)
+        except Exception as exc:
+            logger.warning("synthesis section=figures status=failed detail=%s", type(exc).__name__)
+            return 0, []
+        return asked, found
+
+    figures_task = asyncio.create_task(figures()) if settings.key_figures_enabled else None
     devs_ready: asyncio.Future[list[KeyDevelopment]] = asyncio.get_running_loop().create_future()
 
     async def linked_outlook() -> tuple[list[OutlookItem], list[OutlookItem]]:
@@ -840,21 +876,32 @@ async def synthesize_briefing(
             reported("alerts"),
         )
     except BaseException:
-        for task in (signals_task, outlook_task, outlook_links):
-            task.cancel()
+        for task in (signals_task, outlook_task, outlook_links, figures_task):
+            if task is not None:
+                task.cancel()
         raise
-    try:
-        trends, implications = await asyncio.wait_for(asyncio.shield(outlook_links), OUTLOOK_GRACE_S)
-    except TimeoutError:
+    # Outlook and figures share one grace window, measured from here; neither extends it.
+    await asyncio.wait([t for t in (outlook_links, figures_task) if t is not None], timeout=OUTLOOK_GRACE_S)
+    if not outlook_links.done():
         outlook_links.cancel()
         outlook_task.cancel()
         logger.warning("synthesis section=outlook status=late")
         if not outlook_reported:
             await report("outlook")
         trends, implications = [], []
-    except Exception:
-        logger.exception("outlook assembly failed")
-        trends, implications = [], []
+    else:
+        try:
+            trends, implications = outlook_links.result()
+        except Exception:
+            logger.exception("outlook assembly failed")
+            trends, implications = [], []
+    asked, figures_found = 0, []
+    if figures_task is not None:
+        if figures_task.done():
+            asked, figures_found = figures_task.result()  # never raises: figures() catches its failures
+        else:
+            figures_task.cancel()
+            logger.warning("synthesis section=figures status=late")
     briefing = briefing_from_data({**signals, **alerts}, focus, articles)  # both already validated
     for tension, related in zip(briefing.emerging_tensions, tension_links):
         tension.related_developments = related
@@ -862,6 +909,9 @@ async def synthesize_briefing(
         contradiction.related_developments = related
     briefing.key_developments = devs
     briefing.trends, briefing.implications = trends, implications
+    if figures_task is not None:
+        attached = attach_figures(devs, figures_found)
+        logger.info("figures asked=%d verified=%d attached=%d", asked, len(figures_found), attached)
     try:
         assign_images(briefing, candidates)
     except Exception:

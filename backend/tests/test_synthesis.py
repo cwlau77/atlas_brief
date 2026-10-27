@@ -189,6 +189,7 @@ SECTION_REPLIES = {
     "trends": {"trends": [{"statement": "TS", "basis": "assessment", "quote": None, "sources": [1]}],
                "implications": [{"statement": "IS", "basis": "assessment", "quote": None,
                                  "watch_for": "W", "sources": [1]}]},
+    "key_figures": {"key_figures": [{"figure": "19.5 million", "label": "face acute hunger", "kind": "people", "source": 1}]},
 }
 
 
@@ -224,7 +225,7 @@ async def test_sections_are_written_by_separate_calls_and_merged(monkeypatch, ma
 
     monkeypatch.setattr(llm, "complete", complete)
     b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
-    assert sorted(set(seen)) == ["context", "emerging_tensions", "key_developments", "priority_alerts", "trends"]
+    assert sorted(set(seen)) == ["context", "emerging_tensions", "key_developments", "key_figures", "priority_alerts", "trends"]
     assert b.key_developments[0].headline == "H"
     assert b.key_developments[0].historical_context == "Background paragraph."
     assert b.emerging_tensions[0].description == "D"
@@ -727,3 +728,124 @@ async def test_outlook_with_a_null_list_keeps_the_other(monkeypatch, make_articl
     monkeypatch.setattr(llm, "complete", complete)
     b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
     assert [t.statement for t in b.trends] == ["TS"] and b.implications == []
+
+
+# --- Key figures ---
+
+def _hunger(make_article):
+    return [make_article(url="https://ex.com/1", snippet="UN: 19.5 million face acute hunger in Sudan.")]
+
+
+def _figures_llm(monkeypatch, figures_reply=None, figures_delay=0.0, outlook_delay=0.0):
+    import asyncio
+    import json
+    import backend.llm as llm
+    calls = []
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        calls.append((section, kwargs))
+        if section == "context":
+            return "Background."
+        if section == "key_figures":
+            await asyncio.sleep(figures_delay)
+            if figures_reply is not None:
+                return figures_reply
+        if section == "trends":
+            await asyncio.sleep(outlook_delay)
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    return calls
+
+
+@pytest.mark.asyncio
+async def test_figures_attached_to_developments(monkeypatch, make_article):
+    _keyed(monkeypatch)
+    _figures_llm(monkeypatch)
+    b = await synthesize_briefing("sudan", _hunger(make_article))
+    [f] = b.key_developments[0].key_figures
+    assert f.figure == "19.5 million" and f.kind == "people" and f.source.url == "https://ex.com/1"
+
+
+@pytest.mark.asyncio
+async def test_figures_call_uses_figures_model_and_cap(monkeypatch, make_article):
+    _keyed(monkeypatch)
+    monkeypatch.setattr(settings, "figures_model", "figures-model")
+    calls = _figures_llm(monkeypatch)
+    await synthesize_briefing("sudan", _hunger(make_article))
+    [kw] = [kw for s, kw in calls if s == "key_figures"]
+    assert kw["model"] == "figures-model" and kw["max_tokens"] == 1200
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", ["garbage", "[]", '{"key_figures": "x"}'])
+async def test_figures_failure_or_junk_leaves_cards_without_figures(monkeypatch, make_article, reply):
+    _keyed(monkeypatch)
+    calls = _figures_llm(monkeypatch, figures_reply=reply)
+    b = await synthesize_briefing("sudan", _hunger(make_article))
+    assert b.key_developments[0].key_figures == []
+    assert b.key_developments[0].headline == "H" and b.emerging_tensions[0].description == "D"
+    assert b.trends[0].statement == "TS" and b.priority_alerts[0].headline == "AH"
+    assert sum(1 for s, _ in calls if s == "key_developments") == 1
+
+
+@pytest.mark.asyncio
+async def test_slow_figures_dropped_within_shared_grace(monkeypatch, make_article, caplog):
+    import logging
+    import time
+    from backend.synthesis import briefing as briefing_mod
+    _keyed(monkeypatch)
+    monkeypatch.setattr(briefing_mod, "OUTLOOK_GRACE_S", 0.05)
+    _figures_llm(monkeypatch, figures_delay=5)
+    started = time.monotonic()
+    with caplog.at_level(logging.WARNING, logger="briefing.synthesis"):
+        b = await synthesize_briefing("sudan", _hunger(make_article))
+    assert time.monotonic() - started < 1
+    assert b.key_developments[0].key_figures == [] and b.trends[0].statement == "TS"
+    assert any("section=figures status=late" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_figures_and_outlook_share_one_grace_window(monkeypatch, make_article):
+    import time
+    from backend.synthesis import briefing as briefing_mod
+    _keyed(monkeypatch)
+    monkeypatch.setattr(briefing_mod, "OUTLOOK_GRACE_S", 0.3)
+    _figures_llm(monkeypatch, figures_delay=5, outlook_delay=5)
+    started = time.monotonic()
+    b = await synthesize_briefing("sudan", _hunger(make_article))
+    assert time.monotonic() - started < 0.55
+    assert b.trends == [] and b.key_developments[0].key_figures == []
+
+
+@pytest.mark.asyncio
+async def test_figures_emits_no_section_event(monkeypatch, make_article):
+    _keyed(monkeypatch)
+    _figures_llm(monkeypatch)
+    names = []
+
+    async def on_section(name):
+        names.append(name)
+
+    await synthesize_briefing("sudan", _hunger(make_article), on_section=on_section)
+    assert "figures" not in names and sorted(names) == ["alerts", "developments", "outlook", "signals"]
+
+
+@pytest.mark.asyncio
+async def test_figures_disabled_makes_no_call(monkeypatch, make_article):
+    _keyed(monkeypatch)
+    monkeypatch.setattr(settings, "key_figures_enabled", False)
+    calls = _figures_llm(monkeypatch)
+    b = await synthesize_briefing("sudan", _hunger(make_article))
+    assert all(s != "key_figures" for s, _ in calls)
+    assert b.key_developments[0].key_figures == []
+
+
+def test_config_figures_model_defaults_to_haiku(tmp_path, monkeypatch):
+    from backend.config import Settings
+    monkeypatch.setitem(Settings.model_config, "env_file", str(tmp_path / "none.env"))
+    monkeypatch.delenv("FIGURES_MODEL", raising=False)
+    monkeypatch.delenv("KEY_FIGURES_ENABLED", raising=False)
+    s = Settings()
+    assert s.figures_model == "claude-haiku-4-5" and s.key_figures_enabled is True
