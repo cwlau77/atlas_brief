@@ -104,3 +104,71 @@ def test_non_list_is_shape_error(make_article):
 def test_key_development_without_figures_validates():
     d = KeyDevelopment(headline="h", summary="s", regions=[], sources=[])
     assert d.key_figures == []
+
+
+# --- attaching figures to cards ---
+
+from backend.models import Briefing, KeyFigure, SourceCitation  # noqa: E402
+from backend.synthesis.briefing import attach_figures, enforce_url_allowlist  # noqa: E402
+
+
+def _cite(url):
+    return SourceCitation(outlet=url, url=url, published_at=None)
+
+
+def _dev(urls, headline="h", summary="s"):
+    return KeyDevelopment(headline=headline, summary=summary, regions=[], sources=[_cite(u) for u in urls])
+
+
+def _fig(url, figure="5", label="thing"):
+    return KeyFigure(figure=figure, label=label, kind="count", source=_cite(url))
+
+
+def test_figure_goes_only_to_a_citing_card():
+    devs = [_dev(["u1"]), _dev(["u2"])]
+    assert attach_figures(devs, [_fig("u2")]) == 1
+    assert devs[0].key_figures == [] and devs[1].key_figures[0].source.url == "u2"
+
+
+def test_figure_from_uncited_article_dropped():
+    devs = [_dev(["u1"]), _dev(["u2"])]
+    assert attach_figures(devs, [_fig("u3")]) == 0
+    assert all(d.key_figures == [] for d in devs)
+
+
+def test_shared_article_goes_to_best_word_overlap():
+    devs = [_dev(["u1"], "Ceasefire talks resume", "Talks in Geneva."),
+            _dev(["u1"], "Famine risk rises", "Millions face acute hunger across Darfur.")]
+    attach_figures(devs, [_fig("u1", label="face acute hunger")])
+    assert devs[0].key_figures == [] and len(devs[1].key_figures) == 1
+
+
+def test_overlap_tie_goes_to_earlier_card():
+    devs = [_dev(["u1"]), _dev(["u1"])]
+    attach_figures(devs, [_fig("u1", label="unrelated words")])
+    assert len(devs[0].key_figures) == 1 and devs[1].key_figures == []
+
+
+def test_at_most_three_per_card_in_model_order():
+    devs = [_dev(["u1"])]
+    assert attach_figures(devs, [_fig("u1", figure=str(n)) for n in range(5)]) == 3
+    assert [f.figure for f in devs[0].key_figures] == ["0", "1", "2"]
+
+
+def _briefing(devs):
+    return Briefing(focus="f", generated_at="2026-10-27T00:00:00Z", key_developments=devs, emerging_tensions=[],
+                    contradictions=[], priority_alerts=[], recommended_readings=[], article_count=1, source_breakdown={})
+
+
+def test_allowlist_drops_figure_whose_source_is_stripped():
+    dev = _dev(["u1"])
+    dev.key_figures = [_fig("u1"), _fig("u9")]
+    b = enforce_url_allowlist(_briefing([dev]), {"u1"})
+    assert [f.source.url for f in b.key_developments[0].key_figures] == ["u1"]
+
+
+def test_allowlist_drops_figure_no_longer_cited_by_its_card():
+    dev = _dev(["u1", "u2"])
+    dev.key_figures = [_fig("u1"), _fig("u2")]
+    b = enforce_url_allowlist(_briefing([dev]), {"u2"})
+    assert [f.source.url for f in b.key_developments[0].key_figures] == ["u2"]

@@ -438,6 +438,34 @@ def _parse_figures(raw: list, articles: list[Article]) -> list[KeyFigure]:
     return out
 
 
+_FIGURES_PER_CARD = 3
+
+
+def _content_words(text: str) -> set[str]:
+    return set(re.findall(r"[a-z]{4,}", text.lower()))
+
+
+def attach_figures(devs: list[KeyDevelopment], figures: list[KeyFigure]) -> int:
+    """Put each figure on one development that cites its article; returns how many found a card.
+
+    When several cite it, the one whose headline and summary share the most words with the
+    figure's label wins, ties to the earlier one. A card keeps at most three, in model order.
+    """
+    dev_urls = [{s.url for s in d.sources} for d in devs]
+    dev_words = [_content_words(f"{d.headline} {d.summary}") for d in devs]
+    attached = 0
+    for figure in figures:
+        citing = [i for i, urls in enumerate(dev_urls)
+                  if figure.source.url in urls and len(devs[i].key_figures) < _FIGURES_PER_CARD]
+        if not citing:
+            continue
+        label = _content_words(figure.label)
+        best = max(citing, key=lambda i: (len(label & dev_words[i]), -i))
+        devs[best].key_figures.append(figure)
+        attached += 1
+    return attached
+
+
 def _fallback_citations(articles: list[Article], limit: int = 3) -> list[SourceCitation]:
     return [
         SourceCitation(outlet=article.source, url=article.url, published_at=article.published_at,
@@ -569,6 +597,9 @@ def enforce_url_allowlist(briefing: Briefing, allowed: set[str]) -> Briefing:
 
     for dev in briefing.key_developments:
         dev.sources = _keep(dev.sources)
+        # A figure stays only while its article is allowed and still cited by its card.
+        cited = {s.url for s in dev.sources}
+        dev.key_figures = [f for f in dev.key_figures if f.source.url in cited]
     for tension in briefing.emerging_tensions:
         tension.sources = _keep(tension.sources)
     for contradiction in briefing.contradictions:
