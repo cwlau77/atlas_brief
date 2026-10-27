@@ -5,9 +5,9 @@ import pytest
 
 from backend import llm
 from backend.config import settings
-from backend.models import Contradiction, KeyDevelopment, Tension
+from backend.models import Contradiction, KeyDevelopment, OutlookItem, Tension
 from backend.synthesis import links
-from backend.synthesis.links import LINK_SYSTEM_PROMPT, link_signals, parse_links
+from backend.synthesis.links import LINK_SYSTEM_PROMPT, link_outlook, link_signals, parse_links
 
 
 def test_parse_links_clamps_and_dedupes():
@@ -115,3 +115,66 @@ async def test_link_signals_bad_json_or_error_returns_none(monkeypatch, reply):
 
     monkeypatch.setattr(llm, "complete", fake)
     assert await link_signals(_devs(), _tensions(), _contradictions()) == ([None], [None])
+
+
+# --- Trends & implications ---
+
+def _trends():
+    return [OutlookItem(statement="Strikes are moving north", basis="assessment", sources=[])]
+
+
+def _implications():
+    return [OutlookItem(statement="Premiums stay high", basis="assessment", sources=[])]
+
+
+@pytest.mark.asyncio
+async def test_link_outlook_sends_both_lists_and_uses_context_model(monkeypatch):
+    _keyed(monkeypatch)
+    seen = {}
+
+    async def fake(**kwargs):
+        seen.update(kwargs)
+        return '{"trends": [[0, 1]], "implications": [[]]}'
+
+    monkeypatch.setattr(llm, "complete", fake)
+    result = await link_outlook(_devs(), _trends(), _implications())
+    assert seen["model"] == settings.context_model
+    prompt = seen["messages"][0]["content"]
+    for text in ("TRENDS:", "IMPLICATIONS:", "Strikes are moving north", "Premiums stay high", "H1"):
+        assert text in prompt
+    assert '"trends"' not in prompt  # test_synthesis routes fake replies by that key
+    assert result == ([[0, 1]], [[]])
+
+
+@pytest.mark.asyncio
+async def test_link_outlook_skipped_without_items(monkeypatch):
+    _keyed(monkeypatch)
+
+    async def fake(**kwargs):
+        pytest.fail("llm.complete must not be called")
+
+    monkeypatch.setattr(llm, "complete", fake)
+    assert await link_outlook(_devs(), [], []) == ([], [])
+
+
+@pytest.mark.asyncio
+async def test_link_outlook_timeout_returns_none(monkeypatch):
+    _keyed(monkeypatch)
+    monkeypatch.setattr(links, "LINK_BUDGET_S", 0.05)
+
+    async def fake(**kwargs):
+        await asyncio.sleep(1)
+
+    monkeypatch.setattr(llm, "complete", fake)
+    assert await link_outlook(_devs(), _trends(), _implications()) == ([None], [None])
+
+
+@pytest.mark.asyncio
+async def test_link_outlook_bad_json_returns_none(monkeypatch):
+    _keyed(monkeypatch)
+
+    async def fake(**kwargs):
+        return "not json"
+
+    monkeypatch.setattr(llm, "complete", fake)
+    assert await link_outlook(_devs(), _trends(), _implications()) == ([None], [None])

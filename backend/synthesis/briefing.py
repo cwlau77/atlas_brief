@@ -263,6 +263,26 @@ def _parse_outlook(raw: list, articles: list[Article], *, implications: bool) ->
     return out
 
 
+def settle_outlook(items: list[OutlookItem], devs: list[KeyDevelopment]) -> list[OutlookItem]:
+    """The honesty rules that need the developments; safe to run twice.
+
+    Unlinked items borrow the developments that share a source URL. A Reported item with no
+    source left becomes an assessment, and an assessment linked to nothing is dropped.
+    """
+    dev_urls = [{s.url for s in d.sources} for d in devs]
+    out: list[OutlookItem] = []
+    for item in items:
+        if item.related_developments is None:
+            urls = {s.url for s in item.sources}
+            item.related_developments = [i for i, d in enumerate(dev_urls) if d & urls]
+        if item.basis == "reported" and not item.sources:
+            item.basis, item.quote = "assessment", None
+        if item.basis == "assessment" and not item.related_developments:
+            continue
+        out.append(item)
+    return out
+
+
 def _fallback_citations(articles: list[Article], limit: int = 3) -> list[SourceCitation]:
     return [
         SourceCitation(outlet=article.source, url=article.url, published_at=article.published_at,

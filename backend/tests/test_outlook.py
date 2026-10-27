@@ -101,3 +101,42 @@ def test_config_outlook_model_defaults_to_haiku(tmp_path, monkeypatch):
     monkeypatch.setitem(Settings.model_config, "env_file", str(tmp_path / "none.env"))
     monkeypatch.delenv("OUTLOOK_MODEL", raising=False)
     assert Settings().outlook_model == "claude-haiku-4-5"
+
+
+# --- Settling links ---
+
+from backend.models import KeyDevelopment, OutlookItem, SourceCitation  # noqa: E402
+from backend.synthesis.briefing import settle_outlook  # noqa: E402
+
+
+def _cite(url):
+    return SourceCitation(outlet="O", url=url)
+
+
+def _dev(url):
+    return KeyDevelopment(headline="H", summary="S", regions=[], sources=[_cite(url)])
+
+
+def test_overlap_fallback_links_devs_sharing_a_source_url():
+    item = OutlookItem(statement="S", basis="assessment", sources=[_cite("u2")])
+    assert settle_outlook([item], [_dev("u1"), _dev("u2")])[0].related_developments == [1]
+
+
+def test_link_result_wins_over_overlap():
+    item = OutlookItem(statement="S", basis="assessment", sources=[_cite("u2")], related_developments=[0])
+    assert settle_outlook([item], [_dev("u1"), _dev("u2")])[0].related_developments == [0]
+
+
+def test_unlinked_assessment_dropped_unlinked_reported_kept():
+    assessment = OutlookItem(statement="A", basis="assessment", sources=[_cite("x")])
+    reported = OutlookItem(statement="R", basis="reported", quote="q q q q", sources=[_cite("x")])
+    settled = settle_outlook([assessment, reported], [_dev("u1")])
+    assert [i.statement for i in settled] == ["R"]
+    assert settled[0].related_developments == []
+
+
+def test_reported_without_sources_downgraded_then_dropped_if_unlinked():
+    linked = OutlookItem(statement="L", basis="reported", quote="q q q q", sources=[], related_developments=[0])
+    unlinked = OutlookItem(statement="U", basis="reported", quote="q q q q", sources=[])
+    settled = settle_outlook([linked, unlinked], [_dev("u1")])
+    assert [(i.statement, i.basis, i.quote) for i in settled] == [("L", "assessment", None)]
