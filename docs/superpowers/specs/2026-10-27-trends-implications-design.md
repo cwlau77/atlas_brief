@@ -207,7 +207,7 @@ Layout (see mockup):
 
 - `SectionName` gains `'outlook'`.
 - `SECTIONS` gains `{ name: 'outlook', label: 'Trends' }`, after Signals.
-- `written` still waits for every section. The backend always reports outlook (on success, failure or being dropped), so the ledger finishes.
+- `written` waits for developments, signals and alerts only. Outlook ticks its own line when its event arrives, so a new frontend on an older backend (one that never sends `outlook`) still finishes. The backend always reports outlook, whether it succeeds, fails or is dropped.
 
 ## Saved briefings
 
