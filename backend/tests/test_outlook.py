@@ -163,3 +163,35 @@ def test_allowlist_drops_unlinked_reported_that_lost_its_source():
     trend = OutlookItem(statement="S", basis="reported", quote="q q q q", sources=[_cite("bad")], related_developments=[])
     b = enforce_url_allowlist(_briefing_with(trend, [_dev("u1")]), {"u1"})
     assert b.trends == []
+
+
+# --- Quotes cut off by a truncated snippet end on a whole word ---
+
+@pytest.mark.parametrize("snippet, quote, shown", [
+    # The snippet itself is cut mid-word; the model copied it to the end.
+    ("Carriers are gradually restoring services through the Red Sea, following the widespread d",
+     "gradually restoring services through the Red Sea, following the widespread d",
+     "gradually restoring services through the Red Sea, following the widespread…"),
+    # The quote stops part-way through a word the snippet goes on to finish.
+    ("Measures may be presented as soon as the first quarter of 2027, officials said.",
+     "may be presented as soon as the first quarter of 2",
+     "may be presented as soon as the first quarter of…"),
+    # A quote that ends on a whole word inside the text is left alone.
+    ("Measures may be presented as soon as the first quarter of 2027, officials said.",
+     "may be presented as soon as the first quarter",
+     "may be presented as soon as the first quarter"),
+    # Ending where a finished sentence ends is fine too.
+    ("Premiums are likely to remain elevated into 2027.",
+     "Premiums are likely to remain elevated into 2027.",
+     "Premiums are likely to remain elevated into 2027."),
+])
+def test_quote_cut_mid_word_ends_on_a_whole_word(make_article, snippet, quote, shown):
+    b, _ = _outlook(make_article, [{"statement": "S", "basis": "reported", "quote": quote, "sources": [1]}],
+                    articles=[make_article(title="Headline", snippet=snippet, url="https://ex.com/1")])
+    assert (b.trends[0].basis, b.trends[0].quote) == ("reported", shown)
+
+
+def test_trimmed_quote_under_four_words_is_downgraded(make_article):
+    b, _ = _outlook(make_article, [{"statement": "S", "basis": "reported", "quote": "after the widespread d", "sources": [1]}],
+                    articles=[make_article(title="Headline", snippet="Ships return after the widespread d", url="https://ex.com/1")])
+    assert b.trends[0].basis == "assessment"

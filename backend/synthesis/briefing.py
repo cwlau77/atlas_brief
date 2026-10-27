@@ -263,6 +263,22 @@ def _normalise_quote(text: str) -> str:
     return " ".join(text.split()).strip(" \"'.,;:!?-")
 
 
+_SENTENCE_END = tuple(".!?\"'”’)")
+
+
+def _whole_word_quote(quote: str, article: Article) -> str:
+    """A quote that stops part-way through a word, or where a cut-off snippet stops, loses that
+    last word and ends in an ellipsis instead."""
+    raw = f"{article.title} {article.snippet}".rstrip()
+    hay, needle = _normalise_quote(raw), _normalise_quote(quote)
+    end = hay.find(needle) + len(needle)
+    cut = hay[end].isalnum() if end < len(hay) else not raw.endswith(_SENTENCE_END)
+    if not cut:
+        return quote.strip()
+    words = quote.split()[:-1]
+    return " ".join(words).rstrip(" ,;:-") + "…" if words else ""
+
+
 def _parse_outlook(raw: list, articles: list[Article], *, implications: bool) -> list[OutlookItem]:
     """Trends or implications. "reported" is kept only when the quote is found in a cited article;
     anything else is Atlas's own assessment. Only a missing statement is a shape error."""
@@ -280,7 +296,10 @@ def _parse_outlook(raw: list, articles: list[Article], *, implications: bool) ->
         quote = item.get("quote") if isinstance(item.get("quote"), str) else ""
         needle = _normalise_quote(quote)
         holding = [a for a in cited if needle and needle in _normalise_quote(f"{a.title} {a.snippet}")]
-        reported = item.get("basis") == "reported" and len(needle.split()) >= 4 and bool(holding)
+        reported = item.get("basis") == "reported" and bool(holding)
+        if reported:
+            quote = _whole_word_quote(quote, holding[0])
+            reported = len(_normalise_quote(quote).split()) >= 4
         watch_for = item.get("watch_for") if implications and isinstance(item.get("watch_for"), str) else None
         out.append(OutlookItem(
             statement=statement,
