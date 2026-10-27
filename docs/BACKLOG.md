@@ -56,7 +56,8 @@ Owner request, 2026-10-27. A new Story-tab section after the timeline, in two pa
 
 Honesty rule (owner's): prefer analysis an article actually states, linked to that article. When no article says it, Atlas may give its own assessment, but must mark it clearly as Atlas's own prediction, not reported fact, and still point to the developments it reasons from. Needs a synthesis change (a new section call or field) and a design pass on how "sourced" and "Atlas assessment" look different.
 
-### Key figures and charts on development cards, each figure sourced
+### ~~Key figures and charts on development cards, each figure sourced~~ (done 2026-10-27)
+Shipped per `docs/superpowers/specs/2026-10-27-key-figures-design.md`: a fifth Haiku call (sharing outlook's 3s grace) pulls figures that are verified word for word in a cited article's title or snippet, with the article's own hedge restored. Up to three per card, only on a card that cites the article; comparable ones get ink bars or 0–100% meters. Original note:
 Owner request, 2026-10-27. Analysts need to know which article a statistic came from. Each development card gets a **Key figures** list: the figure, what it measures, and a link to the article Atlas took it from. Where a card has comparable figures, show them as a chart or stat tiles; the owner rates visual data highly.
 - Every figure must come from a cited article, never be computed or invented by the model, and keep its unit, date and outlet.
 - Likely a model change (e.g. `KeyDevelopment.key_figures: [{value, label, source}]`) with the source validated against the article list, like `enforce_url_allowlist` does for citations.
