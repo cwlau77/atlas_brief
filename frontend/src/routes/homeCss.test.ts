@@ -37,6 +37,13 @@ describe('home styles', () => {
     }
   })
 
+  it('drops the time column when the wire shows suggestions', () => {
+    const wide = rulesFor(homeCss, '.wire-suggested .wire-line').join(';')
+    expect(wide).toMatch(/grid-template-columns:\s*1fr auto/)
+    const narrow = homeCss.slice(homeCss.indexOf('@media (max-width: 480px)'))
+    expect(rulesFor(narrow, '.wire-suggested .wire-line').join(';')).toMatch(/grid-template-columns:\s*1fr\s*;/)
+  })
+
   it('gives wire lines a target at least 24px high', () => {
     const decls = rulesFor(homeCss, '.wire-line').join(';')
     const px = Number(decls.match(/min-height:\s*(\d+(?:\.\d+)?)px/)?.[1])

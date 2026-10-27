@@ -5,6 +5,9 @@ import { loadTrending, orderWire, peekTrending, type TrendingItem } from '../lib
 const WIRE_LINES = 5
 const REFRESH_MS = 10 * 60_000
 const NEW_MS = 1600
+// While only the suggestions show (the backend asleep or restarting), try again sooner.
+const RETRY_MS = 30_000
+const RETRIES = 4
 
 type Wire = { items: TrendingItem[]; generatedAt: string | null }
 
@@ -38,10 +41,20 @@ export function TopicWire({ fallback, onPick, disabled = false, timeZone }: {
     // The same session copy the first render showed, so the mount load highlights nothing.
     let current: TrendingItem[] = seedWire().items
     let freshTimer: number | undefined
+    let retryTimer: number | undefined
+    let retries = 0
     const load = () => {
       void loadTrending(ctrl.signal).then((result) => {
+        if (ctrl.signal.aborted) return
         // An empty result is a failure: keep what's showing.
-        if (ctrl.signal.aborted || !result.items.length) return
+        if (!result.items.length) {
+          if (!current.length && retries < RETRIES) {
+            retries++
+            window.clearTimeout(retryTimer)
+            retryTimer = window.setTimeout(check, RETRY_MS)
+          }
+          return
+        }
         const next = orderWire(result.items)
         if (sameTopics(current, next)) return
         const prev = current
@@ -67,6 +80,7 @@ export function TopicWire({ fallback, onPick, disabled = false, timeZone }: {
       window.clearInterval(interval)
       document.removeEventListener('visibilitychange', check)
       window.clearTimeout(freshTimer)
+      window.clearTimeout(retryTimer)
     }
   }, [])
 
@@ -76,7 +90,7 @@ export function TopicWire({ fallback, onPick, disabled = false, timeZone }: {
     : fallback.map((topic) => ({ topic, publishedAt: null }))
   const updated = live ? formatWireTime(wire.generatedAt, timeZone) : ''
   return (
-    <div className={`wire ${live ? 'wire-live' : ''}`}>
+    <div className={`wire ${live ? 'wire-live' : 'wire-suggested'}`}>
       <div className="wire-head">
         {/* The list's aria-label already names the wire. */}
         <span className="wire-label" aria-hidden="true">
@@ -97,7 +111,7 @@ export function TopicWire({ fallback, onPick, disabled = false, timeZone }: {
                 onClick={() => onPick(topic)}
                 disabled={disabled}
               >
-                <span className="wire-time mono">{time}</span>
+                {live && <span className="wire-time mono">{time}</span>}
                 <span className="wire-topic">{topic}</span>
                 <span className="wire-go" aria-hidden="true">Brief me →</span>
               </button>

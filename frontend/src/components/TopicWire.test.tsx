@@ -106,12 +106,52 @@ describe('TopicWire', () => {
     expect(container.querySelector('.wire-updated')).toBeNull()
     expect(container.querySelector('.wire-live')).toBeNull()
     expect(container.querySelector('.wire-mark')).toBeNull()
-    expect([...container.querySelectorAll('.wire-time')].map((t) => t.textContent)).toEqual(['', ''])
+    // No empty time column: the suggestions sit flush left.
+    expect(container.querySelectorAll('.wire-time')).toHaveLength(0)
+    expect(container.querySelector('.wire')?.classList.contains('wire-suggested')).toBe(true)
     act(() => root.unmount())
     root = createRoot(container)
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('asleep') }))
     await render()
     expect(topics()).toEqual(FALLBACK)
+  })
+
+  it('retries every 30s while the suggestions show, then gives up after four tries', async () => {
+    const fetch = vi.fn(async () => { throw new Error('asleep') })
+    vi.stubGlobal('fetch', fetch)
+    await render()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    await advance(29_000)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    await advance(1_000)
+    expect(fetch).toHaveBeenCalledTimes(2)
+    await advance(3 * 30_000)
+    expect(fetch).toHaveBeenCalledTimes(5)
+    await advance(5 * 30_000)
+    expect(fetch).toHaveBeenCalledTimes(5)
+  })
+
+  it('swaps the suggestions for the live wire when a retry succeeds', async () => {
+    respond({ topics: [], items: [] })
+    await render()
+    expect(container.querySelector('.wire-label')?.textContent).toBe('Suggested')
+    const fetch = respond(BODY)
+    await advance(30_000)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(container.querySelector('.wire-label')?.textContent).toBe('On the wire')
+    expect(container.querySelector('.wire-suggested')).toBeNull()
+    expect(newTopics()).toEqual([])
+    await advance(5 * 30_000)
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retry while the tab is hidden', async () => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
+    const fetch = vi.fn(async () => { throw new Error('asleep') })
+    vi.stubGlobal('fetch', fetch)
+    await render()
+    await advance(5 * 30_000)
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('briefs on the clicked line and names it for screen readers', async () => {

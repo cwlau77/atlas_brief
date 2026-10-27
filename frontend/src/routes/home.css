@@ -85,6 +85,8 @@
   text-align: left;
   cursor: pointer;
 }
+/* Suggestions carry no times, so they drop the time column and sit flush left. */
+.wire-suggested .wire-line { grid-template-columns: 1fr auto; }
 .wire-time { font-size: 0.8rem; color: var(--ink-3); }
 .wire-topic { font-size: 0.95rem; font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
 .wire-go { font-size: 0.75rem; color: var(--ink-3); }
@@ -94,6 +96,7 @@
 @media (max-width: 480px) {
   .wire-go { display: none; }
   .wire-line { grid-template-columns: 5.5em 1fr; }
+  .wire-suggested .wire-line { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .wire-live .wire-line { animation: wire-in var(--dur-mid) var(--ease-out) both; }
