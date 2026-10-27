@@ -136,7 +136,7 @@ Not fixable with the current check, recorded so it isn't forgotten: a verbatim q
 The final review of Key figures (`docs/superpowers/specs/2026-10-27-key-figures-design.md`) found these. None shows a wrong number, so they were deferred.
 
 - **A preposition can be read as a hedge.** `_figure_qualifier` restores the word before a figure when it is on the qualifier list, so "talks about 50 hostages" shows "about 50", and "dispute over 3 islands" shows "over 3", which the frontend then treats as a bound and won't chart. A fix would restore a qualifier only when the model's own figure dropped it, and not after a noun or verb. That's hard to get right, so a known limit may be fine.
-- **The figures call outlives a cancelled briefing.** If synthesis is cancelled during the grace wait (a stream client disconnects), `asyncio.wait` leaves the figures task, and the outlook task as before, running to completion. That wastes about half a cent and has no visible effect. Wrap the wait, cancel both tasks, and re-raise.
+- **The figures call outlives a cancelled briefing.** Same fix as §6's "Tasks outlive a cancelled briefing", which covers `figures_task` too.
 - **A leading intensifier can be trimmed.** "just under 10%" can come back as "under 10%". It's still a bound and never charted, but the wording isn't the article's.
 - **The model's `kind` can't be checked.** Live check: a 4.5% growth rate was tagged `share`. The meter caption ("Percentages on a 0–100% scale") and the people-noun list limit the damage. A tighter prompt could make it rarer.
 
