@@ -143,7 +143,12 @@ export function TensionIndex({ id, items, highlight, timeZone, onOpen }: {
                   <ul>
                     {item.linked.map((l) => (
                       <li key={l.dev}>
-                        <button type="button" aria-label={`Go to development: ${l.title}`} onClick={() => onOpen(`dev-${l.dev}`)}>
+                        <button type="button" aria-label={`Go to development: ${l.title}`} onClick={() => {
+                          // End the row's preview in the same update as the jump: the scroll will carry
+                          // the row out from under the pointer, and that leave must not retire the jump.
+                          preview(null)
+                          onOpen(`dev-${l.dev}`)
+                        }}>
                           <span className="index-tie-title">{l.title}</span>
                           <time dateTime={l.timestamp}>{formatDayMonth(l.timestamp, timeZone)}</time>
                         </button>

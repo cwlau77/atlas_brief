@@ -141,6 +141,29 @@ describe('StoryTab', () => {
     })
   })
 
+  describe('a Ties to jump', () => {
+    afterEach(() => vi.useRealTimers())
+    const mouse = (el: Element, type: 'mouseover' | 'mouseout') =>
+      act(() => { el.dispatchEvent(new MouseEvent(type, { bubbles: true, relatedTarget: document.body })) })
+
+    it('keeps the globe on its card when the scroll moves the row out from under the pointer', () => {
+      vi.useFakeTimers()
+      show(makeBriefing())
+      for (const c of container.querySelectorAll<HTMLElement>('.dev')) c.scrollIntoView = () => {}
+      const row = container.querySelector<HTMLElement>('#tension-index .index-item')!
+      mouse(row, 'mouseover')
+      act(() => { vi.advanceTimersByTime(400) })
+      act(() => row.querySelector<HTMLButtonElement>('.index-ties button')!.click())
+      act(() => { vi.advanceTimersByTime(400) })
+      const jumped = globeProps.follow
+      expect(jumped).not.toBeNull()
+      // The scroll carries the row away from a still pointer: browsers report a leave.
+      mouse(row, 'mouseout')
+      act(() => { vi.advanceTimersByTime(1000) })
+      expect(globeProps.follow).toEqual(jumped)
+    })
+  })
+
   describe('region tag tap on a touch screen', () => {
     const tapRegion = (globeTop: number) => {
       vi.stubGlobal('matchMedia', (q: string) => ({
