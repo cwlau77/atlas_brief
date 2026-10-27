@@ -4,7 +4,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { MountainBand } from '../components/Footer'
 import { PrintIcon, StarIcon, TrashIcon } from '../components/icons'
 import { groupThreads, hasHighAlert, type TopicThread } from '../lib/archive'
-import type { SavedBriefing } from '../lib/normalize'
+import { actorsText, type SavedBriefing } from '../lib/normalize'
 import { plural } from '../lib/plural'
 import { upperFirst } from '../lib/text'
 import { formatDate, formatDateTime } from '../lib/time'
@@ -29,7 +29,7 @@ function CompareColumn({ briefing, timeZone }: { briefing: SavedBriefing; timeZo
       <div className="compare-block">
         <span className="label">Tensions</span>
         {briefing.emergingTensions.length
-          ? <ul>{briefing.emergingTensions.map((t, i) => <li key={i}>{t.actors}</li>)}</ul>
+          ? <ul>{briefing.emergingTensions.map((t, i) => <li key={i}>{actorsText(t.actors)}</li>)}</ul>
           : <p className="compare-none">None surfaced.</p>}
       </div>
     </div>

@@ -42,6 +42,8 @@ export interface Tension {
   sources: SourceCitation[]
   /** Zero-based indexes into key_developments; null/absent when the link call did not run. */
   related_developments?: number[] | null
+  /** How the actors relate: one of the backend's six values; absent in older briefings. */
+  relationship?: string | null
 }
 
 export interface Contradiction {

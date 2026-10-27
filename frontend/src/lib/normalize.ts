@@ -28,12 +28,29 @@ export interface ViewDevelopment {
   commonsImage: CommonsImage | null
 }
 
+/** How a tension's actors relate (the API's enum); the words shown live in lib/tensionIndex.ts. */
+export type TensionRelationship = 'in_conflict' | 'rivalry' | 'competing_claims' | 'pressure' | 'negotiating' | 'uneasy_partners'
+
+const RELATIONSHIPS: readonly string[] = ['in_conflict', 'rivalry', 'competing_claims', 'pressure', 'negotiating', 'uneasy_partners']
+
+// "A, B and C": no Oxford comma, in keeping with the rest of the copy.
+const ACTOR_LIST = new Intl.ListFormat('en-GB', { style: 'long', type: 'conjunction' })
+
+/** Actors as words. Briefings saved before 2026-10-27 joined them with arrows ("A ↔ B"). */
+export function actorsText(actors: string): string {
+  const parts = actors.split(/\s*↔\s*/)
+  return parts.length > 1 ? ACTOR_LIST.format(parts) : actors
+}
+
 export interface ViewTension {
+  /** Actors as words ("A and B"); older saved briefings hold "A ↔ B", read through actorsText. */
   actors: string
   level: 'high' | 'medium' | 'low'
   description: string
   sources: SourceCitation[]
   relatedDevelopments: number[] | null
+  /** Absent in briefings saved before relationships existed. */
+  relationship?: TensionRelationship | null
 }
 
 export type ViewContradiction = Omit<Contradiction, 'related_developments'> & {
@@ -139,11 +156,12 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
       commonsImage: item.commons_image ?? null,
     })),
     emergingTensions: (apiBriefing.emerging_tensions || []).map((item, index) => ({
-      actors: (item.actors || []).join(' ↔ ') || 'Multiple actors',
+      actors: item.actors?.length ? ACTOR_LIST.format(item.actors) : 'Multiple actors',
       level: index === 0 ? 'high' : index === 1 ? 'medium' : 'low',
       description: item.description,
       sources: item.sources || [],
       relatedDevelopments: item.related_developments ?? null,
+      relationship: RELATIONSHIPS.includes(item.relationship ?? '') ? (item.relationship as TensionRelationship) : null,
     })),
     contradictions: (apiBriefing.contradictions || []).map(({ related_developments, ...rest }) => ({
       ...rest,

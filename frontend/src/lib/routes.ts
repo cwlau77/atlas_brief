@@ -1,7 +1,7 @@
 // Transit-style routes: a tension or source disagreement linked to two or more
 // developments, drawn as its own lane beside the timeline and as a globe arc.
 // Pure; Timeline and the globe do the drawing.
-import type { SavedBriefing } from './normalize'
+import { actorsText, type SavedBriefing } from './normalize'
 import { linkBriefing, type TimelineEntry } from './timeline'
 
 export interface RouteColor { token: string; hex: string }
@@ -47,7 +47,7 @@ export function buildRoutes(
   const row = new Map(order.map((e, r) => [e.index, r]))
   const inOrder = (devs: number[]) => [...devs].sort((x, y) => (row.get(x) ?? 0) - (row.get(y) ?? 0))
   const candidates = [
-    ...links.tensions.map((devs, i) => ({ kind: 'tension' as const, i, devs, title: b.emergingTensions[i]?.actors ?? '' })),
+    ...links.tensions.map((devs, i) => ({ kind: 'tension' as const, i, devs, title: actorsText(b.emergingTensions[i]?.actors ?? '') })),
     ...links.contradictions.map((devs, i) => ({ kind: 'contradiction' as const, i, devs, title: b.contradictions[i]?.topic ?? '' })),
   ].filter((c) => c.devs.length >= 2)
   candidates.sort((x, y) =>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isSavedBriefing } from '../state/resolveBriefing'
-import { flattenSourceCitations, normalizeBriefing, withDefaults, type SavedBriefing } from './normalize'
+import { actorsText, flattenSourceCitations, normalizeBriefing, withDefaults, type SavedBriefing } from './normalize'
 import type { ApiBriefing } from './types'
 
 const FIXTURE: ApiBriefing = {
@@ -84,10 +84,6 @@ describe('normalizeBriefing', () => {
   it('assigns development priority by position', () => {
     expect(vm.keyDevelopments.map((d) => d.priority)).toEqual(['high', 'medium'])
     expect(vm.keyDevelopments[0].historicalContext).toContain('2021')
-  })
-
-  it('joins tension actors with the interchange arrow', () => {
-    expect(vm.emergingTensions[0].actors).toBe('India ↔ Pakistan')
   })
 
   it('keeps the area and generation timestamp', () => {
@@ -200,5 +196,27 @@ describe('related developments', () => {
     const loaded = withDefaults(old)
     expect(loaded.emergingTensions[0].relatedDevelopments).toBeNull()
     expect(loaded.contradictions[0].relatedDevelopments).toBeNull()
+  })
+})
+
+describe('tension relationship and actors', () => {
+  const tension = (actors: string[], relationship?: string | null) => ({ description: 'D', actors, sources: [], relationship })
+  const view = (tensions: ReturnType<typeof tension>[]) =>
+    normalizeBriefing({ ...FIXTURE, emerging_tensions: tensions }, 'daily').emergingTensions
+
+  it('maps a known relationship and drops an unknown or missing one', () => {
+    const ts = view([tension(['A'], 'rivalry'), tension(['A'], 'war'), tension(['A'], null), tension(['A'])])
+    expect(ts.map((t) => t.relationship)).toEqual(['rivalry', null, null, null])
+  })
+
+  it('writes actors as words', () => {
+    const ts = view([tension(['Egypt']), tension(['A', 'B']), tension(['A', 'B', 'C']), tension([])])
+    expect(ts.map((t) => t.actors)).toEqual(['Egypt', 'A and B', 'A, B and C', 'Multiple actors'])
+  })
+
+  it('actorsText reformats a legacy arrow string and leaves words alone', () => {
+    expect(actorsText('A ↔ B ↔ C')).toBe('A, B and C')
+    expect(actorsText('A ↔ B')).toBe('A and B')
+    expect(actorsText('A and B')).toBe('A and B')
   })
 })

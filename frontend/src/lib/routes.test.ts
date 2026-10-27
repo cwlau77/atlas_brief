@@ -47,7 +47,8 @@ describe('buildRoutes', () => {
     expect(routes.map((r) => r.color)).toEqual(ROUTE_COLORS.slice(0, 3))
     expect(routes.map((r) => r.dashed)).toEqual([false, false, true])
     expect(colorFor.get('contradiction-0')).toEqual(ROUTE_COLORS[2])
-    expect(routes[0]).toMatchObject({ kind: 'tension', i: 1, title: 'A ↔ B' })
+    // A saved briefing's arrow actors read as words.
+    expect(routes[0]).toMatchObject({ kind: 'tension', i: 1, title: 'A and B' })
     expect(routes[2]).toMatchObject({ kind: 'contradiction', i: 0, title: 'South Africa or Egypt' })
   })
 

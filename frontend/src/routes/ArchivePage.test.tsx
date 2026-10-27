@@ -65,6 +65,19 @@ describe('ArchivePage threads', () => {
     expect(container.textContent).toContain('Side by side')
   })
 
+  it('compare lists a saved briefing\'s arrow actors as words', () => {
+    const b = makeBriefing({ id: 'r2', area: 'red sea shipping', generatedAt: day(17) })
+    const legacy = { ...b, emergingTensions: [{ ...b.emergingTensions[0], actors: 'Houthi forces ↔ EU-US coalition' }] }
+    localStorage.setItem(KEYS.saved, JSON.stringify([legacy, makeBriefing({ id: 'r1', area: 'Red Sea shipping', generatedAt: day(12) })]))
+    mount()
+    act(() => [...container.querySelectorAll('button')].find((x) => x.textContent === 'Compare two')!.click())
+    const picks = [...container.querySelectorAll<HTMLButtonElement>('button.bead')]
+    act(() => picks[0].click())
+    act(() => picks[1].click())
+    expect(container.textContent).toContain('Houthi forces and EU-US coalition')
+    expect(container.textContent).not.toContain('↔')
+  })
+
   it('shows the empty state with no briefings', () => {
     localStorage.clear()
     mount()
