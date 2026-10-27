@@ -2,7 +2,7 @@
 // readable by entries already sitting in users' localStorage.
 
 import { upperFirst } from './text'
-import type { ApiBriefing, ApiPlace, CommonsImage, Contradiction, SourceCitation } from './types'
+import type { ApiBriefing, ApiPlace, CommonsImage, Contradiction, OutlookItem, SourceCitation } from './types'
 
 export type AlertTone = 'urgent' | 'warning' | 'info'
 
@@ -57,6 +57,32 @@ export type ViewContradiction = Omit<Contradiction, 'related_developments'> & {
   relatedDevelopments: number[] | null
 }
 
+/** Stated by an article, or Atlas's own reading; the words shown live in lib/outlook.ts. */
+export type OutlookBasis = 'reported' | 'assessment'
+
+export interface ViewOutlook {
+  statement: string
+  basis: OutlookBasis
+  quote: string | null
+  sources: SourceCitation[]
+  watchFor: string | null
+  relatedDevelopments: number[] | null
+}
+
+// Anything but "reported" reads as Atlas's own assessment: the safer label.
+const basisOf = (basis: unknown): OutlookBasis => (basis === 'reported' ? 'reported' : 'assessment')
+
+function viewOutlook(item: OutlookItem): ViewOutlook {
+  return {
+    statement: item.statement,
+    basis: basisOf(item.basis),
+    quote: item.quote ?? null,
+    sources: item.sources || [],
+    watchFor: item.watch_for || null,
+    relatedDevelopments: item.related_developments ?? null,
+  }
+}
+
 export interface ViewReading {
   title: string
   publication: string
@@ -78,6 +104,9 @@ export interface SavedBriefing {
   emergingTensions: ViewTension[]
   contradictions: ViewContradiction[]
   readingList: ViewReading[]
+  /** Absent in briefings saved before 2026-10-27. */
+  trends?: ViewOutlook[]
+  implications?: ViewOutlook[]
 }
 
 export function flattenSourceCitations(briefing: ApiBriefing): SourceCitation[] {
@@ -173,6 +202,8 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
       why: item.why,
       link: item.url,
     })),
+    trends: (apiBriefing.trends || []).map(viewOutlook),
+    implications: (apiBriefing.implications || []).map(viewOutlook),
   }
 }
 
@@ -189,5 +220,7 @@ export function withDefaults(b: SavedBriefing): SavedBriefing {
     })),
     emergingTensions: (b.emergingTensions ?? []).map((t) => ({ ...t, relatedDevelopments: t.relatedDevelopments ?? null })),
     contradictions: (b.contradictions ?? []).map((c) => ({ ...c, relatedDevelopments: c.relatedDevelopments ?? null })),
+    trends: (b.trends ?? []).map((t) => ({ ...t, basis: basisOf(t.basis) })),
+    implications: (b.implications ?? []).map((t) => ({ ...t, basis: basisOf(t.basis) })),
   }
 }

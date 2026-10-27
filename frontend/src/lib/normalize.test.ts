@@ -220,3 +220,38 @@ describe('tension relationship and actors', () => {
     expect(actorsText('A and B')).toBe('A and B')
   })
 })
+
+describe('trends and implications', () => {
+  const item = { statement: 'S', basis: 'reported', quote: 'q q q q', sources: [], related_developments: [0] }
+
+  it('maps both lists to the view shape', () => {
+    const b = normalizeBriefing({
+      ...FIXTURE,
+      trends: [item],
+      implications: [{ ...item, basis: 'assessment', quote: null, watch_for: 'W', related_developments: null }],
+    }, 'daily')
+    expect(b.trends).toEqual([{ statement: 'S', basis: 'reported', quote: 'q q q q', sources: [], watchFor: null, relatedDevelopments: [0] }])
+    expect(b.implications?.[0]).toMatchObject({ basis: 'assessment', quote: null, watchFor: 'W', relatedDevelopments: null })
+  })
+
+  it('reads an unknown basis as an assessment', () => {
+    const b = normalizeBriefing({ ...FIXTURE, trends: [{ ...item, basis: 'rumour' }] }, 'daily')
+    expect(b.trends?.[0].basis).toBe('assessment')
+  })
+
+  it('gives empty lists when the API has none', () => {
+    const b = normalizeBriefing(FIXTURE, 'daily')
+    expect(b.trends).toEqual([])
+    expect(b.implications).toEqual([])
+  })
+
+  it('withDefaults fills a missing list and fixes an unknown basis', () => {
+    const current = normalizeBriefing(FIXTURE, 'daily')
+    const { trends: _t, implications: _i, ...rest } = current
+    const old = JSON.parse(JSON.stringify({ ...rest, trends: [{ statement: 'S', basis: 'rumour', quote: null, sources: [], watchFor: null, relatedDevelopments: null }] })) as SavedBriefing
+    const loaded = withDefaults(old)
+    expect(loaded.implications).toEqual([])
+    expect(loaded.trends?.[0].basis).toBe('assessment')
+    expect(withDefaults(JSON.parse(JSON.stringify(rest)) as SavedBriefing).trends).toEqual([])
+  })
+})

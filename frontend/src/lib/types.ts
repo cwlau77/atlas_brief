@@ -72,6 +72,16 @@ export interface RecommendedReading {
   why: string
 }
 
+/** A trend or implication: stated by an article ("reported") or Atlas's own reading ("assessment"). */
+export interface OutlookItem {
+  statement: string
+  basis: string
+  quote: string | null
+  sources: SourceCitation[]
+  watch_for?: string | null
+  related_developments?: number[] | null
+}
+
 export interface ApiBriefing {
   focus: string
   generated_at: string
@@ -82,4 +92,7 @@ export interface ApiBriefing {
   recommended_readings: RecommendedReading[]
   article_count: number
   source_breakdown: Record<string, number>
+  /** Absent in older briefings. */
+  trends?: OutlookItem[]
+  implications?: OutlookItem[]
 }
