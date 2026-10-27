@@ -26,6 +26,16 @@ export interface ApiPlace {
   lng: number
 }
 
+/** A figure copied word for word from one article the development cites. */
+export interface KeyFigure {
+  figure: string
+  label: string
+  /** people | money | share | change | count | other; decides what may share a chart. */
+  kind?: string | null
+  period?: string | null
+  source: SourceCitation
+}
+
 export interface KeyDevelopment {
   headline: string
   summary: string
@@ -34,6 +44,8 @@ export interface KeyDevelopment {
   historical_context: string | null
   place?: ApiPlace | null
   commons_image?: CommonsImage | null
+  /** Absent in older briefings. */
+  key_figures?: KeyFigure[]
 }
 
 export interface Tension {

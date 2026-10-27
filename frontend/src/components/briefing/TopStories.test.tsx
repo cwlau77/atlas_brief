@@ -8,7 +8,7 @@ import { TopStories } from './TopStories'
 
 const dev = (priority: ViewDevelopment['priority'], timestamp: string): ViewDevelopment => ({
   title: `${priority} ${timestamp}`, content: '', historicalContext: '', priority, regions: [], sources: [],
-  timestamp, leadImage: null, place: null, commonsImage: null,
+  timestamp, leadImage: null, place: null, commonsImage: null, keyFigures: [],
 })
 
 describe('topStories', () => {

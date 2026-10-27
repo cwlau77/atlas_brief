@@ -255,3 +255,41 @@ describe('trends and implications', () => {
     expect(withDefaults(JSON.parse(JSON.stringify(rest)) as SavedBriefing).trends).toEqual([])
   })
 })
+
+describe('key figures', () => {
+  const source = { outlet: 'news.un.org', url: 'https://un.org/1', published_at: '2026-10-21T12:08:05Z' }
+
+  it('maps key_figures to keyFigures and narrows an unknown kind to null', () => {
+    const api: ApiBriefing = {
+      ...FIXTURE,
+      key_developments: [
+        {
+          ...FIXTURE.key_developments[0],
+          key_figures: [
+            { figure: '34 million people', label: 'need humanitarian support', kind: 'people', period: null, source },
+            { figure: '2.5', label: 'ratio', kind: 'ratio', source },
+          ],
+        },
+        FIXTURE.key_developments[1],
+      ],
+    }
+    const [first, second] = normalizeBriefing(api, 'daily').keyDevelopments
+    expect(first.keyFigures).toEqual([
+      { figure: '34 million people', label: 'need humanitarian support', kind: 'people', period: null, source },
+      { figure: '2.5', label: 'ratio', kind: null, period: null, source },
+    ])
+    expect(second.keyFigures).toEqual([])
+  })
+
+  it('withDefaults gives saved briefings without figures an empty list', () => {
+    const current = normalizeBriefing(FIXTURE, 'daily')
+    const old = JSON.parse(JSON.stringify({
+      ...current,
+      keyDevelopments: current.keyDevelopments.map(({ keyFigures: _k, ...rest }) => rest),
+    })) as SavedBriefing
+    const loaded = withDefaults(old)
+    expect(loaded.keyDevelopments.every((d) => Array.isArray(d.keyFigures) && d.keyFigures.length === 0)).toBe(true)
+    expect(loaded.keyDevelopments.map(({ keyFigures: _k, ...rest }) => rest))
+      .toEqual(current.keyDevelopments.map(({ keyFigures: _k, ...rest }) => rest))
+  })
+})

@@ -2,7 +2,7 @@
 // readable by entries already sitting in users' localStorage.
 
 import { upperFirst } from './text'
-import type { ApiBriefing, ApiPlace, CommonsImage, Contradiction, OutlookItem, SourceCitation } from './types'
+import type { ApiBriefing, ApiPlace, CommonsImage, Contradiction, KeyFigure, OutlookItem, SourceCitation } from './types'
 
 export type AlertTone = 'urgent' | 'warning' | 'info'
 
@@ -26,6 +26,30 @@ export interface ViewDevelopment {
   leadImage: string | null
   place: ApiPlace | null
   commonsImage: CommonsImage | null
+  keyFigures: ViewKeyFigure[]
+}
+
+/** What kind of quantity a key figure is (the API's enum); it decides only what may share a chart. */
+export type FigureKind = 'people' | 'money' | 'share' | 'change' | 'count' | 'other'
+
+const FIGURE_KINDS: readonly string[] = ['people', 'money', 'share', 'change', 'count', 'other']
+
+export interface ViewKeyFigure {
+  figure: string
+  label: string
+  kind: FigureKind | null
+  period: string | null
+  source: SourceCitation
+}
+
+function viewFigure(f: KeyFigure): ViewKeyFigure {
+  return {
+    figure: f.figure,
+    label: f.label,
+    kind: FIGURE_KINDS.includes(f.kind ?? '') ? (f.kind as FigureKind) : null,
+    period: f.period ?? null,
+    source: f.source,
+  }
 }
 
 /** How a tension's actors relate (the API's enum); the words shown live in lib/tensionIndex.ts. */
@@ -183,6 +207,7 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
       leadImage: (item.sources || []).find((s) => s.image_url)?.image_url || null,
       place: item.place || null,
       commonsImage: item.commons_image ?? null,
+      keyFigures: (item.key_figures || []).map(viewFigure),
     })),
     emergingTensions: (apiBriefing.emerging_tensions || []).map((item, index) => ({
       actors: item.actors?.length ? ACTOR_LIST.format(item.actors) : 'Multiple actors',
@@ -217,6 +242,7 @@ export function withDefaults(b: SavedBriefing): SavedBriefing {
       leadImage: typeof d.leadImage === 'string' ? d.leadImage : null,
       place: d.place ?? null,
       commonsImage: d.commonsImage ?? null,
+      keyFigures: d.keyFigures ?? [],
     })),
     emergingTensions: (b.emergingTensions ?? []).map((t) => ({ ...t, relatedDevelopments: t.relatedDevelopments ?? null })),
     contradictions: (b.contradictions ?? []).map((c) => ({ ...c, relatedDevelopments: c.relatedDevelopments ?? null })),
