@@ -152,4 +152,17 @@ describe('story styles', () => {
     expect(rulesFor(storyCss, '.text-btn').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
     expect(rulesFor(storyCss, '.chip').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
   })
+
+  it('the index has no square strip left', () => {
+    expect(storyCss).not.toContain('.index-strip')
+  })
+
+  it('Ties to titles clamp to one line on screen and print in full', () => {
+    expect(rulesFor(storyCss, '.index-tie-title').join(';')).toMatch(/text-overflow:\s*ellipsis/)
+    expect(printBlock(storyCss)).toMatch(/\.index-tie-title[^{]*\{[^}]*white-space:\s*normal/)
+  })
+
+  it('gives Ties to buttons 24px targets', () => {
+    expect(rulesFor(storyCss, '.index-ties button').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
+  })
 })

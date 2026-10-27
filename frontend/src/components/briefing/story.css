@@ -91,8 +91,9 @@
 .index-row {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  row-gap: 2px;
   gap: var(--space-3);
   padding: 10px 12px 4px;
   text-align: left;
@@ -105,10 +106,8 @@
 .index-kind.hot { --kind: var(--hot); }
 .index-kind-sq { flex: none; width: 8px; height: 8px; background: var(--kind); }
 .index-sides { min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
-.index-strip { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; max-width: 96px; }
-.index-strip i { flex: none; width: 10px; height: 10px; box-shadow: inset 0 0 0 1px var(--rule-strong); }
-.index-strip i.on { background: var(--ink); box-shadow: none; }
-.index-item.active .index-strip i.on { background: var(--accent); }
+/* How the sides relate, in words, under the actors. */
+.index-relation { grid-column: 2; color: var(--ink-2); }
 .index-why {
   grid-column: 1 / -1;
   min-width: 0;
@@ -134,8 +133,40 @@
 .index-show { margin-left: 12px; }
 /* Rows and alerts past the first 3: hidden on screen until "Show N more", always printed. */
 .index-item.is-overflow, .alert.is-overflow { display: none; }
+/* The developments a row ties to, named: one line each, a jump to the card. */
+.index-ties {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-3);
+  align-items: baseline;
+  padding: 0 12px 10px;
+  min-width: 0;
+}
+.index-ties > .label { color: var(--ink-3); }
+.index-ties ul { list-style: none; display: grid; min-width: 0; }
+.index-ties button {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 24px; /* WCAG 2.5.8 target size */
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.index-ties button:hover .index-tie-title { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.index-ties button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.index-tie-title { min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.index-ties time { flex: none; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.index-ties-none { color: var(--ink-3); }
 @media (prefers-reduced-motion: no-preference) {
-  .index-item, .index-strip i { transition: background-color var(--dur-quick), box-shadow var(--dur-quick); }
+  .index-item { transition: background-color var(--dur-quick), box-shadow var(--dur-quick); }
+  .index-tie-title { transition: color var(--dur-quick); }
 }
 
 /* Read first: ruled cells, 3 across, 2 on tablets, 1 on phones. Cells share their hairlines. */
@@ -311,4 +342,5 @@
   /* Every alert and index row prints, in full, without the screen-only reveal controls. */
   .index-item.is-overflow, .alert.is-overflow { display: grid; }
   .clamp-2, .index-why { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
+  .index-tie-title { white-space: normal; overflow: visible; }
 }

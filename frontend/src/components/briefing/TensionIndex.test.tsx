@@ -17,12 +17,15 @@ const ITEMS: IndexItem[] = [
 ]
 
 let pinFromOutside: (key: string) => void = () => {}
+let pinnedNow: string | null = null
+const open = vi.fn()
 
 function Harness({ onActive }: { onActive: (a: string | null) => void }) {
   const h = useIndexHighlight()
   onActive(h.active)
   pinFromOutside = h.pin
-  return <TensionIndex id="tension-index" items={ITEMS} devCount={3} order={[2, 0, 1]} highlight={h} />
+  pinnedNow = h.pinned
+  return <TensionIndex id="tension-index" items={ITEMS} highlight={h} timeZone="UTC" onOpen={open} />
 }
 
 describe('TensionIndex', () => {
@@ -133,11 +136,40 @@ describe('TensionIndex', () => {
     expect(toggle.getAttribute('aria-label')).toBe('Less: Shipping lines vs Houthis')
   })
 
-  it('strip fills linked developments in order', () => {
-    const squares = [...rows()[0].querySelectorAll('.index-strip i')]
-    expect(squares).toHaveLength(3)
-    // order [2,0,1] with devs [0,2] -> filled, filled, empty
-    expect(squares.map((s) => s.classList.contains('on'))).toEqual([true, true, false])
+  it('shows the relationship under the actors, inside the row button', () => {
+    // A visually hidden comma keeps the accessible name reading "…coalition, In open conflict".
+    expect(rows()[0].querySelector('.index-relation')!.textContent).toBe(', In open conflict')
+    expect(rows()[1].querySelector('.index-relation')!.textContent).toBe(', Same event, different accounts')
+    expect(rows()[0].querySelector('.index-relation .visually-hidden')!.textContent).toBe(', ')
+    // A tension with no relationship shows no line.
+    expect(rows()[2].querySelector('.index-relation')).toBeNull()
+  })
+
+  it('has no square strip', () => {
+    expect(container.querySelector('.index-strip')).toBeNull()
+  })
+
+  it('names linked developments with their date, in the order given', () => {
+    const ties = [...container.querySelectorAll<HTMLButtonElement>('.index-item:first-child .index-ties button')]
+    expect(ties.map((t) => t.getAttribute('aria-label'))).toEqual(['Go to development: Second', 'Go to development: First'])
+    expect(ties[0].querySelector('.index-tie-title')!.textContent).toBe('Second')
+    expect(ties[0].querySelector('time')!.getAttribute('dateTime')).toBe('2026-10-26T09:00:00Z')
+    expect(container.querySelector('.index-item:first-child .index-ties')!.textContent).toContain('Ties to')
+  })
+
+  it('a Ties to button opens its development and leaves the pin alone', () => {
+    open.mockClear()
+    act(() => pinFromOutside('tension-0'))
+    const tie = container.querySelector<HTMLButtonElement>('.index-item:first-child .index-ties button')!
+    act(() => tie.click())
+    expect(open).toHaveBeenCalledWith('dev-2')
+    expect(pinnedNow).toBe('tension-0')
+  })
+
+  it('says when a row ties to no development', () => {
+    const last = container.querySelectorAll('li.index-item')[3]
+    expect(last.querySelector('.index-ties')!.textContent).toContain('Not tied to one development in this brief')
+    expect(last.querySelectorAll('.index-ties button')).toHaveLength(0)
   })
 
   it('contradiction row shows "Contradiction" and hot marker class', () => {
@@ -175,7 +207,7 @@ describe('TensionIndex reason toggle', () => {
       { key: 'a', kind: 'tension', sides: 'Short', why: 'Fits.', devs: [0], color: null, relation: null, linked: [] },
       { key: 'b', kind: 'tension', sides: 'Long', why: 'A reason long enough to overflow two lines.', devs: [0], color: null, relation: null, linked: [] },
     ]
-    return <TensionIndex items={items} devCount={1} order={[0]} highlight={h} />
+    return <TensionIndex items={items} highlight={h} timeZone="UTC" onOpen={() => {}} />
   }
 
   it('shows "more" only for a reason that overflows its clamp', () => {
@@ -200,7 +232,7 @@ describe('TensionIndex rows', () => {
     pinned, previewed: null, active: pinned, pin: vi.fn(), preview: vi.fn(), clear: vi.fn(),
   })
   const render = (highlight: IndexHighlight) =>
-    act(() => root.render(<TensionIndex id="t" items={ITEMS} devCount={3} order={[2, 0, 1]} highlight={highlight} />))
+    act(() => root.render(<TensionIndex id="t" items={ITEMS} highlight={highlight} timeZone="UTC" onOpen={() => {}} />))
   const li = (i = 0) => container.querySelectorAll<HTMLElement>('li.index-item')[i]
   const click = (el: Element, detail: number) =>
     act(() => { el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail })) })

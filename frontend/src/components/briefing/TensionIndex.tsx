@@ -1,18 +1,22 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { IndexItem } from '../../lib/tensionIndex'
+import { formatDate } from '../../lib/time'
 import type { IndexHighlight } from '../../state/useIndexHighlight'
 import { TextButton } from './TextButton'
 
 const TOP = 3
 
-/** The tension index: every tension and contradiction, busiest first. Hover previews, click pins, Escape clears. */
-export function TensionIndex({ id, items, devCount, order, highlight }: {
+/**
+ * The tension index: every tension and contradiction, busiest first, saying how its sides relate
+ * and naming the developments it ties to. Hover previews, click pins, Escape clears.
+ */
+export function TensionIndex({ id, items, highlight, timeZone, onOpen }: {
   id?: string
   items: IndexItem[]
-  devCount: number
-  /** Development indexes in timeline order: one strip square each. */
-  order: number[]
   highlight: IndexHighlight
+  timeZone: string
+  /** Jumps to a development card by its anchor id ("dev-2"). */
+  onOpen: (anchorId: string) => void
 }) {
   const { active, pinned, pin, preview, clear } = highlight
   const [showAll, setShowAll] = useState(false)
@@ -115,9 +119,8 @@ export function TensionIndex({ id, items, devCount, order, highlight }: {
                   <span className="label">{item.kind === 'contradiction' ? 'Contradiction' : 'Tension'}</span>
                 </span>
                 <span className="index-sides">{item.sides}</span>
-                <span className="index-strip" role="img" aria-label={`Linked to ${item.devs.length} of ${devCount} developments`}>
-                  {order.map((d) => <i key={d} className={item.devs.includes(d) ? 'on' : undefined} />)}
-                </span>
+                {/* A comma for screen readers: "Houthi forces and EU-US coalition, In open conflict". */}
+                {item.relation && <span className="index-relation"><span className="visually-hidden">, </span>{item.relation}</span>}
               </button>
               <p id={`index-why-${item.key}`} data-key={item.key} className={open ? 'index-why open' : 'index-why'}>{item.why}</p>
               {(open || !fits.has(item.key)) && (
@@ -133,6 +136,24 @@ export function TensionIndex({ id, items, devCount, order, highlight }: {
                   {open ? 'Less' : 'More'}
                 </TextButton>
               )}
+              {/* Outside the row button (buttons can't nest); the row's click handler skips these buttons, so they never pin. */}
+              <div className="index-ties">
+                <span className="label">Ties to</span>
+                {item.linked.length ? (
+                  <ul>
+                    {item.linked.map((l) => (
+                      <li key={l.dev}>
+                        <button type="button" aria-label={`Go to development: ${l.title}`} onClick={() => onOpen(`dev-${l.dev}`)}>
+                          <span className="index-tie-title">{l.title}</span>
+                          <time dateTime={l.timestamp}>{formatDate(l.timestamp, timeZone)}</time>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="index-ties-none">Not tied to one development in this brief</p>
+                )}
+              </div>
             </li>
           )
         })}
