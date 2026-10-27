@@ -7,10 +7,13 @@ import { useIndexHighlight, type IndexHighlight } from '../../state/useIndexHigh
 import { TensionIndex } from './TensionIndex'
 
 const ITEMS: IndexItem[] = [
-  { key: 'tension-0', kind: 'tension', sides: 'Shipping lines vs Houthis', why: 'Carriers reroute.', devs: [0, 2], color: ROUTE_COLORS[0] },
-  { key: 'contradiction-0', kind: 'contradiction', sides: 'Tanker damage', why: 'A / B', devs: [1], color: ROUTE_COLORS[1] },
-  { key: 'tension-1', kind: 'tension', sides: 'Navy vs Insurers', why: 'Premiums.', devs: [1], color: null },
-  { key: 'tension-2', kind: 'tension', sides: 'Fourth', why: 'Hidden at first.', devs: [], color: null },
+  { key: 'tension-0', kind: 'tension', sides: 'Shipping lines vs Houthis', why: 'Carriers reroute.', devs: [0, 2], color: ROUTE_COLORS[0],
+    relation: 'In open conflict', linked: [{ dev: 2, title: 'Second', timestamp: '2026-10-26T09:00:00Z' }, { dev: 0, title: 'First', timestamp: '2026-10-26T09:00:00Z' }] },
+  { key: 'contradiction-0', kind: 'contradiction', sides: 'Tanker damage', why: 'A / B', devs: [1], color: ROUTE_COLORS[1],
+    relation: 'Same event, different accounts', linked: [{ dev: 1, title: 'Third', timestamp: '2026-10-26T09:00:00Z' }] },
+  { key: 'tension-1', kind: 'tension', sides: 'Navy vs Insurers', why: 'Premiums.', devs: [1], color: null, relation: null,
+    linked: [{ dev: 1, title: 'Third', timestamp: '2026-10-26T09:00:00Z' }] },
+  { key: 'tension-2', kind: 'tension', sides: 'Fourth', why: 'Hidden at first.', devs: [], color: null, relation: null, linked: [] },
 ]
 
 let pinFromOutside: (key: string) => void = () => {}
@@ -169,8 +172,8 @@ describe('TensionIndex reason toggle', () => {
   function Long() {
     const h = useIndexHighlight()
     const items: IndexItem[] = [
-      { key: 'a', kind: 'tension', sides: 'Short', why: 'Fits.', devs: [0], color: null },
-      { key: 'b', kind: 'tension', sides: 'Long', why: 'A reason long enough to overflow two lines.', devs: [0], color: null },
+      { key: 'a', kind: 'tension', sides: 'Short', why: 'Fits.', devs: [0], color: null, relation: null, linked: [] },
+      { key: 'b', kind: 'tension', sides: 'Long', why: 'A reason long enough to overflow two lines.', devs: [0], color: null, relation: null, linked: [] },
     ]
     return <TensionIndex items={items} devCount={1} order={[0]} highlight={h} />
   }
