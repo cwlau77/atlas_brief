@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal, Optional, get_args
 from pydantic import BaseModel, Field
 
 SourceType = Literal[
@@ -58,11 +58,17 @@ class KeyDevelopment(BaseModel):
     commons_image: Optional[CommonsImage] = None
 
 
+# How a tension's actors relate; the frontend owns the words shown for each.
+Relationship = Literal["in_conflict", "rivalry", "competing_claims", "pressure", "negotiating", "uneasy_partners"]
+RELATIONSHIPS: tuple[str, ...] = get_args(Relationship)
+
+
 class Tension(BaseModel):
     description: str
     actors: list[str]
     sources: list[SourceCitation]
     related_developments: Optional[list[int]] = None  # indexes into key_developments
+    relationship: Optional[Relationship] = None  # absent in older briefings
 
 
 class Contradiction(BaseModel):

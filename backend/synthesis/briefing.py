@@ -14,6 +14,7 @@ from backend.config import settings
 from backend.ingestion.common import USER_AGENT
 from backend.llm_json import extract_json
 from backend.models import (
+    RELATIONSHIPS,
     Article,
     Briefing,
     CommonsImage,
@@ -83,6 +84,7 @@ Constraints:
     {
       "description": "string, 1-3 sentences describing the tension and its trajectory",
       "actors": ["named states, groups, or institutions"],
+      "relationship": "in_conflict | rivalry | competing_claims | pressure | negotiating | uneasy_partners",
       "sources": [article numbers, e.g. 3, 7]
     }
   ],
@@ -98,7 +100,14 @@ Constraints:
 }
 
 Constraints:
-- 0-4 emerging_tensions, 0-4 contradictions.""",
+- 0-4 emerging_tensions, 0-4 contradictions.
+- relationship: pick the one value that best says how the actors relate:
+  in_conflict = fighting, strikes or attacks between the actors;
+  rivalry = hostile posturing, build-ups or threats with no direct incident;
+  competing_claims = rival claims to territory, resources, rights or authority;
+  pressure = one side pressing the other through sanctions, tariffs, tolls, legal or diplomatic action;
+  negotiating = talks, ceasefire or deal-making under strain;
+  uneasy_partners = allies or partners whose interests are pulling apart.""",
     "alerts": """{
   "priority_alerts": [
     {
@@ -371,6 +380,8 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
             description=t["description"],
             actors=t.get("actors", []),
             sources=_parse_citations(t.get("sources", []), articles),
+            # An unknown or missing value is dropped, never a reason to retry the section.
+            relationship=t.get("relationship") if t.get("relationship") in RELATIONSHIPS else None,
         )
         for t in data.get("emerging_tensions", [])
     ]

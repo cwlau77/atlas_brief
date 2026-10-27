@@ -553,3 +553,34 @@ async def test_a_bad_request_is_not_retried(monkeypatch, make_article):
     with pytest.raises(SynthesisFailedError):
         await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
     assert len(calls["key_developments"]) == 1
+
+
+# --- Tension relationship type ---
+
+def _tension_data(relationship):
+    t = {"description": "D", "actors": ["A", "B"], "sources": [1]}
+    if relationship is not ...:
+        t["relationship"] = relationship
+    return {"emerging_tensions": [t]}
+
+
+def test_known_relationship_parses(make_article):
+    b = briefing_from_data(_tension_data("in_conflict"), "f", [make_article()])
+    assert b.emerging_tensions[0].relationship == "in_conflict"
+
+
+@pytest.mark.parametrize("value", ["war", None, 7, ...])
+def test_unknown_or_missing_relationship_is_none(make_article, value):
+    b = briefing_from_data(_tension_data(value), "f", [make_article()])
+    assert b.emerging_tensions[0].relationship is None
+
+
+def test_signals_prompt_lists_every_relationship():
+    from backend.synthesis.briefing import _SECTION_SHAPES
+    for v in ("in_conflict", "rivalry", "competing_claims", "pressure", "negotiating", "uneasy_partners"):
+        assert v in _SECTION_SHAPES["signals"]
+
+
+def test_fallback_tensions_have_no_relationship(make_article):
+    b = _fallback_briefing("Aden port", [make_article(title="Strike near Aden port in Yemen")])
+    assert b.emerging_tensions and all(t.relationship is None for t in b.emerging_tensions)
