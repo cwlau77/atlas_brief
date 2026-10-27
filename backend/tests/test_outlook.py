@@ -195,3 +195,39 @@ def test_trimmed_quote_under_four_words_is_downgraded(make_article):
     b, _ = _outlook(make_article, [{"statement": "S", "basis": "reported", "quote": "after the widespread d", "sources": [1]}],
                     articles=[make_article(title="Headline", snippet="Ships return after the widespread d", url="https://ex.com/1")])
     assert b.trends[0].basis == "assessment"
+
+
+# --- Final review fixes ---
+
+@pytest.mark.parametrize("quote", ["possible deal by Friday is now likely", "ernments will default next year as"])
+def test_quote_must_start_on_a_word_boundary(make_article, quote):
+    article = make_article(title="Officials say an impossible deal by Friday is now likely",
+                           snippet="Analysts think governments will default next year as rates rise.", url="https://ex.com/1")
+    b, _ = _outlook(make_article, [{"statement": "S", "basis": "reported", "quote": quote, "sources": [1]}], articles=[article])
+    assert b.trends[0].basis == "assessment"
+
+
+def test_quote_found_later_on_a_word_boundary_still_verifies(make_article):
+    # The first hit is inside "impossible"; a later whole-word hit counts.
+    article = make_article(title="An impossible deal, officials say", snippet="Still, a possible deal by Friday is now likely.",
+                           url="https://ex.com/1")
+    b, _ = _outlook(make_article, [{"statement": "S", "basis": "reported", "quote": "possible deal by Friday is now likely", "sources": [1]}],
+                    articles=[article])
+    assert b.trends[0].basis == "reported"
+
+
+def test_quote_drops_the_snippet_quote_marks(make_article):
+    b, _ = _outlook(make_article, [{"statement": "S", "basis": "reported",
+                                    "quote": "“Premiums are likely to remain elevated well into 2027,”", "sources": [1]}])
+    assert b.trends[0].quote == "Premiums are likely to remain elevated well into 2027,"
+
+
+@pytest.mark.parametrize("statement", [None, 3, "  "])
+def test_non_string_or_blank_statement_is_shape_error(make_article, statement):
+    with pytest.raises((KeyError, TypeError)):
+        _outlook(make_article, [{"statement": statement, "basis": "assessment", "sources": [1]}])
+
+
+def test_null_lists_parse_as_empty(make_article):
+    b = briefing_from_data({"trends": None, "implications": None}, "f", [make_article()])
+    assert b.trends == [] and b.implications == []

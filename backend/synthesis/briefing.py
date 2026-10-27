@@ -266,12 +266,20 @@ def _normalise_quote(text: str) -> str:
 _SENTENCE_END = tuple(".!?\"'”’)")
 
 
+def _find_whole(hay: str, needle: str) -> int:
+    """Where needle starts in hay on a word boundary, or -1: "possible" must not match inside "impossible"."""
+    at = hay.find(needle) if needle else -1
+    while at > 0 and hay[at - 1].isalnum():
+        at = hay.find(needle, at + 1)
+    return at
+
+
 def _whole_word_quote(quote: str, article: Article) -> str:
     """A quote that stops part-way through a word, or where a cut-off snippet stops, loses that
     last word and ends in an ellipsis instead."""
     raw = f"{article.title} {article.snippet}".rstrip()
     hay, needle = _normalise_quote(raw), _normalise_quote(quote)
-    end = hay.find(needle) + len(needle)
+    end = _find_whole(hay, needle) + len(needle)
     cut = hay[end].isalnum() if end < len(hay) else not raw.endswith(_SENTENCE_END)
     if not cut:
         return quote.strip()
@@ -284,7 +292,10 @@ def _parse_outlook(raw: list, articles: list[Article], *, implications: bool) ->
     anything else is Atlas's own assessment. Only a missing statement is a shape error."""
     out: list[OutlookItem] = []
     for item in raw or []:
-        statement = str(item["statement"]).strip()
+        statement = item["statement"]
+        if not isinstance(statement, str):
+            raise TypeError("statement")
+        statement = statement.strip()
         if not statement:
             raise KeyError("statement")
         # Article numbers only: a legacy {"url": ...} dict can't be checked against an article.
@@ -295,7 +306,7 @@ def _parse_outlook(raw: list, articles: list[Article], *, implications: bool) ->
                 cited.append(article)
         quote = item.get("quote") if isinstance(item.get("quote"), str) else ""
         needle = _normalise_quote(quote)
-        holding = [a for a in cited if needle and needle in _normalise_quote(f"{a.title} {a.snippet}")]
+        holding = [a for a in cited if _find_whole(_normalise_quote(f"{a.title} {a.snippet}"), needle) >= 0]
         reported = item.get("basis") == "reported" and bool(holding)
         if reported:
             quote = _whole_word_quote(quote, holding[0])
@@ -304,7 +315,8 @@ def _parse_outlook(raw: list, articles: list[Article], *, implications: bool) ->
         out.append(OutlookItem(
             statement=statement,
             basis="reported" if reported else "assessment",
-            quote=quote.strip() if reported else None,
+            # The page draws its own quote marks.
+            quote=quote.strip().strip("\"'“”‘’„") if reported else None,
             # A Reported item cites only the article(s) holding its quote.
             sources=_fallback_citations(holding if reported else cited, limit=len(cited)),
             watch_for=(watch_for.strip() or None) if watch_for else None,
@@ -663,7 +675,8 @@ async def synthesize_briefing(
         for item, related in zip(parsed.trends + parsed.implications, trend_links + implication_links):
             item.related_developments = related
         trends, implications = settle_outlook(parsed.trends, devs), settle_outlook(parsed.implications, devs)
-        asked = sum(1 for i in data.get("trends", []) + data.get("implications", []) if i.get("basis") == "reported")
+        raw_items = (data.get("trends") or []) + (data.get("implications") or [])
+        asked = sum(1 for i in raw_items if isinstance(i, dict) and i.get("basis") == "reported")
         kept = trends + implications
         reported_n = sum(1 for i in kept if i.basis == "reported")
         logger.info(

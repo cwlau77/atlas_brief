@@ -708,3 +708,22 @@ async def test_outlook_links_do_not_wait_for_signals(monkeypatch, make_article):
     monkeypatch.setattr(llm, "complete", complete)
     await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
     assert marks["outlook_link"] < marks["signals_done"]
+
+
+@pytest.mark.asyncio
+async def test_outlook_with_a_null_list_keeps_the_other(monkeypatch, make_article):
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            return "Background."
+        if section == "trends":
+            return json.dumps({**SECTION_REPLIES["trends"], "implications": None})
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert [t.statement for t in b.trends] == ["TS"] and b.implications == []
