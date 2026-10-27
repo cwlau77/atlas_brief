@@ -1,0 +1,215 @@
+<title>Atlas Key Figures</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of Atlas development cards, each annotated with what the mockup shows. Atlas is light-only by design. */
+:root {
+  color-scheme: light;
+  --paper: #F5F5F1; --paper-deep: #EBEBE6; --ink: #0E1116; --ink-2: #3F4752; --ink-3: #636A75;
+  --rule: #DADBD5; --rule-strong: #B9BBB3; --accent: #1F3FE0; --accent-wash: rgba(31,63,224,0.08);
+  --hot: #E2381B; --warm: #C27400;
+  --font: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; }
+.page { max-width: 760px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.intro { color: var(--ink-2); max-width: 64ch; margin: 8px 0 0; }
+.label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+.note { display: grid; gap: 6px; }
+.note h2 { font-size: 1rem; font-weight: 600; margin: 0; }
+.note p { margin: 0; color: var(--ink-2); max-width: 66ch; }
+.note .label { color: var(--accent); }
+.demo { display: grid; gap: 12px; }
+
+/* --- the Atlas card, as in story.css --- */
+.dev { background: var(--paper); border: 1px solid var(--rule); display: grid; grid-template-columns: 160px minmax(0,1fr); gap: 20px; padding: 20px; }
+.card-img { aspect-ratio: 1; background: linear-gradient(135deg, var(--paper-deep), var(--rule)); display: grid; place-items: end start; padding: 8px; color: var(--ink-3); }
+.dev-main { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.dev-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.prio { display: inline-flex; gap: 6px; align-items: center; }
+.prio i { width: 8px; height: 8px; background: var(--hot); display: inline-block; }
+.prio.high i { background: var(--warm); }
+.dev-time { color: var(--ink-3); }
+.chip { border: 1px solid var(--rule-strong); padding: 2px 8px; color: var(--ink-2); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.dev-title { font-size: 1.28rem; letter-spacing: -0.015em; line-height: 1.25; margin: 0; font-weight: 600; text-wrap: balance; }
+.dev-body { color: var(--ink-2); margin: 0; max-width: 64ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.chips a { text-decoration: none; text-transform: none; letter-spacing: 0; font-size: 0.8rem; }
+.chips .t { color: var(--ink-3); font-family: var(--mono); font-size: 0.72rem; margin-left: 6px; }
+
+/* --- Key figures: option A, rows --- */
+.kf { display: grid; gap: 10px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.kf-h { color: var(--ink); font-weight: 600; margin: 0; }
+.kf-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.kf-row { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); column-gap: 14px; row-gap: 2px; align-items: center; }
+.kf-fig { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.kf-what { grid-column: 1 / -1; color: var(--ink-2); font-size: 0.9rem; }
+.kf-what .period { color: var(--ink-3); }
+.kf-src { color: var(--ink-3); font-size: 0.8rem; white-space: nowrap; text-decoration: none; border-bottom: 1px solid var(--rule-strong); }
+.kf-src:hover, .kf-src:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+.kf-row.plain { grid-template-columns: minmax(0, 1fr); }
+/* bar cell: one scale from zero across the group */
+.kf-bar { height: 10px; position: relative; }
+.kf-bar > b { position: absolute; inset: 0 auto 0 0; background: var(--ink-2); }
+.kf-bar.meter { background: var(--rule); }
+.kf-bar.none { height: auto; color: var(--ink-3); font-size: 0.78rem; font-style: italic; }
+.kf-chart { position: relative; }
+.kf-chart .kf-row:not(.plain) .kf-bar:not(.none)::before { content: ""; position: absolute; left: 0; top: -4px; bottom: -4px; width: 1px; background: var(--ink-3); }
+.kf-cap { color: var(--ink-3); font-size: 0.8rem; margin: 0; }
+
+/* --- option B, tiles --- */
+.tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); border: 1px solid var(--rule); }
+.tile { padding: 12px; display: grid; gap: 6px; align-content: start; border-right: 1px solid var(--rule); min-width: 0; }
+.tile:last-child { border-right: 0; }
+.tile .kf-fig { font-size: 1.35rem; }
+.tile .kf-what { font-size: 0.85rem; }
+
+@media (max-width: 640px) {
+  .dev { grid-template-columns: minmax(0,1fr); }
+  .card-img { aspect-ratio: 16/7; }
+  .kf-row { grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr); }
+  .tile { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .tile:last-child { border-bottom: 0; }
+}
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<main class="page">
+  <header>
+    <span class="label" style="color:var(--ink-3)">Mockup · not built</span>
+    <h1>Key figures on development cards</h1>
+    <p class="intro">Every figure below is real. Haiku pulled it from the titles and snippets of live articles on 27 October, and Atlas found it word for word in the article it cites. The card text around the figures is shortened. Option A (rows) is the one I recommend. Option B (tiles) comes at the end for comparison.</p>
+  </header>
+
+  <!-- 1 -->
+  <section class="demo">
+    <div class="note">
+      <span class="label">A1 · comparable figures → bars</span>
+      <h2>Three counts of people, from three outlets</h2>
+      <p>All three are counts of people, so they share one scale from zero. Each bar is labelled with the article's own words, including "Nearly". The caption says the figures come from different outlets and dates.</p>
+    </div>
+    <article class="dev">
+      <div class="card-img label">photo</div>
+      <div class="dev-main">
+        <div class="dev-top"><span class="prio label"><i></i>Critical</span><span class="dev-time label">26 Oct, 04:47</span><span class="chip">Sudan</span></div>
+        <h3 class="dev-title">34 million Sudanese need aid as famine risk escalates</h3>
+        <p class="dev-body">UN agencies warn that the humanitarian need is deepening as fighting continues, with a UK-led warning that famine risk is rising across several regions.</p>
+        <div class="kf">
+          <p class="kf-h label">Key figures</p>
+          <ul class="kf-list kf-chart">
+            <li class="kf-row"><span class="kf-fig">34 million people</span><span class="kf-bar"><b style="width:100%"></b></span>
+              <span class="kf-what">need humanitarian support · <a class="kf-src" href="#">news.un.org, 21 Oct ↗</a></span></li>
+            <li class="kf-row"><span class="kf-fig">19.5 million</span><span class="kf-bar"><b style="width:57.35%"></b></span>
+              <span class="kf-what">face acute hunger · <a class="kf-src" href="#">allAfrica.com, 26 Oct ↗</a></span></li>
+            <li class="kf-row"><span class="kf-fig">Nearly 14 million</span><span class="kf-bar"><b style="width:41.18%"></b></span>
+              <span class="kf-what">forced from their homes · <a class="kf-src" href="#">elon.edu, 21 Oct ↗</a></span></li>
+          </ul>
+          <p class="kf-cap">People · one scale from zero · 3 outlets, 21–26 Oct</p>
+        </div>
+        <ul class="chips"><li><a class="chip" href="#">news.un.org<span class="t">6d</span></a></li><li><a class="chip" href="#">allAfrica.com<span class="t">1d</span></a></li><li><a class="chip" href="#">elon.edu<span class="t">6d</span></a></li></ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- 2 -->
+  <section class="demo">
+    <div class="note">
+      <span class="label">A2 · percentage levels → meters, and a limit left uncharted</span>
+      <h2>Tariff levels from one CEPR article</h2>
+      <p>Each share is drawn against its own 0–100% track. "Around 8%" and "roughly 20%" keep the hedges the article used. "Below 10%" is a ceiling, not a value, so it gets a row but no bar. The period ("2018") is copied from the same article.</p>
+    </div>
+    <article class="dev">
+      <div class="card-img label">photo</div>
+      <div class="dev-main">
+        <div class="dev-top"><span class="prio high label"><i></i>High</span><span class="dev-time label">26 Oct</span><span class="chip">China</span><span class="chip">United States</span></div>
+        <h3 class="dev-title">China detects tariff evasion via false origin declarations</h3>
+        <p class="dev-body">Research finds goods are being relabelled to dodge China's origin-specific tariffs on US imports, eroding the intended effect of the trade war's tariff gap.</p>
+        <div class="kf">
+          <p class="kf-h label">Key figures</p>
+          <ul class="kf-list kf-chart">
+            <li class="kf-row"><span class="kf-fig">around 8%</span><span class="kf-bar meter"><b style="width:8%"></b></span>
+              <span class="kf-what">China's average tariff on US goods <span class="period">· before 2018</span> · <a class="kf-src" href="#">cepr.org, 26 Oct ↗</a></span></li>
+            <li class="kf-row"><span class="kf-fig">roughly 20%</span><span class="kf-bar meter"><b style="width:20%"></b></span>
+              <span class="kf-what">China's average tariff on US goods <span class="period">· beginning in 2018</span> · <a class="kf-src" href="#">cepr.org, 26 Oct ↗</a></span></li>
+            <li class="kf-row"><span class="kf-fig">below 10%</span><span class="kf-bar none">a limit, not charted</span>
+              <span class="kf-what">China's tariffs on other origins · <a class="kf-src" href="#">cepr.org, 26 Oct ↗</a></span></li>
+          </ul>
+          <p class="kf-cap">Shares of 100% · 1 outlet, 26 Oct</p>
+        </div>
+        <ul class="chips"><li><a class="chip" href="#">cepr.org<span class="t">1d</span></a></li></ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- 3 -->
+  <section class="demo">
+    <div class="note">
+      <span class="label">A3 · nothing to compare → a plain list</span>
+      <h2>One figure, or figures that measure different things</h2>
+      <p>A single number never becomes a one-bar chart. Figures of different kinds (money next to a growth rate) are listed without bars.</p>
+    </div>
+    <article class="dev">
+      <div class="card-img label">photo</div>
+      <div class="dev-main">
+        <div class="dev-top"><span class="prio high label"><i></i>Elevated</span><span class="dev-time label">25 Oct</span><span class="chip">China</span><span class="chip">Red Sea</span></div>
+        <h3 class="dev-title">China expresses serious concern over Red Sea shipping threats</h3>
+        <p class="dev-body">Beijing and Djibouti jointly stress freedom of navigation, as the route carries a large share of Chinese exports to Europe.</p>
+        <div class="kf">
+          <p class="kf-h label">Key figures</p>
+          <ul class="kf-list">
+            <li class="kf-row plain"><span class="kf-fig">$5 billion</span>
+              <span class="kf-what">Chinese investment in the Suez Canal Economic Zone · <a class="kf-src" href="#">thediplomat.com ↗</a></span></li>
+          </ul>
+        </div>
+        <ul class="chips"><li><a class="chip" href="#">thediplomat.com</a></li></ul>
+      </div>
+    </article>
+    <p class="kf-cap">This article has no publication date, so the row shows the outlet only. Atlas never guesses a date.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="demo">
+    <div class="note">
+      <span class="label">A4 · saved briefing from before this change</span>
+      <h2>No figures, no block</h2>
+      <p>Older saved briefings, and new cards whose articles hold no figures, render exactly as today: no heading, no empty state.</p>
+    </div>
+    <article class="dev">
+      <div class="card-img label">photo</div>
+      <div class="dev-main">
+        <div class="dev-top"><span class="prio label"><i></i>Critical</span><span class="dev-time label">24 Oct</span><span class="chip">Yemen</span><span class="chip">Saudi Arabia</span></div>
+        <h3 class="dev-title">Houthis declare maritime blockade on Saudi Arabia</h3>
+        <p class="dev-body">The announcement ends a period of Saudi–Houthi de-escalation and widens the group's maritime campaign beyond the southern Red Sea.</p>
+        <ul class="chips"><li><a class="chip" href="#">Reuters<span class="t">3d</span></a></li></ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- 5 -->
+  <section class="demo">
+    <div class="note">
+      <span class="label" style="color:var(--ink-3)">B · alternative: stat tiles</span>
+      <h2>The same Sudan figures as tiles</h2>
+      <p>Tiles give the numbers more weight, but at card width three long figures ("34 million people") crowd the row. Short bars inside a tile are harder to compare than one shared column of bars. On phones the tiles stack and end up as rows anyway.</p>
+    </div>
+    <article class="dev">
+      <div class="card-img label">photo</div>
+      <div class="dev-main">
+        <div class="dev-top"><span class="prio label"><i></i>Critical</span><span class="dev-time label">26 Oct, 04:47</span><span class="chip">Sudan</span></div>
+        <h3 class="dev-title">34 million Sudanese need aid as famine risk escalates</h3>
+        <div class="kf">
+          <p class="kf-h label">Key figures</p>
+          <ul class="tiles">
+            <li class="tile"><span class="kf-fig">34 million people</span><span class="kf-bar"><b style="width:100%"></b></span><span class="kf-what">need humanitarian support</span><a class="kf-src" href="#">news.un.org, 21 Oct ↗</a></li>
+            <li class="tile"><span class="kf-fig">19.5 million</span><span class="kf-bar"><b style="width:57.35%"></b></span><span class="kf-what">face acute hunger</span><a class="kf-src" href="#">allAfrica.com, 26 Oct ↗</a></li>
+            <li class="tile"><span class="kf-fig">Nearly 14 million</span><span class="kf-bar"><b style="width:41.18%"></b></span><span class="kf-what">forced from their homes</span><a class="kf-src" href="#">elon.edu, 21 Oct ↗</a></li>
+          </ul>
+        </div>
+      </div>
+    </article>
+  </section>
+</main>
