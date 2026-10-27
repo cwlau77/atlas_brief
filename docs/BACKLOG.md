@@ -56,6 +56,12 @@ Owner request, 2026-10-27. Analysts need to know which article a statistic came 
 - Likely a model change (e.g. `KeyDevelopment.key_figures: [{value, label, source}]`) with the source validated against the article list, like `enforce_url_allowlist` does for citations.
 - Open: how many figures per card, whether charts need several figures from the same source and period, and how saved briefings without figures render.
 
+### Hotspots tab
+Project 4 of the 2026-10-20 design-review roadmap (see `docs/superpowers/specs/2026-10-20-newsprint-identity-design.md`), the only one not started. A new top-level page with red/amber news-intensity markers on the globe, plus a flat-map view. Red and amber are reserved for heat, and the identity spec names "globe/hotspot heat markers" as one of their uses.
+- **Builds on:** the globe engine's `setHotspots`, `setArcs`, `focusOn` and `zoomTo`; briefing globes already draw hotspot markers, but in one accent colour, because all markers share one shader (the identity spec deferred the ink / `--hot` split).
+- **Main design question:** what "intensity" measures and where it comes from. `GET /trending` (Google News top stories grouped by Haiku) is one possible seed; GDELT volume or recent Atlas briefings are others.
+- **Open:** the flat-map projection and library, how often it refreshes, and its fallback when the backend is asleep.
+
 ## 1. Ask Atlas about this briefing (chat)
 
 A chat panel on the briefing page that answers questions about the current briefing: "Why does the Suez revenue drop matter?", "Which sources disagree about the tanker damage?", "What should I read first?"
