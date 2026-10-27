@@ -34,6 +34,28 @@ When an outlet's photo fails to load, `CardImage` hides the picture, and the car
 
 Estimate: about an hour. Raised by the 2026-10-21 briefing-polish review; the owner deferred it on 2026-10-22.
 
+### Story tab: timeline first, tensions below it
+Owner request, 2026-10-27. Today the tension index sits above the timeline in `section#key-developments`, so readers hit the tensions before they know what happened. New order on the Story tab: Read first → timeline (with its sticky globe) → Trends & implications (below) → tension index → Top stories → reading list. The globe's follow behaviour (`globe/follow.ts`) and the index's hover/pin linking to cards must still work across the larger distance between index and timeline.
+
+### Tension index: say what the relationship is
+Owner feedback, 2026-10-27: at first glance the index rows are unclear.
+- **The squares** (one per development, filled when linked) don't say which events a tension ties to. Name the linked developments instead (headline or date), or alongside.
+- **The arrows between actors** don't say whether the actors are in conflict or involved in the same event. State the relationship in words (e.g. "in conflict", "competing claims", "same event, different accounts"). This probably needs synthesis to emit a relationship type per tension; today `Tension` has only `description`, `actors`, `sources` and `related_developments`.
+- The owner wants both: the relationship in words and the linked developments named.
+
+### Trends & implications section
+Owner request, 2026-10-27. A new Story-tab section after the timeline, in two parts:
+- **Trends:** patterns Atlas sees across the developments in this brief (e.g. repeated ceasefire breaches in one area).
+- **Implications:** what it likely means next and what to watch.
+
+Honesty rule (owner's): prefer analysis an article actually states, linked to that article. When no article says it, Atlas may give its own assessment, but must mark it clearly as Atlas's own prediction, not reported fact, and still point to the developments it reasons from. Needs a synthesis change (a new section call or field) and a design pass on how "sourced" and "Atlas assessment" look different.
+
+### Key figures and charts on development cards, each figure sourced
+Owner request, 2026-10-27. Analysts need to know which article a statistic came from. Each development card gets a **Key figures** list: the figure, what it measures, and a link to the article Atlas took it from. Where a card has comparable figures, show them as a chart or stat tiles; the owner rates visual data highly.
+- Every figure must come from a cited article, never be computed or invented by the model, and keep its unit, date and outlet.
+- Likely a model change (e.g. `KeyDevelopment.key_figures: [{value, label, source}]`) with the source validated against the article list, like `enforce_url_allowlist` does for citations.
+- Open: how many figures per card, whether charts need several figures from the same source and period, and how saved briefings without figures render.
+
 ## 1. Ask Atlas about this briefing (chat)
 
 A chat panel on the briefing page that answers questions about the current briefing: "Why does the Suez revenue drop matter?", "Which sources disagree about the tanker damage?", "What should I read first?"
