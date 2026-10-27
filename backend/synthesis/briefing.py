@@ -29,7 +29,7 @@ from backend.models import (
 from backend.places import resolve_city
 from backend.synthesis.commons import assign_images, fetch_candidates, query_for
 from backend.synthesis.context import enrich_with_historical_context
-from backend.synthesis.links import link_signals
+from backend.synthesis.links import link_outlook, link_signals
 
 logger = logging.getLogger("briefing.synthesis")
 T = TypeVar("T")
@@ -125,7 +125,37 @@ Constraints:
 
 Constraints:
 - 0-3 priority_alerts, 3-5 recommended_readings.""",
+    "outlook": """{
+  "trends": [
+    {
+      "statement": "one sentence naming a pattern across several reported events",
+      "basis": "reported | assessment",
+      "quote": "reported only: up to 30 words copied exactly from the cited article's title or snippet, else null",
+      "sources": [article numbers, e.g. 3, 7]
+    }
+  ],
+  "implications": [
+    {
+      "statement": "one sentence on what this likely means next",
+      "basis": "reported | assessment",
+      "quote": "reported only: up to 30 words copied exactly from the cited article's title or snippet, else null",
+      "watch_for": "a concrete, checkable signpost (a decision, a date, a figure), or null",
+      "sources": [article numbers, e.g. 3, 7]
+    }
+  ]
 }
+
+Constraints:
+- 0-3 trends, 0-3 implications. A trend must span at least two articles about different events.
+- basis "reported": the cited article itself states this analysis or forecast; quote it exactly.
+- basis "assessment": your own reading, when no article states it. Never present it as an outlet's view.
+  Cite the articles you reason from.
+- Prefer "reported" whenever an article supports it.""",
+}
+
+# Outlook is optional and must not hold the briefing up: once everything else is done it gets
+# this long to land, then it is dropped.
+OUTLOOK_GRACE_S = 3.0
 
 _COMMON_RULES = """- Cite sources ONLY by the bracketed article number from the article list (e.g. [3] -> 3). Never write URLs or outlet names in citations.
 - Omit sections (empty array) if evidence is insufficient rather than fabricating."""
@@ -422,6 +452,11 @@ def enforce_url_allowlist(briefing: Briefing, allowed: set[str]) -> Briefing:
     for alert in briefing.priority_alerts:
         alert.sources = _keep(alert.sources)
     briefing.recommended_readings = [r for r in briefing.recommended_readings if r.url in allowed]
+    # Losing a source can turn a Reported item into an assessment, and an unlinked assessment goes.
+    for item in briefing.trends + briefing.implications:
+        item.sources = _keep(item.sources)
+    briefing.trends = settle_outlook(briefing.trends, briefing.key_developments)
+    briefing.implications = settle_outlook(briefing.implications, briefing.key_developments)
     return briefing
 
 
@@ -489,7 +524,10 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
 _TRANSIENT_API_ERRORS = (anthropic.APIConnectionError, anthropic.RateLimitError, anthropic.InternalServerError)
 
 
-async def _write_section(section: str, focus: str, articles: list[Article], parse: Callable[[dict], T]) -> T:
+async def _write_section(
+    section: str, focus: str, articles: list[Article], parse: Callable[[dict], T],
+    model: str | None = None, max_tokens: int | None = None,
+) -> T:
     """One section call, parsed by `parse`, with a single retry; raises SynthesisFailedError.
 
     The retry is shared: it goes to a transient API failure (timeout, overload)
@@ -500,10 +538,10 @@ async def _write_section(section: str, focus: str, articles: list[Article], pars
     for attempt in (1, 2):
         try:
             raw_text = await llm.complete(
-                model=settings.synthesis_model,
+                model=model or settings.synthesis_model,
                 system=SYSTEM_PROMPT,
                 messages=messages,
-                max_tokens=settings.synthesis_max_tokens,
+                max_tokens=max_tokens or settings.synthesis_max_tokens,
                 timeout=settings.synthesis_section_timeout_seconds,
             )
         except _TRANSIENT_API_ERRORS as exc:
@@ -524,13 +562,13 @@ async def _write_section(section: str, focus: str, articles: list[Article], pars
     raise SynthesisFailedError(f"{section}: {type(last_error).__name__}: {last_error}")
 
 
-async def _optional_section(section: str, focus: str, articles: list[Article]) -> dict:
-    """Signals and alerts are worth having, not worth failing the briefing over."""
+async def _optional_section(section: str, focus: str, articles: list[Article], **call) -> dict:
+    """Signals, alerts and outlook are worth having, not worth failing the briefing over."""
     def parse(data: dict) -> dict:
         briefing_from_data(data, focus, articles)  # validates; a bad shape earns the corrective retry
         return data
     try:
-        return await _write_section(section, focus, articles, parse)
+        return await _write_section(section, focus, articles, parse, **call)
     except Exception as exc:
         logger.warning("synthesis section=%s status=failed detail=%s", section, type(exc).__name__)
         return {}
@@ -583,6 +621,42 @@ async def synthesize_briefing(
 
     signals_task = asyncio.create_task(reported("signals"))
 
+    outlook_reported = False
+
+    async def outlook() -> dict:
+        nonlocal outlook_reported
+        data = await _optional_section("outlook", focus, articles, model=settings.outlook_model, max_tokens=1500)
+        outlook_reported = True
+        await report("outlook")
+        return data
+
+    outlook_task = asyncio.create_task(outlook())
+    devs_ready: asyncio.Future[list[KeyDevelopment]] = asyncio.get_running_loop().create_future()
+
+    async def linked_outlook() -> tuple[list[OutlookItem], list[OutlookItem]]:
+        # Waits on developments and outlook only, never on signals.
+        data = await outlook_task
+        devs = await devs_ready
+        if not data:
+            return [], []
+        parsed = briefing_from_data(data, focus, articles)  # already validated
+        trend_links, implication_links = await link_outlook(devs, parsed.trends, parsed.implications)
+        for item, related in zip(parsed.trends + parsed.implications, trend_links + implication_links):
+            item.related_developments = related
+        trends, implications = settle_outlook(parsed.trends, devs), settle_outlook(parsed.implications, devs)
+        asked = sum(1 for i in data.get("trends", []) + data.get("implications", []) if i.get("basis") == "reported")
+        kept = trends + implications
+        reported_n = sum(1 for i in kept if i.basis == "reported")
+        logger.info(
+            "outlook reported=%d assessment=%d downgraded=%d dropped=%d",
+            reported_n, len(kept) - reported_n,
+            asked - sum(1 for i in parsed.trends + parsed.implications if i.basis == "reported"),
+            len(parsed.trends) + len(parsed.implications) - len(kept),
+        )
+        return trends, implications
+
+    outlook_links = asyncio.create_task(linked_outlook())
+
     async def linked_signals(devs: list[KeyDevelopment]):
         signals = await signals_task
         parsed = briefing_from_data(signals, focus, articles)  # already validated
@@ -594,6 +668,7 @@ async def synthesize_briefing(
             lambda data: briefing_from_data({"key_developments": data.get("key_developments", [])}, focus, articles),
         )
         await report("developments")
+        devs_ready.set_result(partial.key_developments)
         _, candidates, links = await asyncio.gather(
             enrich_with_historical_context(partial),
             commons_candidates(partial.key_developments),
@@ -608,14 +683,28 @@ async def synthesize_briefing(
             reported("alerts"),
         )
     except BaseException:
-        signals_task.cancel()
+        for task in (signals_task, outlook_task, outlook_links):
+            task.cancel()
         raise
+    try:
+        trends, implications = await asyncio.wait_for(asyncio.shield(outlook_links), OUTLOOK_GRACE_S)
+    except TimeoutError:
+        outlook_links.cancel()
+        outlook_task.cancel()
+        logger.warning("synthesis section=outlook status=late")
+        if not outlook_reported:
+            await report("outlook")
+        trends, implications = [], []
+    except Exception:
+        logger.exception("outlook assembly failed")
+        trends, implications = [], []
     briefing = briefing_from_data({**signals, **alerts}, focus, articles)  # both already validated
     for tension, related in zip(briefing.emerging_tensions, tension_links):
         tension.related_developments = related
     for contradiction, related in zip(briefing.contradictions, contradiction_links):
         contradiction.related_developments = related
     briefing.key_developments = devs
+    briefing.trends, briefing.implications = trends, implications
     try:
         assign_images(briefing, candidates)
     except Exception:

@@ -140,3 +140,26 @@ def test_reported_without_sources_downgraded_then_dropped_if_unlinked():
     unlinked = OutlookItem(statement="U", basis="reported", quote="q q q q", sources=[])
     settled = settle_outlook([linked, unlinked], [_dev("u1")])
     assert [(i.statement, i.basis, i.quote) for i in settled] == [("L", "assessment", None)]
+
+
+# --- The allowlist re-applies the rules ---
+
+from backend.synthesis.briefing import enforce_url_allowlist  # noqa: E402
+
+
+def _briefing_with(trend, devs):
+    return Briefing(focus="f", generated_at="2026-10-27T00:00:00Z", key_developments=devs, emerging_tensions=[],
+                    contradictions=[], priority_alerts=[], recommended_readings=[], article_count=1,
+                    source_breakdown={}, trends=[trend])
+
+
+def test_allowlist_downgrades_reported_that_lost_its_source():
+    trend = OutlookItem(statement="S", basis="reported", quote="q q q q", sources=[_cite("bad")], related_developments=[0])
+    b = enforce_url_allowlist(_briefing_with(trend, [_dev("u1")]), {"u1"})
+    assert (b.trends[0].basis, b.trends[0].quote) == ("assessment", None)
+
+
+def test_allowlist_drops_unlinked_reported_that_lost_its_source():
+    trend = OutlookItem(statement="S", basis="reported", quote="q q q q", sources=[_cite("bad")], related_developments=[])
+    b = enforce_url_allowlist(_briefing_with(trend, [_dev("u1")]), {"u1"})
+    assert b.trends == []

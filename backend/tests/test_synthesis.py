@@ -186,6 +186,9 @@ SECTION_REPLIES = {
                           "contradictions": [{"topic": "T", "account_a": "a", "account_b": "b", "sources_a": [1], "sources_b": [1]}]},
     "priority_alerts": {"priority_alerts": [{"severity": "high", "headline": "AH", "rationale": "R", "sources": [1]}],
                         "recommended_readings": [{"article": 1, "why": "primary"}]},
+    "trends": {"trends": [{"statement": "TS", "basis": "assessment", "quote": None, "sources": [1]}],
+               "implications": [{"statement": "IS", "basis": "assessment", "quote": None,
+                                 "watch_for": "W", "sources": [1]}]},
 }
 
 
@@ -221,13 +224,17 @@ async def test_sections_are_written_by_separate_calls_and_merged(monkeypatch, ma
 
     monkeypatch.setattr(llm, "complete", complete)
     b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
-    assert sorted(set(seen)) == ["context", "emerging_tensions", "key_developments", "priority_alerts"]
+    assert sorted(set(seen)) == ["context", "emerging_tensions", "key_developments", "priority_alerts", "trends"]
     assert b.key_developments[0].headline == "H"
     assert b.key_developments[0].historical_context == "Background paragraph."
     assert b.emerging_tensions[0].description == "D"
     assert b.contradictions[0].topic == "T"
     assert b.priority_alerts[0].headline == "AH"
     assert b.recommended_readings[0].why == "primary"
+    assert b.trends[0].statement == "TS"
+    assert b.implications[0].watch_for == "W"
+    # The fake's link replies aren't JSON, so this comes from the shared-citation fallback.
+    assert b.trends[0].related_developments == [0]
 
 
 @pytest.mark.asyncio
@@ -473,7 +480,7 @@ async def test_on_section_reports_each_section(monkeypatch, make_article):
         seen.append(name)
 
     await synthesize_briefing("trade", [make_article(url="https://ex.com/1")], on_section=on_section)
-    assert sorted(seen) == ["alerts", "developments", "signals"]
+    assert sorted(seen) == ["alerts", "developments", "outlook", "signals"]
 
 
 # --- Section calls: a bounded timeout and one shared retry ---
@@ -584,3 +591,120 @@ def test_signals_prompt_lists_every_relationship():
 def test_fallback_tensions_have_no_relationship(make_article):
     b = _fallback_briefing("Aden port", [make_article(title="Strike near Aden port in Yemen")])
     assert b.emerging_tensions and all(t.relationship is None for t in b.emerging_tensions)
+
+
+# --- Trends & implications: a fourth optional section that never holds the briefing up ---
+
+@pytest.mark.asyncio
+async def test_outlook_uses_outlook_model_and_small_max_tokens(monkeypatch, make_article):
+    _keyed(monkeypatch)
+    _fast_llm(monkeypatch)
+    import backend.llm as llm
+    inner, calls = llm.complete, {}
+
+    async def complete(**kwargs):
+        calls[_section_of(kwargs["messages"][0]["content"])] = kwargs
+        return await inner(**kwargs)
+
+    monkeypatch.setattr(llm, "complete", complete)
+    monkeypatch.setattr(settings, "outlook_model", "outlook-model")
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert calls["trends"]["model"] == "outlook-model"
+    assert calls["trends"]["max_tokens"] == 1500
+    assert calls["key_developments"]["model"] == settings.synthesis_model
+
+
+@pytest.mark.asyncio
+async def test_outlook_failure_leaves_lists_empty(monkeypatch, make_article):
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            return "Background."
+        return "garbage" if section == "trends" else json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.trends == [] and b.implications == []
+    assert b.key_developments[0].headline == "H" and b.emerging_tensions[0].description == "D"
+
+
+def _outlook_llm(monkeypatch, mode):
+    import asyncio
+    import json
+    import backend.llm as llm
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            return "Background."
+        if section == "trends":
+            if mode == "late":
+                await asyncio.sleep(5)
+            if mode == "fail":
+                return "garbage"
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+
+
+@pytest.mark.asyncio
+async def test_slow_outlook_is_dropped_after_grace(monkeypatch, make_article, caplog):
+    import logging
+    import time
+    from backend.synthesis import briefing as briefing_mod
+    _keyed(monkeypatch)
+    monkeypatch.setattr(briefing_mod, "OUTLOOK_GRACE_S", 0.05)
+    _outlook_llm(monkeypatch, "late")
+    started = time.monotonic()
+    with caplog.at_level(logging.WARNING, logger="briefing.synthesis"):
+        b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert time.monotonic() - started < 1
+    assert b.trends == [] and b.key_developments[0].headline == "H"
+    assert any("section=outlook status=late" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["ok", "fail", "late"])
+async def test_outlook_reports_its_section_in_every_case(monkeypatch, make_article, mode):
+    from backend.synthesis import briefing as briefing_mod
+    _keyed(monkeypatch)
+    monkeypatch.setattr(briefing_mod, "OUTLOOK_GRACE_S", 0.05)
+    _outlook_llm(monkeypatch, mode)
+    names = []
+
+    async def on_section(name):
+        names.append(name)
+
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1")], on_section=on_section)
+    assert names.count("outlook") == 1
+
+
+@pytest.mark.asyncio
+async def test_outlook_links_do_not_wait_for_signals(monkeypatch, make_article):
+    import asyncio
+    import json
+    import time
+    import backend.llm as llm
+    _keyed(monkeypatch)
+    marks = {}
+
+    async def complete(**kwargs):
+        content = kwargs["messages"][0]["content"]
+        if "TRENDS:" in content:
+            marks["outlook_link"] = time.monotonic()
+            return '{"trends": [[0]], "implications": [[0]]}'
+        section = _section_of(content)
+        if section == "context":
+            return "Background."
+        if section == "emerging_tensions":
+            await asyncio.sleep(0.3)
+            marks["signals_done"] = time.monotonic()
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert marks["outlook_link"] < marks["signals_done"]
