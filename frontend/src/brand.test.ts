@@ -22,10 +22,18 @@ describe('index.html brand metadata', () => {
   })
 })
 
+// Bump when the icons change: favicons are cached by URL, apart from the page cache.
+const ICON_VERSION = '20261027'
+
 describe('favicon', () => {
   it('is linked from index.html', () => {
-    expect(html).toContain('<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />')
-    expect(html).toContain('<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />')
+    expect(html).toContain(`<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg?v=${ICON_VERSION}" />`)
+    expect(html).toContain(`<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png?v=${ICON_VERSION}" />`)
+  })
+  it('versions every icon URL, so browsers drop the icons cached before the rebrand', () => {
+    const icons = [...html.matchAll(/<link rel="(?:icon|apple-touch-icon)"[^>]*href="([^"]+)"/g)].map((m) => m[1])
+    expect(icons).toHaveLength(4)
+    for (const href of icons) expect(href).toMatch(new RegExp(`\\?v=${ICON_VERSION}$`))
   })
   it('switches to the reversed palette on dark tab strips', () => {
     expect(fav).toContain('@media (prefers-color-scheme: dark)')
