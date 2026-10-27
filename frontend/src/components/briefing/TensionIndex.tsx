@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { IndexItem } from '../../lib/tensionIndex'
-import { formatDayMonth } from '../../lib/time'
 import type { IndexHighlight } from '../../state/useIndexHighlight'
 import { TextButton } from './TextButton'
+import { TiesList } from './TiesList'
 
 const TOP = 3
 
@@ -137,28 +137,12 @@ export function TensionIndex({ id, items, highlight, timeZone, onOpen }: {
                 </TextButton>
               )}
               {/* Outside the row button (buttons can't nest); the row's click handler skips these buttons, so they never pin. */}
-              <div className="index-ties">
-                <span className="label">Ties to</span>
-                {item.linked.length ? (
-                  <ul>
-                    {item.linked.map((l) => (
-                      <li key={l.dev}>
-                        <button type="button" aria-label={`Go to development: ${l.title}`} onClick={() => {
-                          // End the row's preview in the same update as the jump: the scroll will carry
-                          // the row out from under the pointer, and that leave must not retire the jump.
-                          preview(null)
-                          onOpen(`dev-${l.dev}`)
-                        }}>
-                          <span className="index-tie-title">{l.title}</span>
-                          <time dateTime={l.timestamp}>{formatDayMonth(l.timestamp, timeZone)}</time>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="index-ties-none">Not tied to one development in this brief</p>
-                )}
-              </div>
+              <TiesList label="Ties to" linked={item.linked} timeZone={timeZone} onJump={(dev) => {
+                // End the row's preview in the same update as the jump: the scroll will carry
+                // the row out from under the pointer, and that leave must not retire the jump.
+                preview(null)
+                onOpen(`dev-${dev}`)
+              }} />
             </li>
           )
         })}

@@ -176,4 +176,14 @@ describe('story styles', () => {
     // A later gap shorthand would override row-gap.
     expect(row).not.toMatch(/(^|;)\s*gap:/)
   })
+
+  it('marks Atlas assessments with a dashed rule and never with heat colours', () => {
+    expect(rulesFor(storyCss, '.outlook-item.assessment').join(';')).toMatch(/border:\s*1px dashed/)
+    expect(rulesFor(storyCss, '.outlook-item.reported').join(';')).toMatch(/border-left:\s*3px solid var\(--ink\)/)
+    const start = storyCss.indexOf('/* Trends & implications */')
+    expect(start).toBeGreaterThan(-1)
+    const block = storyCss.slice(start, storyCss.indexOf('/* Read first', start))
+    expect(block).not.toMatch(/--hot|--warm/)
+    expect(block.replace(/@media \(prefers-reduced-motion: no-preference\) \{[^}]*\}\s*\}/g, '')).not.toMatch(/transition/)
+  })
 })
