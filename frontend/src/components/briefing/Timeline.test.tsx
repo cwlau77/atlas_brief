@@ -18,11 +18,12 @@ function Harness({ briefing, onTagTap = () => {} }: { briefing: SavedBriefing; o
   const items = buildTensionIndex(briefing, order)
   return (
     <>
-      <TensionIndex id="t-index" items={items} devCount={order.length} order={order.map((e) => e.index)} highlight={highlight} />
       <Timeline
         briefing={briefing} timeZone="UTC" showContext reduced items={items} highlight={highlight} indexId="t-index"
         onCardHover={() => {}} onCardFocus={() => {}} onTagTap={onTagTap}
       />
+      {/* Below the timeline, as on the Story tab. */}
+      <TensionIndex id="t-index" items={items} highlight={highlight} timeZone="UTC" onOpen={() => {}} />
     </>
   )
 }
@@ -79,15 +80,45 @@ describe('Timeline', () => {
     expect(container.querySelector('.dev-conn')).toBeNull()
   })
 
-  it('tag click pins first linked item', () => {
-    const scroll = vi.fn()
+  // jsdom has no scrollIntoView: record which element each call scrolls.
+  const recordScrolls = () => {
+    const scrolled: { el: Element; opts: unknown }[] = []
+    Element.prototype.scrollIntoView = function (this: Element, opts?: unknown) { scrolled.push({ el: this, opts }) }
+    return scrolled
+  }
+  afterEach(() => { delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView })
+
+  it('tag click pins the first linked item and scrolls its row into view, not the index top', () => {
     render()
-    container.querySelector<HTMLElement>('#t-index')!.scrollIntoView = scroll
+    const scrolled = recordScrolls()
     const tag = container.querySelector<HTMLButtonElement>('#dev-0 .dev-conn')!
     act(() => tag.click())
-    expect(scroll).toHaveBeenCalled()
     // The index sorts tension 0 (one link) before the contradiction (one link): tensions first on ties.
     expect(current.pinned).toBe('tension-0')
+    const row = container.querySelector('#t-index .index-row[aria-pressed="true"]')!.closest('.index-item')
+    expect(scrolled.map((s) => s.el)).toEqual([row])
+    // Tests render with reduced motion on.
+    expect(scrolled[0].opts).toEqual({ behavior: 'auto', block: 'center' })
+  })
+
+  it('tag click reveals a row behind "Show N more" and scrolls to it', () => {
+    const b = makeBriefing()
+    const t = b.emergingTensions[0]
+    render({
+      ...b,
+      emergingTensions: [
+        { ...t, relatedDevelopments: [0, 1] }, { ...t, relatedDevelopments: [0, 1] },
+        { ...t, relatedDevelopments: [0, 1] }, { ...t, relatedDevelopments: [2] },
+      ],
+      contradictions: [],
+    })
+    const scrolled = recordScrolls()
+    act(() => container.querySelector<HTMLButtonElement>('#dev-2 .dev-conn')!.click())
+    expect(current.pinned).toBe('tension-3')
+    const row = container.querySelector('#t-index .index-row[aria-pressed="true"]')!.closest('.index-item')!
+    expect(row.classList.contains('is-overflow')).toBe(false)
+    expect(scrolled.map((s) => s.el)).toEqual([row])
+    expect(document.activeElement).toBe(row.querySelector('.index-row'))
   })
 
   it('the connection tag unpins its row when already pinned', () => {

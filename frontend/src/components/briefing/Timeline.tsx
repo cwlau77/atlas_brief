@@ -16,7 +16,7 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
   /** The tension index's items: they name each card's connection tag and light the cards. */
   items: IndexItem[]
   highlight: IndexHighlight
-  /** The tension index's element id: connection tags scroll to it and move focus into it. */
+  /** The tension index's element id: connection tags scroll to their row in it and move focus there. */
   indexId: string
   onCardHover: (devIndex: number | null) => void
   onCardFocus: (devIndex: number | null) => void
@@ -28,19 +28,21 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
   const activeItem = items.find((item) => item.key === highlight.active && item.devs.length > 0) ?? null
   const { pinned, pin } = highlight
 
-  // Focus follows the reader to the pinned row, so keyboard users aren't left on the card,
-  // and the card's focus no longer holds the globe. preventScroll: the tag already scrolled.
-  const focusRow = () =>
-    document.getElementById(indexId)?.querySelector<HTMLElement>('.index-row[aria-pressed="true"]')?.focus({ preventScroll: true })
+  // The reader follows the tag to the pinned row below the timeline: it scrolls into view and
+  // takes focus, so keyboard users aren't left on the card and the card's focus no longer holds
+  // the globe. Runs after the pin renders, since the row may only appear (from behind
+  // "Show N more") then.
   const focusAfterPin = useRef<string | null>(null)
   useEffect(() => {
     if (pinned === null || focusAfterPin.current !== pinned) return
     focusAfterPin.current = null
-    focusRow()
+    const row = document.getElementById(indexId)?.querySelector<HTMLElement>('.index-row[aria-pressed="true"]')
+    row?.closest('.index-item')?.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
+    row?.focus({ preventScroll: true })
   })
 
-  // Scrolls to the index and pins the busiest item linked to the card; if that row is already
-  // pinned the tag unpins it instead, and focus stays on the tag.
+  // Pins the busiest item linked to the card and takes the reader to its row; if that row is
+  // already pinned the tag unpins it instead, and focus stays on the tag.
   const onTag = (devIndex: number) => {
     const first = items.find((item) => item.devs.includes(devIndex))
     if (!first) return
@@ -48,8 +50,6 @@ export function Timeline({ briefing, timeZone, showContext, reduced, items, high
       pin(first.key)
       return
     }
-    document.getElementById(indexId)?.scrollIntoView?.({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
-    // The row may only appear (from behind "Show N more") once the pin renders.
     focusAfterPin.current = first.key
     pin(first.key)
   }

@@ -55,8 +55,8 @@ describe('StoryTab', () => {
     const left = kd.querySelector('.kd-main')!
     expect(left.querySelector('#tension-index')).not.toBeNull()
     expect(left.querySelector('.timeline')).not.toBeNull()
-    // The index sits above the timeline in the left column.
-    expect(left.querySelector('#tension-index')!.compareDocumentPosition(left.querySelector('.timeline')!))
+    // The timeline comes first; the index sits below it in the left column, beside the globe.
+    expect(left.querySelector('.timeline')!.compareDocumentPosition(left.querySelector('#tension-index')!))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(kd.querySelector('.kd-globe .globe-stub')).not.toBeNull()
     expect(container.querySelector('.story-lead')).toBeNull()
@@ -87,6 +87,17 @@ describe('StoryTab', () => {
     expect(document.activeElement).toBe(card)
     act(() => open.focus())
     expect(card.hasAttribute('tabindex')).toBe(false)
+  })
+
+  it('a Ties to button in the index jumps to its card', () => {
+    show(makeBriefing())
+    for (const c of container.querySelectorAll<HTMLElement>('.dev')) c.scrollIntoView = () => {}
+    const tie = container.querySelector<HTMLButtonElement>('#tension-index .index-ties button')!
+    const target = tie.getAttribute('aria-label')!.replace('Go to development: ', '')
+    act(() => tie.click())
+    const card = document.activeElement as HTMLElement
+    expect(card.matches('article.dev')).toBe(true)
+    expect(card.querySelector('.dev-title')!.textContent).toBe(target)
   })
 
   describe('after a story jump', () => {

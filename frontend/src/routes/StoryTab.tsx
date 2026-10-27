@@ -61,7 +61,6 @@ export function StoryTab() {
   const highlight = useIndexHighlight()
   const order = useMemo(() => sortNewestFirst(briefing.keyDevelopments), [briefing])
   const indexItems = useMemo(() => buildTensionIndex(briefing, order), [briefing, order])
-  const indexOrder = useMemo(() => order.map((e) => e.index), [order])
   const arcs = useMemo(() => buildArcs(briefing, buildRoutes(briefing, order).routes), [briefing, order])
   const { active, preview, previewed, pinned } = highlight
   const litArcs = useMemo(() => new Set(active ? [active] : []), [active])
@@ -146,12 +145,13 @@ export function StoryTab() {
         </h2>
         <div className="kd-cols">
           <div className="kd-main">
-            <TensionIndex id={INDEX_ID} items={indexItems} devCount={count} order={indexOrder} highlight={highlight} />
             <Timeline
               briefing={briefing} timeZone={settings.timeZone} showContext={settings.showHistoricalContext} reduced={reduced}
               items={indexItems} highlight={highlight} indexId={INDEX_ID}
               onCardHover={onCardHover} onCardFocus={setFocusedDev} onTagTap={onTagTap}
             />
+            {/* After the timeline: readers learn what happened before how it connects. */}
+            <TensionIndex id={INDEX_ID} items={indexItems} highlight={highlight} timeZone={settings.timeZone} onOpen={scrollToStory} />
           </div>
           {/* Beside the timeline at 980px and up, sticky so hover-follow stays in view; above it on narrower screens. */}
           <div className="kd-globe" ref={globeRef}>

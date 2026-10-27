@@ -1,8 +1,8 @@
 .story { display: grid; gap: var(--space-6); padding-top: var(--space-5); }
 /* Each section after the lead is a ruled band: a hairline halfway through the old section spacing. */
 .story > * + * { padding-top: var(--space-6); background: var(--wrap-rule) center top / var(--wrap-rule-size); }
-/* Key developments: the index and timeline on the left, the globe beside them, sticky so
-   hover-follow stays in view while the timeline scrolls. */
+/* Key developments: the timeline and then the tension index on the left, the globe beside them,
+   sticky so hover-follow stays in view while the timeline and index scroll. */
 .kd { display: grid; gap: var(--space-4); }
 .kd-cols { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: var(--space-6); align-items: start; }
 /* Hairline between the timeline and the globe, centred in the gap. */
