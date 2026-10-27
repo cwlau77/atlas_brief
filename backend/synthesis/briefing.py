@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from typing import TypeVar
 
+import anthropic
 import httpx
 
 from backend import llm
@@ -407,17 +408,33 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
     )
 
 
+# Worth one more try; anything else (a bad request, a bad key) would fail the same way again.
+_TRANSIENT_API_ERRORS = (anthropic.APIConnectionError, anthropic.RateLimitError, anthropic.InternalServerError)
+
+
 async def _write_section(section: str, focus: str, articles: list[Article], parse: Callable[[dict], T]) -> T:
-    """One section call, parsed by `parse`, with a single corrective retry; raises SynthesisFailedError."""
+    """One section call, parsed by `parse`, with a single retry; raises SynthesisFailedError.
+
+    The retry is shared: it goes to a transient API failure (timeout, overload)
+    or to a corrective nudge after bad JSON, whichever happens first.
+    """
     messages: list[dict] = [{"role": "user", "content": _build_user_prompt(focus, articles, section)}]
     last_error: Exception | None = None
-    for _attempt in (1, 2):
-        raw_text = await llm.complete(
-            model=settings.synthesis_model,
-            system=SYSTEM_PROMPT,
-            messages=messages,
-            max_tokens=settings.synthesis_max_tokens,
-        )
+    for attempt in (1, 2):
+        try:
+            raw_text = await llm.complete(
+                model=settings.synthesis_model,
+                system=SYSTEM_PROMPT,
+                messages=messages,
+                max_tokens=settings.synthesis_max_tokens,
+                timeout=settings.synthesis_section_timeout_seconds,
+            )
+        except _TRANSIENT_API_ERRORS as exc:
+            logger.warning("synthesis section=%s attempt=%d status=failed detail=%s", section, attempt, type(exc).__name__)
+            last_error = exc
+            continue
+        except anthropic.APIError as exc:
+            raise SynthesisFailedError(f"{section}: {type(exc).__name__}") from exc
         try:
             return parse(extract_json(raw_text))
         except (ValueError, KeyError, TypeError) as exc:  # ValidationError is a ValueError
@@ -427,7 +444,7 @@ async def _write_section(section: str, focus: str, articles: list[Article], pars
                 {"role": "assistant", "content": raw_text[:2000] or "(empty reply)"},
                 {"role": "user", "content": "Your previous reply was not valid JSON matching the schema. Return ONLY the JSON object, nothing else."},
             ]
-    raise SynthesisFailedError(f"{section}: {last_error}")
+    raise SynthesisFailedError(f"{section}: {type(last_error).__name__}: {last_error}")
 
 
 async def _optional_section(section: str, focus: str, articles: list[Article]) -> dict:

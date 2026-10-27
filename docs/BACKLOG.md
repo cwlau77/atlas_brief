@@ -34,6 +34,9 @@ When an outlet's photo fails to load, `CardImage` hides the picture, and the car
 
 Estimate: about an hour. Raised by the 2026-10-21 briefing-polish review; the owner deferred it on 2026-10-22.
 
+### ~~Synthesis section calls time out~~ (done 2026-10-27)
+In a live run on 2026-10-26 one Sonnet section call hung for the Anthropic SDK's default 600s, was retried by the SDK, and the briefing took over 10 minutes (`synthesis_ms=613427`). Each section call in `synthesis/briefing.py` now has a 45s timeout (`synthesis_section_timeout_seconds`) and one shared retry: a timeout or overload/5xx error gets one resend, a bad-JSON reply gets the corrective retry, whichever comes first; other API errors aren't retried. Worst case is about 90s per section. Failed developments still fail the briefing (now with a 502 that doesn't claim the reply was unreadable); signals and alerts are left empty.
+
 ### Story tab: timeline first, tensions below it
 Owner request, 2026-10-27. Today the tension index sits above the timeline in `section#key-developments`, so readers hit the tensions before they know what happened. New order on the Story tab: Read first → timeline (with its sticky globe) → Trends & implications (below) → tension index → Top stories → reading list. The globe's follow behaviour (`globe/follow.ts`) and the index's hover/pin linking to cards must still work across the larger distance between index and timeline.
 

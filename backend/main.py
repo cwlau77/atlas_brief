@@ -294,10 +294,10 @@ async def _run_pipeline(focus: str, emit: Emit | None) -> Briefing:
             detail="Briefing synthesis is not configured on this server (missing ANTHROPIC_API_KEY).",
         )
     except SynthesisFailedError:
-        logger.exception("synthesis failed twice for focus=%r", focus)
+        logger.exception("synthesis failed for focus=%r", focus)
         raise HTTPException(
             status_code=502,
-            detail="The synthesis model returned an unreadable response twice. Please retry in a moment.",
+            detail="The synthesis model didn't return a usable briefing. Please retry in a moment.",
         )
 
     lap("synthesis", mark)

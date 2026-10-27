@@ -474,3 +474,82 @@ async def test_on_section_reports_each_section(monkeypatch, make_article):
 
     await synthesize_briefing("trade", [make_article(url="https://ex.com/1")], on_section=on_section)
     assert sorted(seen) == ["alerts", "developments", "signals"]
+
+
+# --- Section calls: a bounded timeout and one shared retry ---
+
+def _api_error(kind: str) -> Exception:
+    import anthropic
+    import httpx
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    if kind == "timeout":
+        return anthropic.APITimeoutError(request=request)
+    status = {"overloaded": 529, "bad_request": 400}[kind]
+    error_class = anthropic.InternalServerError if status >= 500 else anthropic.BadRequestError
+    return error_class(kind, response=httpx.Response(status, request=request), body=None)
+
+
+def _scripted_sections(monkeypatch, script: dict[str, list]):
+    """Fake llm.complete: each section pops its next outcome (an exception to raise) or replies normally."""
+    import json
+    import backend.llm as llm
+    _keyed(monkeypatch)
+    calls: dict[str, list[dict]] = {}
+
+    async def complete(**kwargs):
+        section = _section_of(kwargs["messages"][0]["content"])
+        if section == "context":
+            return ""
+        calls.setdefault(section, []).append(kwargs)
+        outcomes = script.get(section, [])
+        if outcomes:
+            outcome = outcomes.pop(0)
+            if isinstance(outcome, Exception):
+                raise outcome
+        return json.dumps(SECTION_REPLIES[section])
+
+    monkeypatch.setattr(llm, "complete", complete)
+    return calls
+
+
+@pytest.mark.asyncio
+async def test_section_calls_pass_the_configured_timeout(monkeypatch, make_article):
+    calls = _scripted_sections(monkeypatch, {})
+    monkeypatch.setattr(settings, "synthesis_section_timeout_seconds", 45.0)
+    await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    for section in ("key_developments", "emerging_tensions", "priority_alerts"):
+        assert [c["timeout"] for c in calls[section]] == [45.0]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", ["timeout", "overloaded"])
+async def test_a_transient_failure_gets_one_retry(monkeypatch, make_article, kind):
+    calls = _scripted_sections(monkeypatch, {"key_developments": [_api_error(kind)]})
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.key_developments[0].headline == "H"
+    assert len(calls["key_developments"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_developments_timing_out_twice_fail_the_briefing(monkeypatch, make_article):
+    calls = _scripted_sections(monkeypatch, {"key_developments": [_api_error("timeout"), _api_error("timeout")]})
+    with pytest.raises(SynthesisFailedError):
+        await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert len(calls["key_developments"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_signals_timing_out_twice_are_left_empty(monkeypatch, make_article):
+    calls = _scripted_sections(monkeypatch, {"emerging_tensions": [_api_error("timeout"), _api_error("timeout")]})
+    b = await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert b.key_developments[0].headline == "H"
+    assert b.emerging_tensions == [] and b.contradictions == []
+    assert len(calls["emerging_tensions"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_a_bad_request_is_not_retried(monkeypatch, make_article):
+    calls = _scripted_sections(monkeypatch, {"key_developments": [_api_error("bad_request")]})
+    with pytest.raises(SynthesisFailedError):
+        await synthesize_briefing("trade", [make_article(url="https://ex.com/1")])
+    assert len(calls["key_developments"]) == 1

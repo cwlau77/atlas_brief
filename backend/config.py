@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Output cap for the briefing JSON. 25 articles with long Google News URLs
     # overflowed 4000 tokens and truncated the JSON mid-reply.
     synthesis_max_tokens: int = 12000
+    # Per section call. Normal sections land well under 20s; one hung call once waited
+    # out the SDK's 600s default. A timed-out call shares the section's single retry.
+    synthesis_section_timeout_seconds: float = 45.0
 
     # Without an Anthropic key the server refuses to synthesize (503) unless this
     # flag explicitly opts into the keyword-matched fallback "demo" briefing.
