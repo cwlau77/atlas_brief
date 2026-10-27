@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trends mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F5F5F1;--paper-deep:#EBEBE6;--ink:#0E1116;--ink-2:#3F4752;--ink-3:#636A75;--rule:#DADBD5;--rule-strong:#B9BBB3;--accent:#1F3FE0;--accent-wash:rgba(31,63,224,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 'IBM Plex Sans',sans-serif;padding:32px 16px}
+.cols{max-width:1100px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:32px;align-items:start}
+@media(max-width:980px){.cols{grid-template-columns:1fr}.globe{order:-1}}
+.globe{position:sticky;top:24px;aspect-ratio:1;border:1px solid var(--rule);display:grid;place-items:center;color:var(--ink-3)}
+.label{font-weight:500;font-size:.8rem;color:var(--ink-2)}
+.mark::before{content:'';display:inline-block;width:8px;height:8px;background:var(--accent);margin-right:8px}
+.ghost{background:var(--paper-deep);padding:14px;color:var(--ink-3);margin-bottom:32px}
+h2{margin-bottom:6px}
+.legend{color:var(--ink-3);font-size:.85rem;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:4px 20px}
+.legend span{display:inline-flex;gap:8px;align-items:center}
+.sw{width:22px;height:12px;border:1px solid var(--ink-2)}
+.sw.a{border-style:dashed;border-color:var(--ink-3)}
+h3{font-size:.8rem;font-weight:600;color:var(--ink-2);margin:18px 0 6px}
+ul{list-style:none;display:grid;gap:8px}
+.item{padding:10px 12px;display:grid;gap:4px;cursor:pointer}
+.item:hover{background:var(--accent-wash)}
+.rep{border:1px solid var(--rule);border-left:3px solid var(--ink)}
+.ass{border:1px dashed var(--rule-strong)}
+.tag{display:flex;gap:10px;align-items:baseline}
+.tag b{font-weight:600;font-size:.8rem}
+.ass .tag b{border:1px dashed var(--ink-3);padding:0 6px;font-weight:500;color:var(--ink-2)}
+.tag a{color:var(--accent);font-size:.8rem;text-underline-offset:3px}
+.stmt{font-weight:500}
+q{color:var(--ink-2);font-style:italic}
+.watch{color:var(--ink-2)}.watch .label{color:var(--ink-3);margin-right:8px}
+.ties{display:grid;grid-template-columns:auto 1fr;column-gap:12px;font-size:.9rem}
+.ties .label{color:var(--ink-3)}
+.ties li{display:flex;gap:12px}.ties li span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ties time{color:var(--ink-3)}
+</style></head><body>
+<div class="cols"><div>
+<div class="ghost">Key developments timeline (unchanged) …</div>
+
+<section>
+<h2 class="label mark" style="font-size:.9rem">Trends &amp; implications</h2>
+<p class="legend"><span><i class="sw"></i>Reported: an outlet says it, quoted and linked</span><span><i class="sw a"></i>Atlas assessment: Atlas's own reading, not reported fact</span></p>
+
+<h3>Trends</h3>
+<ul>
+<li class="item rep">
+  <div class="tag"><b>Reported</b><a href="#">Reuters · 26 Oct</a></div>
+  <p class="stmt">Attacks on shipping have moved north along Yemen's coast this week.</p>
+  <q>the third strike north of Hodeidah in six days</q>
+  <div class="ties"><span class="label">Builds on</span><ul><li><span>Houthi strike hits tanker off Hodeidah</span><time>26 Oct</time></li><li><span>Second vessel reports drone near Ras Isa</span><time>24 Oct</time></li></ul></div>
+</li>
+<li class="item ass">
+  <div class="tag"><b>Atlas assessment</b></div>
+  <p class="stmt">Egypt is trading toll revenue for volume: each cut has followed a fresh drop in Suez transits.</p>
+  <div class="ties"><span class="label">Reasoned from</span><ul><li><span>Egypt cuts Suez tolls for returning container lines</span><time>25 Oct</time></li><li><span>Suez transits fall to lowest since March</span><time>22 Oct</time></li></ul></div>
+</li>
+</ul>
+
+<h3>Implications</h3>
+<ul>
+<li class="item rep">
+  <div class="tag"><b>Reported</b><a href="#">Lloyd's List · 26 Oct</a></div>
+  <p class="stmt">Insurers expect war-risk premiums to stay high into next year.</p>
+  <q>premiums are likely to remain elevated well into 2027</q>
+  <p class="watch"><span class="label">Watch for</span>The Joint War Committee's next listed-areas update</p>
+  <div class="ties"><span class="label">Builds on</span><ul><li><span>Houthi strike hits tanker off Hodeidah</span><time>26 Oct</time></li></ul></div>
+</li>
+<li class="item ass">
+  <div class="tag"><b>Atlas assessment</b></div>
+  <p class="stmt">If strikes keep moving north, EU escort rules are likely to widen to cover the southern Red Sea ports.</p>
+  <p class="watch"><span class="label">Watch for</span>An EU Council decision on the Aspides mandate</p>
+  <div class="ties"><span class="label">Reasoned from</span><ul><li><span>Houthi strike hits tanker off Hodeidah</span><time>26 Oct</time></li><li><span>EU reviews escort rules after Red Sea strike</span><time>25 Oct</time></li></ul></div>
+</li>
+</ul>
+</section>
+
+<div class="ghost" style="margin-top:32px">Tensions · 4 (tension index, unchanged) …</div>
+</div>
+<div class="globe">sticky globe<br>(follows row hover)</div>
+</div></body></html>
