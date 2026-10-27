@@ -10,7 +10,10 @@ const SECTIONS: { name: SectionName; label: string }[] = [
   { name: 'developments', label: 'Developments' },
   { name: 'signals', label: 'Signals' },
   { name: 'alerts', label: 'Alerts' },
+  { name: 'outlook', label: 'Trends' },
 ]
+// Writing is done once these land: an older backend never sends outlook.
+const CORE_SECTIONS: SectionName[] = ['developments', 'signals', 'alerts']
 
 type RowState = 'done' | 'current' | 'waiting'
 
@@ -45,7 +48,7 @@ export function LoadingLedger({ ledger, labels, reduced, onCancel }: {
   const sourceNames = plan?.sources ?? []
   const sourcesIn = sourceNames.filter((n) => ledger.sources[n]).length
   const allIn = plan !== null && sourcesIn === sourceNames.length
-  const written = SECTIONS.every((s) => sections.has(s.name))
+  const written = CORE_SECTIONS.every((name) => sections.has(name))
 
   const planState: RowState = plan ? 'done' : 'current'
   const sourcesState: RowState = !plan ? 'waiting' : ranked ? 'done' : 'current'

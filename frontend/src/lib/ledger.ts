@@ -2,7 +2,7 @@
 // Only real events change it; the one timer-driven action is the cold-start note.
 import type { ApiBriefing } from './types'
 
-export type SectionName = 'developments' | 'signals' | 'alerts'
+export type SectionName = 'developments' | 'signals' | 'alerts' | 'outlook'
 
 export type StreamEvent =
   | { type: 'plan'; place: string | null; queries: number; is_finance: boolean; sources: string[] }

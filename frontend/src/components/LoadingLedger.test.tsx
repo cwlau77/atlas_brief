@@ -73,6 +73,17 @@ describe('LoadingLedger', () => {
     expect(text()).toContain('Adding context and photos…')
   })
 
+  it('lists Trends, ticks it on its event, and finishes writing without it', () => {
+    const core = ledgerOf([plan('Sudan'), { type: 'ranked', merged: 9, deduped: 9, kept: 9, outlets: 3 }, { type: 'section', name: 'developments' }])
+    render(core)
+    expect(container.querySelector('[data-section="outlook"]')?.textContent).toBe('Trends')
+    render(reduceLedger(core, { type: 'section', name: 'outlook' }))
+    expect(container.querySelector('[data-section="outlook"]')?.getAttribute('data-done')).toBe('true')
+    // An older backend never sends outlook: the core three are enough.
+    render(reduceLedger(reduceLedger(core, { type: 'section', name: 'signals' }), { type: 'section', name: 'alerts' }))
+    expect(text()).toContain('Adding context and photos…')
+  })
+
   it('shows the cold-start note only while the backend wakes', () => {
     render(ledgerOf([]))
     expect(text()).not.toContain('Waking the backend')

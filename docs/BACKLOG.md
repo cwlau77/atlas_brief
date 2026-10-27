@@ -48,7 +48,8 @@ Owner feedback, 2026-10-27: at first glance the index rows are unclear.
 - **The arrows between actors** don't say whether the actors are in conflict or involved in the same event. State the relationship in words (e.g. "in conflict", "competing claims", "same event, different accounts"). This probably needs synthesis to emit a relationship type per tension; today `Tension` has only `description`, `actors`, `sources` and `related_developments`.
 - The owner wants both: the relationship in words and the linked developments named.
 
-### Trends & implications section
+### ~~Trends & implications section~~ (done 2026-10-27)
+Shipped per `docs/superpowers/specs/2026-10-27-trends-implications-design.md`: a fourth Haiku section call (dropped 3s after the rest), Reported items verified by quote, Atlas assessments dashed and linked to their developments. Original note:
 Owner request, 2026-10-27. A new Story-tab section after the timeline, in two parts:
 - **Trends:** patterns Atlas sees across the developments in this brief (e.g. repeated ceasefire breaches in one area).
 - **Implications:** what it likely means next and what to watch.

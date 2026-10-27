@@ -48,6 +48,10 @@ describe('reduceLedger', () => {
     expect([...s.sections].sort()).toEqual(['alerts', 'developments'])
   })
 
+  it('records the outlook section', () => {
+    expect([...run([plan, { type: 'section', name: 'outlook' }]).sections]).toEqual(['outlook'])
+  })
+
   it('shows the cold-start note only while no event has arrived', () => {
     expect(run([{ type: 'cold' }]).coldStart).toBe(true)
     expect(run([plan, { type: 'cold' }]).coldStart).toBe(false)

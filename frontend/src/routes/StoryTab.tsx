@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCallout } from '../components/briefing/AlertCallout'
+import { OutlookSection } from '../components/briefing/OutlookSection'
 import { ReadingList } from '../components/briefing/ReadingList'
 import { TensionIndex } from '../components/briefing/TensionIndex'
 import { StoryCarousel } from '../components/briefing/StoryCarousel'
@@ -10,6 +11,7 @@ import { Globe } from '../globe/Globe'
 import { buildArcs } from '../globe/arcs'
 import { createFollow, type FollowRequest, type FollowTarget } from '../globe/follow'
 import { buildRegionPoints, devFollowPoint, pointKey, type RegionPoint } from '../globe/regions'
+import { buildOutlook } from '../lib/outlook'
 import { buildRoutes } from '../lib/routes'
 import { buildTensionIndex } from '../lib/tensionIndex'
 import { sortNewestFirst } from '../lib/timeline'
@@ -61,6 +63,7 @@ export function StoryTab() {
   const highlight = useIndexHighlight()
   const order = useMemo(() => sortNewestFirst(briefing.keyDevelopments), [briefing])
   const indexItems = useMemo(() => buildTensionIndex(briefing, order), [briefing, order])
+  const outlook = useMemo(() => buildOutlook(briefing, order), [briefing, order])
   const arcs = useMemo(() => buildArcs(briefing, buildRoutes(briefing, order).routes), [briefing, order])
   const { active, preview, previewed, pinned } = highlight
   const litArcs = useMemo(() => new Set(active ? [active] : []), [active])
@@ -101,7 +104,9 @@ export function StoryTab() {
   useEffect(() => {
     const f = createFollow({
       resolve: (dev) => devFollowPoint(briefing, regions, dev),
-      itemDevs: (key) => indexItems.find((item) => item.key === key)?.devs ?? [],
+      // Index rows, then outlook rows: both preview through the same highlight.
+      itemDevs: (key) => (indexItems.find((item) => item.key === key)
+        ?? [...outlook.trends, ...outlook.implications].find((row) => row.key === key))?.devs ?? [],
       onTarget: setFollow,
     })
     followRef.current = f
@@ -110,12 +115,12 @@ export function StoryTab() {
       f.dispose()
       followRef.current = null
     }
-  }, [briefing, regions, indexItems])
+  }, [briefing, regions, indexItems, outlook])
   const carouselOpen = focused !== null || shown !== null
   const previewItem = previewed !== null && previewed !== arcKey ? previewed : null
   useEffect(() => {
     followRef.current?.update({ hoveredDev, focusedDev, request, previewItem, pinnedItem: pinned, carouselOpen, touch })
-  }, [hoveredDev, focusedDev, request, previewItem, pinned, carouselOpen, touch, briefing, regions, indexItems])
+  }, [hoveredDev, focusedDev, request, previewItem, pinned, carouselOpen, touch, briefing, regions, indexItems, outlook])
   // Opening a carousel retires the request; follow.ts retires it on the other newer intents.
   useEffect(() => { if (carouselOpen) setRequest(null) }, [carouselOpen])
   // On phones the globe sits above the timeline, usually scrolled away: bring it back into
@@ -150,7 +155,11 @@ export function StoryTab() {
               items={indexItems} highlight={highlight} indexId={INDEX_ID}
               onCardHover={onCardHover} onCardFocus={setFocusedDev} onTagTap={onTagTap}
             />
-            {/* After the timeline: readers learn what happened before how it connects. */}
+            {/* After the timeline: what it adds up to, then how its actors connect. */}
+            <OutlookSection
+              trends={outlook.trends} implications={outlook.implications} timeZone={settings.timeZone}
+              preview={highlight.preview} onOpen={scrollToStory}
+            />
             <TensionIndex id={INDEX_ID} items={indexItems} highlight={highlight} timeZone={settings.timeZone} onOpen={scrollToStory} />
           </div>
           {/* Beside the timeline at 980px and up, sticky so hover-follow stays in view; above it on narrower screens. */}

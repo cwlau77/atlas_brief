@@ -62,6 +62,34 @@ describe('StoryTab', () => {
     expect(container.querySelector('.story-lead')).toBeNull()
   })
 
+  const trend = { statement: 'Strikes move north.', basis: 'assessment' as const, quote: null, sources: [], watchFor: null, relatedDevelopments: [1] }
+
+  it('puts Trends & implications between the timeline and the index', () => {
+    show(makeBriefing({ trends: [trend] }))
+    const left = container.querySelector('section#key-developments .kd-main')!
+    const [timeline, outlook, index] = ['.timeline', '#outlook', '#tension-index'].map((s) => left.querySelector(s)!)
+    expect(outlook).not.toBeNull()
+    expect(timeline.compareDocumentPosition(outlook)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(outlook.compareDocumentPosition(index)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('shows no Trends & implications for a briefing without them', () => {
+    show(makeBriefing())
+    expect(container.querySelector('#outlook')).toBeNull()
+  })
+
+  it('moves the globe to an outlook item\'s development on hover', () => {
+    vi.useFakeTimers()
+    show(makeBriefing({ trends: [trend] }))
+    globeProps.follow = null
+    const li = container.querySelector('#outlook .outlook-item')!
+    act(() => { li.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body })) })
+    // Index-row previews wait for a dwell; outlook rows share that path.
+    act(() => { vi.advanceTimersByTime(400) })
+    expect(globeProps.follow).not.toBeNull()
+    vi.useRealTimers()
+  })
+
   it('omits read first when no alerts', () => {
     show(makeBriefing({ alerts: [] }))
     expect(container.querySelector('#alerts-h')).toBeNull()
