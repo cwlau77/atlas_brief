@@ -104,7 +104,7 @@ export function HomePage() {
             <div className={`home-copy ${copyLeaving ? 'home-copy-leaving' : ''}`} aria-hidden={copyLeaving || undefined} inert={copyLeaving || undefined}>
               <p className="eyebrow label"><span>{clock.day}</span><span>{clock.time}</span><span>Global intelligence</span></p>
               <RotatingHeadline />
-              <HomeLede info={sources} />
+              <HomeLede />
               <div className="home-ask">
                 <AskForm id="home-ask" loading={loading} error={error} onGenerate={start} onRetry={retry} placeholder={placeholder} prefill={prefill} />
                 <TopicWire fallback={SUGGESTIONS} timeZone={settings.timeZone} onPick={(t) => start(t, 'daily')} disabled={loading} />

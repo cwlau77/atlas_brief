@@ -224,6 +224,7 @@
 .alert .card-img { margin-bottom: var(--space-1); }
 .alert-title { font-size: 1.12rem; }
 .alert-body { color: var(--ink-2); }
+.alert-more { justify-self: start; }
 .clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 @media (max-width: 980px) {
   .alert-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -328,6 +329,7 @@
 .kf-what { grid-column: 1 / -1; color: var(--ink-2); font-size: 0.9rem; overflow-wrap: anywhere; }
 .kf-period { color: var(--ink-3); }
 .kf-src { color: var(--ink-3); text-decoration: none; border-bottom: 1px solid var(--rule-strong); }
+.kf-src-ext { margin-left: 3px; vertical-align: -1px; opacity: 0.6; }
 .kf-src:hover, .kf-src:focus-visible { color: var(--accent); border-color: var(--accent); }
 .kf-src:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .kf-bar { position: relative; height: 10px; }

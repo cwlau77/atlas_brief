@@ -44,7 +44,7 @@ describe('AlertCallout (Read first)', () => {
   it('has no reveal control with 3 or fewer alerts', () => {
     act(() => root.render(<AlertCallout alerts={[1, 2, 3].map((i) => alert(i))} />))
     expect(container.querySelectorAll('.alert')).toHaveLength(3)
-    expect(container.querySelector('button')).toBeNull()
+    expect(container.querySelector('.alerts-show')).toBeNull()
   })
 
   it('puts a Commons file photo with its credit on top of the cell', () => {
@@ -61,5 +61,20 @@ describe('AlertCallout (Read first)', () => {
     act(() => root.render(<AlertCallout alerts={[alert(1, { sources })]} />))
     expect(container.querySelector('.card-img-top img')!.getAttribute('src')).toBe('https://img.r.eu/1.jpg')
     expect(container.querySelector('.alert-body')!.classList.contains('clamp-2')).toBe(true)
+  })
+
+  it('a clamped summary opens with More and closes with Less', () => {
+    act(() => root.render(<AlertCallout alerts={[alert(1, { description: 'A long rationale that runs past two lines.' })]} />))
+    const body = container.querySelector<HTMLElement>('.alert-body')!
+    const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'More')!
+    expect(more.getAttribute('aria-expanded')).toBe('false')
+    expect(more.getAttribute('aria-controls')).toBe(body.id)
+    expect(more.getAttribute('aria-label')).toBe('More: Alert 1')
+    act(() => more.click())
+    expect(body.classList.contains('open')).toBe(true)
+    const less = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Less')!
+    expect(less.getAttribute('aria-expanded')).toBe('true')
+    act(() => less.click())
+    expect(body.classList.contains('open')).toBe(false)
   })
 })

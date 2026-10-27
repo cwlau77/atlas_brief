@@ -1,6 +1,7 @@
 import { figureGroups, type ChartRow } from '../../lib/keyFigures'
 import type { ViewKeyFigure } from '../../lib/normalize'
 import { formatDayMonth } from '../../lib/time'
+import { ExternalIcon } from '../icons'
 
 /**
  * A development's key figures, each copied word for word from an article the card cites and
@@ -22,7 +23,9 @@ export function KeyFigures({ figures, timeZone }: { figures: ViewKeyFigure[]; ti
           className="kf-src" href={f.source.url} target="_blank" rel="noopener noreferrer"
           aria-label={`Read in ${f.source.outlet}: ${f.figure} ${f.label}`}
         >
-          {date ? `${f.source.outlet}, ${date} ↗` : `${f.source.outlet} ↗`}
+          {date ? `${f.source.outlet}, ${date}` : f.source.outlet}
+          {/* An SVG, not "↗": iOS draws that character as an emoji. */}
+          <ExternalIcon size={11} className="kf-src-ext" />
         </a>
       </span>
     )

@@ -51,7 +51,9 @@ describe('KeyFigures', () => {
     expect([...container.querySelectorAll('.kf-bar')].every((el) => el.getAttribute('aria-hidden') === 'true')).toBe(true)
     expect(container.querySelector('.kf-cap')?.textContent).toBe('People · one scale from zero · 3 outlets, 21–26 Oct')
     const link = container.querySelector<HTMLAnchorElement>('.kf-src')!
-    expect(link.textContent).toBe('news.un.org, 21 Oct ↗')
+    expect(link.textContent).toBe('news.un.org, 21 Oct')
+    expect(link.querySelector('svg')).not.toBeNull()
+    expect(container.textContent).not.toContain('↗')
     expect(link.target).toBe('_blank')
     expect(link.rel).toBe('noopener noreferrer')
     expect(link.getAttribute('aria-label')).toBe('Read in news.un.org: 34 million people need humanitarian support')
@@ -67,7 +69,7 @@ describe('KeyFigures', () => {
 
   it('links an undated figure by outlet alone, with no bar or caption for a single figure', () => {
     render([fig('$5 billion', 'Chinese investment in the Suez Canal zone', 'money', 'thediplomat.com', null)])
-    expect(container.querySelector('.kf-src')?.textContent).toBe('thediplomat.com ↗')
+    expect(container.querySelector('.kf-src')?.textContent).toBe('thediplomat.com')
     expect(container.querySelector('.kf-bar')).toBeNull()
     expect(container.querySelector('.kf-cap')).toBeNull()
   })
