@@ -48,6 +48,19 @@ class CommonsImage(BaseModel):
     source: Literal["commons"] = "commons"
 
 
+# What kind of quantity a figure is; decides which figures may share a chart. Never shown.
+FigureKind = Literal["people", "money", "share", "change", "count", "other"]
+FIGURE_KINDS: tuple[str, ...] = get_args(FigureKind)
+
+
+class KeyFigure(BaseModel):
+    figure: str                        # verbatim from the source, hedge included: "nearly 14 million"
+    label: str                         # Atlas's words: what it measures, <= 8 words
+    kind: Optional[FigureKind] = None  # unknown values become None, which never charts
+    period: Optional[str] = None       # verbatim from the same article ("in 2025"), else None
+    source: SourceCitation             # the one article it was copied from
+
+
 class KeyDevelopment(BaseModel):
     headline: str
     summary: str
@@ -56,6 +69,7 @@ class KeyDevelopment(BaseModel):
     historical_context: Optional[str] = None
     place: Optional[Place] = None
     commons_image: Optional[CommonsImage] = None
+    key_figures: list[KeyFigure] = []  # absent in older briefings
 
 
 # How a tension's actors relate; the frontend owns the words shown for each.

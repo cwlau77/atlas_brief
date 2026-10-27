@@ -14,12 +14,14 @@ from backend.config import settings
 from backend.ingestion.common import USER_AGENT
 from backend.llm_json import extract_json
 from backend.models import (
+    FIGURE_KINDS,
     RELATIONSHIPS,
     Article,
     Briefing,
     CommonsImage,
     Contradiction,
     KeyDevelopment,
+    KeyFigure,
     OutlookItem,
     PriorityAlert,
     RecommendedReading,
@@ -341,6 +343,98 @@ def settle_outlook(items: list[OutlookItem], devs: list[KeyDevelopment]) -> list
         if item.basis == "assessment" and not item.related_developments:
             continue
         out.append(item)
+    return out
+
+
+# Words an article puts before a number to hedge it ("around") or bound it ("below"). Two-word
+# entries come first so "more than" wins over a bare "than". The frontend mirrors this list.
+_FIGURE_QUALIFIERS: tuple[str, ...] = (
+    "an estimated", "more than", "at least", "upwards of", "less than", "fewer than", "at most", "up to",
+    "about", "around", "roughly", "nearly", "almost", "approximately", "some", "estimated",
+    "over", "above", "under", "below",
+)
+# A scale or unit word right after a match means the figure lost its unit ("5" of "5 billion").
+_FIGURE_UNIT_WORDS = ("thousand", "million", "billion", "trillion", "bn", "mn", "tn", "m", "k", "percent", "per cent")
+_FIGURE_MAX = 40
+_LABEL_MAX = 80
+
+
+def _normalise_figure(text: str) -> str:
+    """Like _normalise_quote, but a leading sign or currency symbol is part of the figure."""
+    text = " ".join(text.casefold().translate(_QUOTE_FOLDS).split())
+    return text.strip(" \"'").rstrip(".,;:!?")
+
+
+def _find_figure(hay: str, needle: str) -> int:
+    """Where needle starts in hay as a whole figure, or -1: "4.5%" must not match inside "14.5%",
+    "20" inside "200" or "20%", nor "5 billion" inside "$5 billion"."""
+    at = hay.find(needle) if needle else -1
+    while at >= 0:
+        end = at + len(needle)
+        before = hay[at - 1] if at > 0 else " "
+        rest = hay[end:]
+        whole_start = not before.isalnum() and before not in "$£€¥₹+-."
+        whole_end = not rest[:1].isalnum() and rest[:1] != "%" and not (rest[:1] in ".," and rest[1:2].isdigit())
+        unit_lost = any(rest.startswith(f" {w}") and not rest[len(w) + 1:len(w) + 2].isalnum() for w in _FIGURE_UNIT_WORDS)
+        if whole_start and whole_end and not unit_lost:
+            return at
+        at = hay.find(needle, at + 1)
+    return -1
+
+
+def _figure_qualifier(hay: str, at: int, needle: str) -> str:
+    """The hedge or bound the article puts just before a figure, unless the figure already has it."""
+    if needle.startswith(tuple(f"{q} " for q in _FIGURE_QUALIFIERS)):
+        return ""
+    words = hay[:at].split()
+    for q in _FIGURE_QUALIFIERS:
+        if words[-len(q.split()):] == q.split():
+            return q
+    return ""
+
+
+def _parse_figures(raw: list, articles: list[Article]) -> list[KeyFigure]:
+    """Key figures found word for word in the title or snippet of the article each one cites.
+
+    The article's own hedge ("around", "below") is put back when the model dropped it. A bad item
+    is dropped, never a reason to retry; only a reply that isn't a list is a shape error.
+    """
+    if not isinstance(raw, list):
+        raise TypeError("key_figures")
+    out: list[KeyFigure] = []
+    seen: set[tuple[str, str]] = set()
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        article = _article_at(item.get("source"), articles)
+        figure, label = item.get("figure"), item.get("label")
+        if article is None or not isinstance(figure, str) or not isinstance(label, str):
+            continue
+        figure = figure.strip().strip("\"'“”‘’„").rstrip(".,;:!?").strip()
+        label = label.strip()
+        if len(label) > _LABEL_MAX:
+            label = label[:_LABEL_MAX + 1].rsplit(" ", 1)[0].rstrip(" ,;:-")
+        if not label or len(figure) > _FIGURE_MAX or not any(c.isdigit() for c in figure):
+            continue
+        hay, needle = _normalise_quote(f"{article.title} {article.snippet}"), _normalise_figure(figure)
+        at = _find_figure(hay, needle)
+        if at < 0:
+            continue
+        if qualifier := _figure_qualifier(hay, at, needle):
+            figure = f"{qualifier} {figure}"
+        key = (article.url, _normalise_figure(figure))
+        if key in seen:
+            continue
+        seen.add(key)
+        period = item.get("period")
+        period = period.strip() if isinstance(period, str) else ""
+        out.append(KeyFigure(
+            figure=figure,
+            label=label,
+            kind=item.get("kind") if item.get("kind") in FIGURE_KINDS else None,
+            period=period if period and _find_whole(hay, _normalise_quote(period)) >= 0 else None,
+            source=_fallback_citations([article])[0],
+        ))
     return out
 
 
