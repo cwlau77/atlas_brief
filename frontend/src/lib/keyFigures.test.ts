@@ -46,7 +46,7 @@ describe('figureGroups', () => {
     expect(g.chart?.scale).toBe('meter')
     expect(g.chart!.rows.map((r) => r.width)).toEqual([8, 20, null])
     expect(g.chart!.rows.map((r) => r.note)).toEqual([null, null, 'a limit, not charted'])
-    expect(g.chart!.caption).toBe('Shares of 100% · 1 outlet, 26 Oct')
+    expect(g.chart!.caption).toBe('Percentages on a 0–100% scale · 1 outlet, 26 Oct')
   })
 
   it.each([
@@ -57,6 +57,7 @@ describe('figureGroups', () => {
     ['a share over 100', [fig('120%', 'share'), fig('20%', 'share')]],
     ['a single figure', [fig('$5 billion', 'money')]],
     ['an unknown kind', [fig('5', null), fig('6', null)]],
+    ['things mislabelled as people', [fig('43 hospitals', 'people'), fig('12 clinics', 'people')]],
   ])('no chart for %s', (_name, figures) => {
     const g = figureGroups(figures, 'UTC')
     expect(g.chart).toBeNull()
@@ -68,6 +69,18 @@ describe('figureGroups', () => {
     const g = figureGroups([fig('34 million people', 'people'), money, fig('19.5 million', 'people')], 'UTC')
     expect(g.chart!.rows.map((r) => r.figure.figure)).toEqual(['34 million people', '19.5 million'])
     expect(g.plain).toEqual([money])
+  })
+
+  it('charts people counts with people nouns or none', () => {
+    const g = figureGroups([fig('1.3 million refugees', 'people'), fig('nearly 14 million', 'people'), fig('2,000 troops', 'people')], 'UTC')
+    expect(g.chart?.rows).toHaveLength(3)
+  })
+
+  it('lists a mislabelled count apart from real people counts', () => {
+    const hospitals = fig('43 hospitals', 'people')
+    const g = figureGroups([fig('34 million people', 'people'), hospitals, fig('19.5 million', 'people')], 'UTC')
+    expect(g.chart!.rows.map((r) => r.figure.figure)).toEqual(['34 million people', '19.5 million'])
+    expect(g.plain).toEqual([hospitals])
   })
 
   it('leaves undated figures out of the date span', () => {

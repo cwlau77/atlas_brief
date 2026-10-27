@@ -64,11 +64,18 @@ export interface FigureGroups {
 
 const CHARTED: Partial<Record<FigureKind, string>> = { people: 'People', money: 'Money', count: 'Count', share: '' }
 
+// The model's kind can't be checked, so "people" charts only counts that name people (or no noun).
+const PEOPLE_NOUNS = new Set([
+  '', 'people', 'persons', 'person', 'refugees', 'migrants', 'civilians', 'children', 'adults', 'women', 'men', 'residents',
+  'troops', 'soldiers', 'fighters', 'deaths', 'dead', 'killed', 'casualties', 'injured', 'wounded', 'displaced', 'workers',
+  'employees', 'jobs', 'voters', 'patients', 'students', 'hostages', 'prisoners', 'detainees', 'asylum-seekers', 'users', 'customers',
+])
+
 /** The unit a figure is compared on for its kind, or null when it can't be charted as that kind. */
 function chartUnit(kind: FigureKind, p: ParsedFigure): string | null {
   if (kind === 'share') return p.unit === 'percent' && p.value <= 100 ? 'percent' : null
   if (kind === 'money') return p.unit.startsWith('money:') ? p.unit : null
-  if (kind === 'people') return p.unit.startsWith('count:') ? 'people' : null
+  if (kind === 'people') return p.unit.startsWith('count:') && PEOPLE_NOUNS.has(p.unit.slice(6)) ? 'people' : null
   return p.unit.startsWith('count:') ? p.unit : null
 }
 
@@ -119,7 +126,8 @@ export function figureGroups(figures: ViewKeyFigure[], timeZone: string): Figure
   const outlets = plural(new Set(charted.map((f) => f.source.outlet)).size, 'outlet')
   const span = dateSpan(charted, timeZone)
   const tail = span ? `${outlets}, ${span}` : outlets
-  const caption = meter ? `Shares of 100% · ${tail}` : `${CHARTED[kind]} · one scale from zero · ${tail}`
+  // Neutral words: the model may tag a growth rate as a share, so the caption never claims "share".
+  const caption = meter ? `Percentages on a 0–100% scale · ${tail}` : `${CHARTED[kind]} · one scale from zero · ${tail}`
   return {
     chart: { scale: meter ? 'meter' : 'bars', rows, caption },
     plain: figures.filter((_, i) => !inChart[i]),

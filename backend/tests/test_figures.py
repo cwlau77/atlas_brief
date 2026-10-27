@@ -172,3 +172,36 @@ def test_allowlist_drops_figure_no_longer_cited_by_its_card():
     dev.key_figures = [_fig("u1"), _fig("u2")]
     b = enforce_url_allowlist(_briefing([dev]), {"u2"})
     assert [f.source.url for f in b.key_developments[0].key_figures] == ["u2"]
+
+
+# --- final review: meaning must survive the verbatim check ---
+
+@pytest.mark.parametrize("figure,text", [("500", "no fewer than 500 killed"), ("fewer than 500", "no fewer than 500 killed"),
+                                         ("more than 10", "not more than 10 ships")])
+def test_negated_bound_dropped(make_article, figure, text):
+    assert _parse_figures([{"figure": figure, "label": "x", "kind": "count", "source": 1}],
+                          [make_article(title=text, snippet="")]) == []
+
+
+@pytest.mark.parametrize("figure,text", [("3%", "GDP shrank −3% in May"), ("10%", "inflation <10% this year"),
+                                         ("10%", "inflation ~10% this year"), ("3%", "-3% drop in output")])
+def test_sign_or_bound_symbol_never_lost(make_article, figure, text):
+    assert _parse_figures([{"figure": figure, "label": "x", "kind": "change", "source": 1}],
+                          [make_article(title=text, snippet="")]) == []
+
+
+def test_unicode_minus_figure_kept_when_signed(make_article):
+    [f] = _parse_figures([{"figure": "−3%", "label": "x", "kind": "change", "source": 1}],
+                         [make_article(title="GDP shrank −3% in May", snippet="")])
+    assert f.figure == "−3%"
+
+
+@pytest.mark.parametrize("figure,text", [
+    ("10", "a rise of 10-15% in prices"), ("10", "a rise of 10 to 15% in prices"), ("10%", "a rise of 10% or more"),
+    ("$5", "a $5 bln deal"), ("5", "a 5 mln euros fund"), ("2.5", "up 2.5 percentage points"),
+    ("30", "cut by 30 bps"), ("5", "fell 5 points"), ("7", "7 lakh people"), ("6", "6 crore rupees"),
+    ("200", "1 200 troops"), ("10%", "10%-plus growth"),
+])
+def test_range_trailing_bound_or_unit_never_lost(make_article, figure, text):
+    assert _parse_figures([{"figure": figure, "label": "x", "kind": "count", "source": 1}],
+                          [make_article(title=text, snippet="")]) == []
