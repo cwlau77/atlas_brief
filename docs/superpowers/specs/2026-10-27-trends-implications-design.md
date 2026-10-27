@@ -30,7 +30,7 @@ Owner request, 2026-10-27. After the timeline, a reader knows *what* happened bu
 ## Non-goals
 
 - No change to the developments, signals or alerts calls, or their prompts.
-- No change to the tension index, its links, the cards' connection tags or the globe engine.
+- No change to the tension index's behaviour, its links, the cards' connection tags or the globe engine. The one change to its code is pulling its "Ties to" list out into a shared `TiesList` (section 7), with the same markup and behaviour.
 - No new colour tokens.
 - No confidence scores, probabilities or time horizons on predictions. These are possible later; the label carries the uncertainty for now.
 - No fresh search for analysis pieces. The section works only from the articles the brief already ingested.
@@ -87,7 +87,9 @@ One class serves both lists. `watch_for` is always `None` on trends.
 
 ### 3. Synthesis: a fourth parallel section (`synthesis/briefing.py`)
 
-**Why a separate call:** it costs no wall time, because it runs alongside the other three. Folding it into an existing call would make that call write more and finish later. The cost is one more Sonnet call per uncached briefing, with the same article input as the others. This is the main cost to check (see "Calls made").
+**Why a separate call:** it costs no wall time, because it runs alongside the other three. Folding it into an existing call would make that call write more and finish later.
+
+**Model and cost (owner: keep it cheap).** There's a new setting, `outlook_model: str = "claude-haiku-4-5"`, in `config.py`, added to `.env.example` as `OUTLOOK_MODEL`. `_write_section` gains optional `model` and `max_tokens` parameters (defaulting to today's `synthesis_model` and `synthesis_max_tokens`); outlook passes `settings.outlook_model` and `max_tokens=1500`, enough for six short items and a cap on runaway output. The other three section calls are unchanged; they already default to Haiku. The cost is one more Haiku call per uncached briefing, with the same article input as the others, plus a small Haiku linking call (section 4). Cached briefings cost nothing. The live check compares Haiku with Sonnet on the same topics by setting `OUTLOOK_MODEL` locally. Switching the default is a one-line change, made only if Haiku's trends read like restated headlines.
 
 `_SECTION_SHAPES["outlook"]`:
 
@@ -126,6 +128,8 @@ It runs through `_optional_section("outlook", ...)`, so a failure gives `{}`, wh
 - `watch_for` on a trend is dropped. Empty strings become `None`.
 
 **Never holding the briefing up.** In `synthesize_briefing`, the outlook task is started with the others but is **not** part of the main `gather`. When everything else is done (developments with context, Commons and signal links; signals; alerts), the outlook task gets at most `OUTLOOK_GRACE_S = 3.0` more seconds via `asyncio.wait_for(asyncio.shield(...))`. Then it's cancelled, logged (`synthesis section=outlook status=late`), and both lists stay empty. In practice the outlook call writes much less than developments and should finish first.
+
+**Cheap-run note.** CLAUDE.md says the section calls use Sonnet; config, `.env.example` and `render.yaml` all set Haiku. The build corrects CLAUDE.md.
 
 **Ledger event.** Outlook reports `{"type": "section", "name": "outlook"}` when it lands, fails or is dropped (dropping reports too, so the ledger always completes).
 
@@ -260,7 +264,7 @@ Layout (see mockup):
 
 ## Calls made without the owner (check these)
 
-1. **A fourth parallel Sonnet call** rather than folding into an existing one. It adds no wall time but **about one more section call's cost per uncached briefing** (same article input). The alternative, a Haiku call after developments exist, is cheaper but would run after them and lengthen the briefing.
+1. **A fourth parallel call on Haiku** (`outlook_model`, owner's choice: cheap to run). It adds no wall time, and costs one more Haiku section call per uncached briefing, plus a small Haiku linking call.
 2. **A 3s grace, then drop:** outlook never delays the briefing more than 3s past everything else. A slow day shows no section rather than a slower brief.
 3. **"Reported" needs a verbatim quote found in the cited article's title or snippet.** Otherwise it's downgraded to Atlas assessment. Atlas only sees titles and snippets, so analysis that lives deeper in an article can't be verified and will read as Atlas assessment. That's honest, but it means fewer Reported items than a reader might expect.
 4. **A downgrade, not a drop,** when the quote check fails. The model's reading is kept but labelled as Atlas's own.
