@@ -130,3 +130,19 @@ Minor findings from the whole-branch review of the Trends & implications section
 - **The outlet link's accessible name drops its visible date.** `OutlookSection.tsx` labels the link "Read in Reuters: <statement>" while it shows "Reuters · 26 Oct", a near-miss on WCAG 2.5.3 (label in name) for voice-control users. The spec set that wording, so it's the owner's call. Option: "Reuters · 26 Oct: <statement>".
 
 Not fixable with the current check, recorded so it isn't forgotten: a verbatim quote can still drop a nearby "not" ("expected to pass the senate" from "is not expected to pass the senate") and stay Reported. Catching that needs a semantic check (a second model call) and would add cost.
+
+## 7. Key figures follow-ups (deferred from the 2026-10-27 review)
+
+The final review of Key figures (`docs/superpowers/specs/2026-10-27-key-figures-design.md`) found these. None shows a wrong number, so they were deferred.
+
+- **A preposition can be read as a hedge.** `_figure_qualifier` restores the word before a figure when it is on the qualifier list, so "talks about 50 hostages" shows "about 50", and "dispute over 3 islands" shows "over 3", which the frontend then treats as a bound and won't chart. A fix would restore a qualifier only when the model's own figure dropped it, and not after a noun or verb. That's hard to get right, so a known limit may be fine.
+- **The figures call outlives a cancelled briefing.** If synthesis is cancelled during the grace wait (a stream client disconnects), `asyncio.wait` leaves the figures task, and the outlook task as before, running to completion. That wastes about half a cent and has no visible effect. Wrap the wait, cancel both tasks, and re-raise.
+- **A leading intensifier can be trimmed.** "just under 10%" can come back as "under 10%". It's still a bound and never charted, but the wording isn't the article's.
+- **The model's `kind` can't be checked.** Live check: a 4.5% growth rate was tagged `share`. The meter caption ("Percentages on a 0–100% scale") and the people-noun list limit the damage. A tighter prompt could make it rarer.
+
+## 8. Cut running cost with Claude Haiku 5.5
+
+Measured 2026-10-27: an uncached briefing costs about 5¢ on Haiku 4.5 ($1 / $5 per million tokens). That's 13 calls: synthesis sections about 3¢, rerank 0.9¢, context 0.4¢, figures 0.4¢, links 0.3¢, plan 0.1¢. Claude Haiku 5.5 is $0.10 / $0.50, about a tenth of the price, which would bring a briefing to about half a cent.
+
+- **Not a drop-in swap.** Haiku 5.5 thinks by default (effort defaults to `medium`), so it may be slower, and it needs a quality check on synthesis, the verbatim quote and figure checks, and rerank.
+- **How to try it:** every call already has its own model setting (`synthesis_model`, `outlook_model`, `figures_model`, `rerank_model`, `context_model`, `search_plan_model`, `trending_model`), so it can be switched one call at a time from `.env`. Compare briefing time against the 25–27s baseline, and compare output on the same focuses.
