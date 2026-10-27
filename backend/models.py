@@ -88,6 +88,19 @@ class PriorityAlert(BaseModel):
     commons_image: Optional[CommonsImage] = None
 
 
+# Whether an outlook item is stated by an article or is Atlas's own reading; the frontend owns the words.
+Basis = Literal["reported", "assessment"]
+
+
+class OutlookItem(BaseModel):
+    statement: str
+    basis: Basis
+    quote: Optional[str] = None  # Reported only: the words found in a cited article's title or snippet
+    sources: list[SourceCitation]  # Reported: the article(s) holding the quote. Assessment: what it reasons from
+    watch_for: Optional[str] = None  # implications only
+    related_developments: Optional[list[int]] = None  # indexes into key_developments
+
+
 class RecommendedReading(BaseModel):
     title: str
     outlet: str
@@ -105,3 +118,6 @@ class Briefing(BaseModel):
     recommended_readings: list[RecommendedReading]
     article_count: int
     source_breakdown: dict[str, int]
+    # Absent in older briefings.
+    trends: list[OutlookItem] = []
+    implications: list[OutlookItem] = []

@@ -20,6 +20,7 @@ from backend.models import (
     CommonsImage,
     Contradiction,
     KeyDevelopment,
+    OutlookItem,
     PriorityAlert,
     RecommendedReading,
     SourceCitation,
@@ -221,6 +222,47 @@ def _parse_readings(raw: list, articles: list[Article]) -> list[RecommendedReadi
     return out
 
 
+_QUOTE_FOLDS = str.maketrans({
+    **dict.fromkeys("‘’‚‛′", "'"), **dict.fromkeys("“”„‟″", '"'), **dict.fromkeys("–—‒―", "-"), "…": " ",
+})
+
+
+def _normalise_quote(text: str) -> str:
+    """Fold case, quote marks, dashes, ellipses and spacing so a quote can be found in an article."""
+    text = text.casefold().translate(_QUOTE_FOLDS).replace("...", " ")
+    return " ".join(text.split()).strip(" \"'.,;:!?-")
+
+
+def _parse_outlook(raw: list, articles: list[Article], *, implications: bool) -> list[OutlookItem]:
+    """Trends or implications. "reported" is kept only when the quote is found in a cited article;
+    anything else is Atlas's own assessment. Only a missing statement is a shape error."""
+    out: list[OutlookItem] = []
+    for item in raw or []:
+        statement = str(item["statement"]).strip()
+        if not statement:
+            raise KeyError("statement")
+        # Article numbers only: a legacy {"url": ...} dict can't be checked against an article.
+        cited: list[Article] = []
+        for n in item.get("sources") or []:
+            article = _article_at(n, articles)
+            if article is not None and article not in cited:
+                cited.append(article)
+        quote = item.get("quote") if isinstance(item.get("quote"), str) else ""
+        needle = _normalise_quote(quote)
+        holding = [a for a in cited if needle and needle in _normalise_quote(f"{a.title} {a.snippet}")]
+        reported = item.get("basis") == "reported" and len(needle.split()) >= 4 and bool(holding)
+        watch_for = item.get("watch_for") if implications and isinstance(item.get("watch_for"), str) else None
+        out.append(OutlookItem(
+            statement=statement,
+            basis="reported" if reported else "assessment",
+            quote=quote.strip() if reported else None,
+            # A Reported item cites only the article(s) holding its quote.
+            sources=_fallback_citations(holding if reported else cited, limit=len(cited)),
+            watch_for=(watch_for.strip() or None) if watch_for else None,
+        ))
+    return out
+
+
 def _fallback_citations(articles: list[Article], limit: int = 3) -> list[SourceCitation]:
     return [
         SourceCitation(outlet=article.source, url=article.url, published_at=article.published_at,
@@ -405,6 +447,8 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
         for p in data.get("priority_alerts", [])
     ]
     recommended = _parse_readings(data.get("recommended_readings", []), articles)
+    trends = _parse_outlook(data.get("trends", []), articles, implications=False)
+    implications = _parse_outlook(data.get("implications", []), articles, implications=True)
 
     return Briefing(
         focus=focus,
@@ -416,6 +460,8 @@ def briefing_from_data(data: dict, focus: str, articles: list[Article]) -> Brief
         recommended_readings=recommended,
         article_count=len(articles),
         source_breakdown=_source_breakdown(articles),
+        trends=trends,
+        implications=implications,
     )
 
 
