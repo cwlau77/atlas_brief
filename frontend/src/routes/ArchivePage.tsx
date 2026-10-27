@@ -7,7 +7,7 @@ import { groupThreads, hasHighAlert, type TopicThread } from '../lib/archive'
 import { actorsText, type SavedBriefing } from '../lib/normalize'
 import { plural } from '../lib/plural'
 import { upperFirst } from '../lib/text'
-import { formatDate, formatDateTime } from '../lib/time'
+import { formatDateTime, formatDayMonth } from '../lib/time'
 import { useAppState } from '../state/hooks'
 import './archive.css'
 
@@ -35,8 +35,6 @@ function CompareColumn({ briefing, timeZone }: { briefing: SavedBriefing; timeZo
     </div>
   )
 }
-
-const dayMonth = (iso: string, tz: string) => formatDate(iso, tz).replace(/ \d{4}$/, '')
 
 export function ArchivePage() {
   const { saved, starred, toggleStar, setStars, removeBriefing, removeBriefings, pushToast, settings } = useAppState()
@@ -86,7 +84,7 @@ export function ArchivePage() {
   const bulkStarred = pendingBulk ? pendingBulk.filter((id) => starred.includes(id)).length : 0
 
   const beadLabel = (b: SavedBriefing) =>
-    `${b.area}, ${dayMonth(b.generatedAt, tz)}, ${plural(b.stats.articles, 'article')}${hasHighAlert(b) ? ', high alert' : ''}`
+    `${b.area}, ${formatDayMonth(b.generatedAt, tz)}, ${plural(b.stats.articles, 'article')}${hasHighAlert(b) ? ', high alert' : ''}`
   const beadSize = (b: SavedBriefing) => 10 + 2 * Math.min(5, Math.round(b.stats.articles / 5))
   // A render function, not a nested component, so React keeps the buttons (and their focus) across renders.
   const beadActions = (b: SavedBriefing) => {
@@ -177,7 +175,7 @@ export function ArchivePage() {
                         />
                       )}
                       <h2 className="thread-title">{upperFirst(t.area)}{anyStar && <StarIcon size={14} filled className="thread-star" />}</h2>
-                      <p className="label">{plural(t.briefings.length, 'briefing')} · since {dayMonth(t.briefings[0].generatedAt, tz)}</p>
+                      <p className="label">{plural(t.briefings.length, 'briefing')} · since {formatDayMonth(t.briefings[0].generatedAt, tz)}</p>
                     </div>
                     <ol className="thread-string">
                       {t.briefings.map((b) => {
@@ -206,7 +204,7 @@ export function ArchivePage() {
                             ) : (
                               <Link className={cls} style={style} to={`/brief/${b.id}`} aria-label={beadLabel(b)} />
                             )}
-                            <span className="bead-date label" aria-hidden="true">{dayMonth(b.generatedAt, tz)}</span>
+                            <span className="bead-date label" aria-hidden="true">{formatDayMonth(b.generatedAt, tz)}</span>
                             {!comparing && !selecting && (
                               <div className="bead-pop">
                                 <p className="label">{formatDateTime(b.generatedAt, tz)}</p>

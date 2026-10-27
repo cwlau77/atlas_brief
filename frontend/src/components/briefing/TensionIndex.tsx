@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { IndexItem } from '../../lib/tensionIndex'
-import { formatDate } from '../../lib/time'
+import { formatDayMonth } from '../../lib/time'
 import type { IndexHighlight } from '../../state/useIndexHighlight'
 import { TextButton } from './TextButton'
 
@@ -145,7 +145,7 @@ export function TensionIndex({ id, items, highlight, timeZone, onOpen }: {
                       <li key={l.dev}>
                         <button type="button" aria-label={`Go to development: ${l.title}`} onClick={() => onOpen(`dev-${l.dev}`)}>
                           <span className="index-tie-title">{l.title}</span>
-                          <time dateTime={l.timestamp}>{formatDate(l.timestamp, timeZone)}</time>
+                          <time dateTime={l.timestamp}>{formatDayMonth(l.timestamp, timeZone)}</time>
                         </button>
                       </li>
                     ))}

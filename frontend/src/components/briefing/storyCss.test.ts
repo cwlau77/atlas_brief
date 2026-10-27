@@ -165,4 +165,15 @@ describe('story styles', () => {
   it('gives Ties to buttons 24px targets', () => {
     expect(rulesFor(storyCss, '.index-ties button').join(';')).toMatch(/min-height:\s*(2[4-9]|[3-9]\d)px/)
   })
+
+  it('Ties to rows shrink to the column so the date stays inside it', () => {
+    expect(rulesFor(storyCss, '.index-ties li').join(';')).toMatch(/min-width:\s*0/)
+  })
+
+  it('the relationship line sits close under the actors', () => {
+    const row = rulesFor(storyCss, '.index-row').join(';')
+    expect(row).toMatch(/row-gap:\s*2px/)
+    // A later gap shorthand would override row-gap.
+    expect(row).not.toMatch(/(^|;)\s*gap:/)
+  })
 })

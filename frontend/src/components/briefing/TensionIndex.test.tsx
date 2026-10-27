@@ -154,6 +154,8 @@ describe('TensionIndex', () => {
     expect(ties.map((t) => t.getAttribute('aria-label'))).toEqual(['Go to development: Second', 'Go to development: First'])
     expect(ties[0].querySelector('.index-tie-title')!.textContent).toBe('Second')
     expect(ties[0].querySelector('time')!.getAttribute('dateTime')).toBe('2026-10-26T09:00:00Z')
+    // Day and month only, as in the Archive: the title needs the room.
+    expect(ties[0].querySelector('time')!.textContent).toBe('26 Oct')
     expect(container.querySelector('.index-item:first-child .index-ties')!.textContent).toContain('Ties to')
   })
 

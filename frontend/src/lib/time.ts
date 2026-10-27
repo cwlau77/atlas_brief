@@ -75,6 +75,11 @@ export function formatDate(value: string | Date | null | undefined, tz: string):
   return `${p.day} ${p.month} ${p.year}`
 }
 
+/** "26 Oct": formatDate without the year, for short lists. */
+export function formatDayMonth(value: string | Date | null | undefined, tz: string): string {
+  return formatDate(value, tz).replace(/ \d{4}$/, '')
+}
+
 export function formatDateTime(value: string | Date | null | undefined, tz: string): string {
   const d = toDate(value)
   if (!d) return UNKNOWN_TIME

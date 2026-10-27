@@ -93,8 +93,8 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: baseline;
+  column-gap: var(--space-3);
   row-gap: 2px;
-  gap: var(--space-3);
   padding: 10px 12px 4px;
   text-align: left;
   border-radius: 0;
@@ -145,6 +145,8 @@
 }
 .index-ties > .label { color: var(--ink-3); }
 .index-ties ul { list-style: none; display: grid; min-width: 0; }
+/* Grid items default to min-width: auto, which would let a long title push the date out. */
+.index-ties li { min-width: 0; }
 .index-ties button {
   display: flex;
   align-items: baseline;
