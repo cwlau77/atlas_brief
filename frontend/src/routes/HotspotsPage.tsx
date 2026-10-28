@@ -27,10 +27,17 @@ const INSET = 12
 const CARD_W = 288
 /** A first guess at the card's height; the real one is measured once it renders. */
 const CARD_H_GUESS = 392
-/** Desktop map box minimum height (matches .hs-stage.is-desktop .hs-mapbox in hotspots.css), so the card fits beside a short map. */
-const MAPBOX_MIN_H = 460
 /** Clear space between the Top countries panel tab and a card placed below it. */
 const TAB_GAP = 8
+/** The tallest card measured live (555px: photo, three-line headline, full blurb, "Often named with"), plus slack. */
+const TALLEST_CARD_H = 564
+/** The panel tab's bottom in map-box px (measured live), plus TAB_GAP. */
+const TAB_INSET = 36 + TAB_GAP
+/**
+ * Desktop map box minimum height, so the tallest card fits with its photo between the tab and the
+ * bottom inset. Set inline on the box (the only copy); a card taller still falls back to compact.
+ */
+const MAPBOX_MIN_H = TAB_INSET + TALLEST_CARD_H + INSET
 /** On a touch screen the map sends a leave right after a tap; the quiet tooltip stays this long. */
 const TIP_HOLD_MS = 2000
 
@@ -323,7 +330,13 @@ export function HotspotsPage() {
       </header>
 
       <div className={`hs-stage is-${density}${desktop && panelOpen ? ' is-open' : ''}`}>
-        <div className="hs-mapbox" ref={mapboxRef} tabIndex={-1} onClick={onMapClick}>
+        <div
+          className="hs-mapbox"
+          ref={mapboxRef}
+          tabIndex={-1}
+          onClick={onMapClick}
+          style={desktop ? { minHeight: `${MAPBOX_MIN_H}px` } : undefined}
+        >
           <HotspotsMap
             snapshot={snapshot}
             density={density}

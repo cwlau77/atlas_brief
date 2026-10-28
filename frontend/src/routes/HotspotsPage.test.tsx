@@ -294,13 +294,15 @@ describe('HotspotsPage', () => {
   })
 
   describe('card fit (desktop)', () => {
-    // jsdom has no layout: the map is 132 x 51 cells at 8px (408px, so the 460px minimum box applies),
-    // the panel tab's bottom edge is put 36px below the map box's top, and the card reports
-    // FULL_H with its photo and COMPACT_H without.
+    // jsdom has no layout: the map is 132 x 51 cells at 8px (408px, so the desktop box's minimum
+    // height applies), the panel tab's bottom edge is put 36px below the map box's top, and the card
+    // reports fullH with its photo and COMPACT_H without.
     const TAB_BOTTOM = 36
-    const MAP_H = 460
-    const FULL_H = 500
+    const MAP_H = 620
+    /** The tallest card measured live (Russia, with photo, long blurb and "Often named with"). */
+    const TALLEST_REAL_H = 555
     const COMPACT_H = 380
+    const FULL_H = TALLEST_REAL_H
     const withPhoto = (over: Wire = {}) =>
       wire({
         countries: [
@@ -317,7 +319,7 @@ describe('HotspotsPage', () => {
         ],
         ...over,
       })
-    let fullH = FULL_H
+    let fullH: number = FULL_H
     beforeEach(() => {
       fullH = FULL_H
       vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
@@ -332,7 +334,28 @@ describe('HotspotsPage', () => {
     afterEach(() => vi.restoreAllMocks())
     const box = () => ({ top: parseFloat(card()!.style.top), h: card()!.offsetHeight })
 
-    it('a card taller than the map drops its photo and stays inside the area', async () => {
+    it('the desktop map box is tall enough for the tallest real card below the tab', async () => {
+      vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
+      render()
+      await settle()
+      const mapbox = container.querySelector<HTMLElement>('.hs-mapbox')!
+      expect(mapbox.style.minHeight).toBe(`${MAP_H}px`)
+      expect(TAB_BOTTOM + 8 + TALLEST_REAL_H + 12).toBeLessThanOrEqual(MAP_H)
+    })
+
+    it('a card of realistic height keeps its photo inside the area', async () => {
+      vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
+      render()
+      await settle()
+      act(() => row('Ukraine').focus())
+      expect(card()!.querySelector('.hs-card-photo')).not.toBeNull()
+      const { top, h } = box()
+      expect(top).toBeGreaterThanOrEqual(TAB_BOTTOM + 8)
+      expect(top + h).toBeLessThanOrEqual(MAP_H - 12)
+    })
+
+    it('an oversized card falls back to compact and stays inside the area', async () => {
+      fullH = 700
       vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
       render()
       await settle()
@@ -344,17 +367,7 @@ describe('HotspotsPage', () => {
       expect(top + h).toBeLessThanOrEqual(MAP_H - 12)
     })
 
-    it('a card that fits keeps its photo', async () => {
-      fullH = 300
-      vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
-      render()
-      await settle()
-      act(() => row('Ukraine').focus())
-      expect(card()!.querySelector('.hs-card-photo')).not.toBeNull()
-    })
-
     it('places the card below the panel tab', async () => {
-      fullH = 300
       vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
       render()
       await settle()

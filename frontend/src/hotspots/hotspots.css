@@ -540,10 +540,7 @@
 .hs-mapbox:focus {
   outline: none;
 }
-/* Room for the card beside a short map (MAPBOX_MIN_H in HotspotsPage.tsx). */
-.hs-stage.is-desktop .hs-mapbox {
-  min-height: 460px;
-}
+/* The desktop map box's min-height is set inline from MAPBOX_MIN_H in HotspotsPage.tsx. */
 /* The readout anchors to the map box, so it sits under the legend at the bottom-left. */
 .hs-mapbox .hs-map {
   position: static;
