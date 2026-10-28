@@ -4,7 +4,7 @@ import { useLocation, useNavigationType } from 'react-router'
 /**
  * On navigation: Back/Forward restores the previous scroll position, other
  * navigations start at the top, and focus moves to the new page's heading
- * so screen readers announce it. React Router's ScrollRestoration needs a
+ * so screen readers announce it (for a lazy route, once its heading renders). React Router's ScrollRestoration needs a
  * data router, which this app doesn't use.
  */
 export function useRouteFocus(): void {
@@ -33,10 +33,25 @@ export function useRouteFocus(): void {
     }
     const top = navType === 'POP' ? positions.current.get(location.key) ?? 0 : 0
     window.scrollTo({ top, left: 0, behavior: 'instant' })
-    const heading = document.querySelector<HTMLElement>('main h1, main h2')
-    if (heading) {
-      heading.setAttribute('tabindex', '-1')
-      heading.focus({ preventScroll: true })
-    }
+    if (focusHeading()) return
+    // A lazy route has no heading until its chunk loads: focus it when it appears,
+    // unless the user has moved focus in the meantime.
+    const main = document.querySelector('main')
+    if (!main) return
+    const from = document.activeElement
+    const observer = new MutationObserver(() => {
+      const moved = document.activeElement !== from && document.activeElement !== document.body
+      if (moved || focusHeading()) observer.disconnect()
+    })
+    observer.observe(main, { childList: true, subtree: true })
+    return () => observer.disconnect()
   }, [location.key, navType])
+}
+
+function focusHeading(): boolean {
+  const heading = document.querySelector<HTMLElement>('main h1, main h2')
+  if (!heading) return false
+  heading.setAttribute('tabindex', '-1')
+  heading.focus({ preventScroll: true })
+  return true
 }

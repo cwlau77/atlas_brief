@@ -1,6 +1,6 @@
-import { act } from 'react'
+import { act, lazy, Suspense, type ComponentType } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MemoryRouter, Route, Routes, useNavigate } from 'react-router'
+import { Link, MemoryRouter, Route, Routes, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useRouteFocus } from './useRouteFocus'
 
@@ -73,5 +73,71 @@ describe('useRouteFocus', () => {
     expect(container.querySelector('h1')?.textContent).toBe('A')
     expect(scrollY).toBe(800)
     expect(calls).toEqual([{ top: 800, left: 0, behavior: 'instant' }])
+  })
+
+  it('focuses a lazy route\'s heading once its chunk has loaded', async () => {
+    let resolveChunk!: (m: { default: ComponentType }) => void
+    const Lazy = lazy(() => new Promise<{ default: ComponentType }>((r) => { resolveChunk = r }))
+    function Shell() {
+      useRouteFocus()
+      return (
+        <>
+          <nav><Link to="/lazy">Lazy</Link></nav>
+          <main>
+            <Routes>
+              <Route path="/" element={<h1>Home</h1>} />
+              <Route path="/lazy" element={<Suspense fallback={null}><Lazy /></Suspense>} />
+            </Routes>
+          </main>
+        </>
+      )
+    }
+    act(() => {
+      root = createRoot(container)
+      root.render(<MemoryRouter initialEntries={['/']}><Shell /></MemoryRouter>)
+    })
+    const link = container.querySelector<HTMLAnchorElement>('nav a')!
+    link.focus()
+    act(() => link.click())
+    expect(container.querySelector('main h1')).toBeNull()
+
+    await act(async () => {
+      resolveChunk({ default: () => <h1>Lazy page</h1> })
+    })
+    const h1 = container.querySelector('main h1')
+    expect(h1?.textContent).toBe('Lazy page')
+    expect(document.activeElement).toBe(h1)
+  })
+
+  it('leaves focus alone when the user moved it before the lazy heading arrived', async () => {
+    let resolveChunk!: (m: { default: ComponentType }) => void
+    const Lazy = lazy(() => new Promise<{ default: ComponentType }>((r) => { resolveChunk = r }))
+    function Shell() {
+      useRouteFocus()
+      return (
+        <>
+          <nav><Link to="/lazy">Lazy</Link><button type="button">Other</button></nav>
+          <main>
+            <Routes>
+              <Route path="/" element={<h1>Home</h1>} />
+              <Route path="/lazy" element={<Suspense fallback={null}><Lazy /></Suspense>} />
+            </Routes>
+          </main>
+        </>
+      )
+    }
+    act(() => {
+      root = createRoot(container)
+      root.render(<MemoryRouter initialEntries={['/']}><Shell /></MemoryRouter>)
+    })
+    const link = container.querySelector<HTMLAnchorElement>('nav a')!
+    link.focus()
+    act(() => link.click())
+    const other = container.querySelector<HTMLButtonElement>('nav button')!
+    other.focus()
+    await act(async () => {
+      resolveChunk({ default: () => <h1>Lazy page</h1> })
+    })
+    expect(document.activeElement).toBe(other)
   })
 })
