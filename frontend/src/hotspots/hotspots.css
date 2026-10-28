@@ -338,6 +338,10 @@
   gap: var(--space-2);
   font-size: 0.8rem;
 }
+/* No photo: the close button sits on the head row, so keep the tier clear of it. */
+.hs-card.is-pinned > .hs-card-body:first-child .hs-card-head {
+  padding-right: 26px;
+}
 .hs-card-name {
   display: flex;
   align-items: center;
