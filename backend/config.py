@@ -103,6 +103,8 @@ class Settings(BaseSettings):
     trending_model: str = "claude-haiku-4-5"
     trending_timeout_seconds: float = 8.0
     trending_ttl_minutes: int = 60
+    # Hotspots page: world-desk snapshot, rebuilt in the background once this old.
+    hotspots_ttl_minutes: int = 60
 
     # Relevance rerank (Haiku scores pre-filtered candidates; keyword + TF-IDF is the fallback).
     rerank_enabled: bool = True

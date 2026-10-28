@@ -4,25 +4,38 @@ Pure building lives here (no I/O, no LLM); the cache and images are layered on t
 """
 from __future__ import annotations
 
+import asyncio
+import logging
 import math
 import re
 import statistics
+import time
 from collections import Counter, defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from itertools import combinations
 from typing import Literal
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.config import settings
+from backend.hotspots_feeds import fetch_world_desks
 from backend.hotspots_match import COUNTRIES, countries_named, country_terms
+from backend.ingestion.common import USER_AGENT
 from backend.models import Article
 from backend.processing.urls import normalize_url
+from backend.synthesis.commons import fetch_candidates
+
+logger = logging.getLogger("briefing.hotspots")
 
 WINDOW_HOURS = 24
 _FUTURE_SLACK = timedelta(minutes=10)
 _MIN_SHARED_FOR_WITH = 3
 _MAX_WITH = 3
 _BLURB_WORDS = 30
+FAILURE_TTL_SECONDS = 300
+COMMONS_BUDGET_S = 2.0
+COMMONS_CREDIT = "File photo · Wikimedia Commons"
 
 Tier = Literal["quiet", "active", "elevated", "high"]
 
@@ -223,3 +236,101 @@ def build_snapshot(store: dict[str, Article], feeds: int, now: datetime) -> Hots
     heat.sort(key=lambda c: (-c.n, c.name))
     return Hotspots(generated_at=now, coverage_hours=coverage, total_articles=len(articles),
                     feeds=feeds, cutoffs=cutoffs, countries=heat)
+
+
+# --- Cache -------------------------------------------------------------------------------------
+# One process only (see main.py). The store keeps the last 24h of articles between rebuilds so a
+# desk that fails once does not empty its countries; the snapshot is rebuilt from it.
+
+_store: dict[str, Article] = {}
+_snapshot: tuple[Hotspots, float] | None = None  # (snapshot, monotonic expiry)
+_lock = asyncio.Lock()
+_rebuild_task: asyncio.Task | None = None
+_tasks: set[asyncio.Task] = set()  # strong refs so a running rebuild isn't garbage-collected
+_retry_after = 0.0  # monotonic time before which a failed rebuild is not retried
+
+
+def reset_cache() -> None:
+    global _snapshot, _rebuild_task, _retry_after
+    _store.clear()
+    _snapshot = None
+    _rebuild_task = None
+    _retry_after = 0.0
+    _tasks.clear()
+
+
+async def _attach_images(snapshot: Hotspots, client: httpx.AsyncClient) -> None:
+    """The article's own photo wins; stories without one get a Commons photo within one shared budget."""
+    stories = [c.story for c in snapshot.countries if c.story is not None]
+    missing: list[Story] = []
+    for story in stories:
+        if story.article.image_url:
+            story.image = StoryImage(url=story.article.image_url, credit=story.article.outlet)
+        else:
+            missing.append(story)
+    if not missing or not settings.commons_images_enabled:
+        return
+    found = await fetch_candidates([s.headline for s in missing], client, COMMONS_BUDGET_S)
+    for story in missing:
+        candidates = found.get(story.headline) or []
+        if candidates:
+            story.image = StoryImage(url=candidates[0].url, credit=COMMONS_CREDIT)
+
+
+async def _build() -> Hotspots | None:
+    """Fetch, merge, build and add photos. None when the desks gave nothing to build from."""
+    async with httpx.AsyncClient(timeout=8.0, headers={"User-Agent": USER_AGENT}, follow_redirects=True) as client:
+        fresh, feeds = await fetch_world_desks(client)
+        if not fresh:
+            return None
+        now = datetime.now(timezone.utc)
+        store = merge_store(_store, fresh, now)
+        if not store:
+            return None
+        snapshot = build_snapshot(store, feeds, now)
+        await _attach_images(snapshot, client)
+    _store.clear()
+    _store.update(store)
+    return snapshot
+
+
+async def _refresh() -> Hotspots | None:
+    """Rebuild and cache; on failure keep whatever snapshot there is and back off."""
+    global _snapshot, _retry_after
+    try:
+        snapshot = await _build()
+    except Exception as exc:  # a feed or parse failure must never take the page down
+        logger.warning("hotspots status=failed detail=%s", type(exc).__name__)
+        snapshot = None
+    if snapshot is None:
+        _retry_after = time.monotonic() + FAILURE_TTL_SECONDS
+        return None
+    _snapshot = (snapshot, time.monotonic() + settings.hotspots_ttl_minutes * 60)
+    _retry_after = 0.0
+    return snapshot
+
+
+def _start_background_rebuild() -> None:
+    global _rebuild_task
+    if _rebuild_task is not None and not _rebuild_task.done():
+        return
+    task = asyncio.create_task(_refresh())
+    _rebuild_task = task
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)
+
+
+async def get_hotspots() -> Hotspots | None:
+    """The cached snapshot. Past its age it is still served while one background rebuild runs;
+    with none at all the first caller builds it and the rest wait. None when it cannot be built."""
+    cached = _snapshot
+    if cached is not None:
+        if cached[1] <= time.monotonic() and time.monotonic() >= _retry_after:
+            _start_background_rebuild()
+        return cached[0]
+    async with _lock:
+        if _snapshot is not None:
+            return _snapshot[0]
+        if time.monotonic() < _retry_after:
+            return None
+        return await _refresh()

@@ -20,6 +20,7 @@ from backend.processing.urls import dedupe_exact
 from backend.rate_limit import GlobalBudget, SlidingWindowLimiter
 from backend.search_plan import plan_search
 from backend.sources_info import sources_payload
+from backend.hotspots import Hotspots, get_hotspots
 from backend.trending import Trending, get_trending
 from backend.synthesis import (
     SynthesisFailedError,
@@ -72,6 +73,15 @@ async def health() -> dict[str, str]:
 async def trending_endpoint() -> Trending:
     """Timed topics for Home's "On the wire" list; empty when they can't be produced (Home shows its fixed suggestions)."""
     return await get_trending()
+
+
+@app.get("/hotspots", response_model=Hotspots, response_model_by_alias=True)
+async def hotspots_endpoint() -> Hotspots:
+    """Per-country article counts over the last 24h of world-desk feeds; 503 when no snapshot could be built."""
+    snapshot = await get_hotspots()
+    if snapshot is None:
+        raise HTTPException(status_code=503, detail="Hotspots unavailable")
+    return snapshot
 
 
 @app.get("/sources")
