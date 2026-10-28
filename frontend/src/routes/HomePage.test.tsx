@@ -1,6 +1,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MemoryRouter } from 'react-router'
+import { StrictMode } from 'react'
+import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initialLedger, type LedgerState } from '../lib/ledger'
 import { SOURCES_CACHE_KEY } from '../lib/sources'
@@ -10,6 +11,7 @@ import { HomePage } from './HomePage'
 const hook = vi.hoisted(() => ({
   state: { loading: false, ledger: null as LedgerState | null },
   globeProps: [] as unknown[],
+  generate: vi.fn(),
 }))
 vi.mock('../globe/Globe', () => ({
   Globe: (props: unknown) => {
@@ -18,7 +20,7 @@ vi.mock('../globe/Globe', () => ({
   },
 }))
 vi.mock('../state/useGenerateBriefing', () => ({
-  useGenerateBriefing: () => ({ generate: vi.fn(), retry: vi.fn(), cancel: vi.fn(), error: null, ...hook.state }),
+  useGenerateBriefing: () => ({ generate: hook.generate, retry: vi.fn(), cancel: vi.fn(), error: null, ...hook.state }),
 }))
 
 const svc = (name: string, enabled: boolean, finance_only = false) => ({ name, label: name, enabled, finance_only })
@@ -128,3 +130,50 @@ describe('HomePage loading screen', () => {
   })
 })
 
+
+describe('HomePage briefFocus router state', () => {
+  let container: HTMLDivElement
+  let root: Root
+  let seen: unknown
+  beforeEach(() => {
+    sessionStorage.clear()
+    hook.state = { loading: false, ledger: null }
+    hook.generate.mockReset()
+    seen = undefined
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
+  })
+  afterEach(() => {
+    act(() => root.unmount())
+    container.remove()
+    vi.unstubAllGlobals()
+  })
+  function Probe() {
+    seen = useLocation().state
+    return null
+  }
+  const renderWith = async (state: unknown) => {
+    await act(async () => {
+      root.render(
+        <StrictMode>
+          <MemoryRouter initialEntries={[{ pathname: '/', state }]}><AppStateProvider><Probe /><HomePage /></AppStateProvider></MemoryRouter>
+        </StrictMode>,
+      )
+    })
+  }
+
+  it('starts a briefing from briefFocus router state exactly once', async () => {
+    await renderWith({ briefFocus: 'Red Sea shipping' })
+    expect(hook.generate).toHaveBeenCalledTimes(1)
+    expect(hook.generate).toHaveBeenCalledWith('Red Sea shipping', 'daily')
+    expect(seen).toBeNull()
+  })
+
+  it('ignores an empty briefFocus', async () => {
+    await renderWith({ briefFocus: '' })
+    expect(hook.generate).not.toHaveBeenCalled()
+  })
+})

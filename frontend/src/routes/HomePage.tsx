@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { AskForm } from '../components/AskForm'
 import { Contours, type ContourCenter } from '../components/Contours'
 import { HomeLede } from '../components/HomeLede'
@@ -68,6 +69,18 @@ export function HomePage() {
     setPrefill((p) => ({ text: focus, n: (p?.n ?? 0) + 1 }))
     void generate(focus, frequency)
   }
+  // "Brief me on…" from Hotspots arrives as router state; start once, then clear it so Back or a refresh doesn't rerun it.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const briefFocus = (location.state as { briefFocus?: unknown } | null)?.briefFocus
+  const briefStarted = useRef(false)
+  useEffect(() => {
+    if (typeof briefFocus !== 'string' || !briefFocus.trim() || briefStarted.current) return
+    briefStarted.current = true
+    start(briefFocus, 'daily')
+    navigate('.', { replace: true, state: null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [briefFocus])
   const labels = Object.fromEntries((sources?.services ?? []).map((s) => [s.name, s.label]))
   // Fly only once the plan has named (or failed to name) a place, never on a guess from the focus alone.
   const globeLoading = loadingScreen && ledger.plan
