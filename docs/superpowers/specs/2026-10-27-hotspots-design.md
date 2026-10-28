@@ -30,7 +30,7 @@ The owner wants a visual tool that shows which countries the news is talking abo
 - **Thick outlines and boxed chrome.** Rejected as "basic and cheap". Cards and the legend use corner brackets and a soft shadow, not a border.
 - **Instrument chrome.** The owner tried and removed the rulers, crosshair and graticule. Only the small coordinate readout stays.
 - **Heat shown by colour alone.** Cell size always carries heat too, and every tier is named in words in the legend, the list and the card.
-- **A number with no source.** Every count is articles Atlas actually read, and every card headline is either an outlet's own words or a summary built only from the listed headlines.
+- **A number with no source.** Every count is articles Atlas actually read, and every card headline and blurb is an outlet's own words.
 
 ## 1. Page layout (desktop, at least 820px)
 
@@ -38,7 +38,7 @@ Order, top to bottom, inside the normal `--maxw` container with the usual hairli
 
 1. **Header,** matching other pages: the eyebrow "Hotspots · last 24 hours" with the accent square, the H1 "Where the news is now", and the lede "Countries shaded by how many of today's articles mention them. Hover one to see what's driving it." On the right, the meta: "**840 articles** from 14 world news desks" on one line, and "Updated 14:05 UTC · refreshes hourly" on the next. The time uses the user's chosen time zone, the same way other timestamps in Atlas do.
 2. **The stage:** the map with the Top countries panel over its right edge, the legend in the bottom-left corner, and the coordinate readout below the legend.
-3. **A short "How this is counted" note** under the stage, in the explanatory style of `HowAtlasReads`. It says what counts as naming a country, the 24-hour window, the feed list, and that the hover summaries are written by Atlas from the listed headlines.
+3. **A short "How this is counted" note** under the stage, in the explanatory style of `HowAtlasReads`. It says what counts as naming a country, the 24-hour window, and the feed list, and that each card shows the most widely covered story in an outlet's own words.
 
 The footer is unchanged.
 
@@ -103,9 +103,8 @@ CountryHeat {
   story: Story | null        # only for active and above
 }
 Story {
-  headline: str
-  blurb: str | null
-  kind: "summary" | "headline"   # summary = written by Atlas from the headlines; headline = an outlet's own words
+  headline: str              # the outlet's own title
+  blurb: str | null          # the outlet's own snippet, first sentence
   article: { title, url, outlet, published_at, image_url | null }
   image: { url, credit } | null  # the article's image, else a Commons file photo
 }
@@ -142,16 +141,16 @@ The builder may adjust field names. The meanings stay as written.
 
 The mockups showed "▲ 38% on yesterday". That's cut: we keep no history across restarts, Render's process sleeps, and RSS feeds rarely hold 48 hours of entries. The sparkline shows the shape of the last 24 hours instead. The list's right column shows the count only. *(My call.)*
 
-### 3.5 The card's story (one Haiku call per refresh)
+### 3.5 The card's story (no model call)
 
-- **Countries:** those at Active and above, capped at 15, highest `n` first.
-- **Input:** for each country, up to 10 of its headlines in the window (title plus outlet, newest first, deduped), numbered. Headlines are untrusted data. Wrap them in the same "BEGIN/END … untrusted content" fence `trending.py` uses, and say so in the system prompt.
-- **Output (JSON):** per country, a `headline` (newsroom style, 4–9 words, present tense, a specific actor or place, like the trending prompt's style), a one-sentence `blurb` (at most about 25 words) that only restates what the listed headlines say, and `source`, the number of the headline that best represents it. Parse with `llm_json.extract_json`, and call through `llm.complete`.
-- **Model:** `hotspots_model` in `config.py`, defaulting to `claude-haiku-4-5`, with `hotspots_timeout_seconds` (about 10) and `max_tokens` around 1,500.
-- **Grounding:** the blurb may only restate the listed headlines. Unlike Key figures there's no verbatim check, because a summary can't be verbatim. The card marks it as Atlas's summary: a small "Atlas summary of N headlines" line under the blurb. *(My call.)* If the model returns a `source` that isn't in range, use the newest headline.
-- **Fallback, used with no key, in `DEMO_MODE`, on timeout or error, or for a country the model skipped:** `kind = "headline"`. The headline is the representative article's own title, word for word, and the blurb is its snippet, trimmed to one sentence, or null if it has none. The card then shows the outlet as the attribution instead of "Atlas summary".
-- **Representative article for the fallback:** the article in the country's set whose title shares the most content words with the country's other titles; ties go to the newer one. *(Builder may simplify.)*
-- **Cost, stated up front:** roughly 15 countries × 10 headlines × about 18 tokens, plus about 400 tokens of instructions, comes to about 3,100 input tokens. Output is roughly 15 × 60, about 900 tokens. At Haiku 4.5's $1 per million input and $5 per million output that's about **0.8¢ per refresh**. Refreshes only happen when someone visits after the cache expires, so the ceiling is 24 a day: **at most about 20¢ a day, about $6 a month**, and less on quiet days. If backlog §8 moves to Haiku 5.5, this follows `hotspots_model`.
+**Owner decision, 2026-10-27: no LLM call.** An earlier draft used one Haiku call per refresh (about $6 a month at most), and the owner rejected it as too expensive. The page costs nothing to run beyond the feed fetches.
+
+- **Countries:** every country at Active and above gets a story.
+- **Representative article:** in the country's set of articles, the one whose title shares the most content words (stopwords and the country's own names removed) with the country's other titles. That's the story most outlets are covering. Ties go to the newer article.
+- **Headline:** that article's own title, word for word, with the trailing " - Outlet" suffix stripped as `trending.py` does.
+- **Blurb:** that article's own snippet, HTML stripped and trimmed to its first sentence (at most about 30 words, cut at a word boundary with an ellipsis), or null if it has none. It's never rewritten.
+- **Attribution:** the outlet and age ("BBC World · 2h ago"), linking to the article.
+- **Cost: $0.**
 
 ### 3.6 Images
 
@@ -191,7 +190,7 @@ Contents, top to bottom:
 3. **Stat row:** the count in large type (about 1.7rem, 600) with "articles in 24 hours" under it, and beside it a 24-hour sparkline (an `--ink` line over a light area, with its last point in the country's ramp colour) captioned "24h ago" and "now".
 4. **Headline** (1rem, 600).
 5. **Blurb** (0.82rem, `--ink-2`).
-6. **Attribution line,** `--ink-3`: "Atlas summary of 8 headlines" for a summary, or "Reuters · 2h ago" for a headline fallback. Either way it links to the representative article.
+6. **Attribution line,** `--ink-3`: the outlet and age ("BBC World · 2h ago"), linking to the article. Under it, "1 of 23 articles naming Ukraine".
 7. **"Often named with"** and up to three flags and names, if any.
 8. **"Brief me on {headline} →"** in `--accent` (section 6).
 
@@ -237,7 +236,7 @@ It starts a normal briefing with **the card's headline as the focus**, for examp
 
 ## 10. Architecture notes for the builder
 
-- **Backend:** a new module `backend/hotspots.py`, modelled on `trending.py` (fetch, count, story call, cache), plus `backend/data/countries.csv` and an `@app.get("/hotspots")` route in `main.py`. Response models go in `models.py` or local to the module, following `trending.py`. New settings (`hotspots_model`, `hotspots_timeout_seconds`, `hotspots_ttl_minutes`) go in `config.py`. Nothing needs adding to `.env.example` unless a toggle like `HOTSPOTS_ENABLED` is added. If one is, the backlog's off switch is the builder's call.
+- **Backend:** a new module `backend/hotspots.py`, modelled on `trending.py` (fetch, count, pick stories, cache), plus `backend/data/countries.csv` and an `@app.get("/hotspots")` route in `main.py`. Response models go in `models.py` or local to the module, following `trending.py`. The one new setting, `hotspots_ttl_minutes`, goes in `config.py`. Nothing needs adding to `.env.example` unless a toggle like `HOTSPOTS_ENABLED` is added. If one is, the backlog's off switch is the builder's call.
 - **Frontend:**
   - A route `src/routes/HotspotsPage.tsx` plus a CSS file, and a nav entry in `NavBar.tsx`.
   - `src/lib/hotspots.ts` holds the fetch, the localStorage cache and the scale and tier helpers, modelled on `lib/trending.ts`.
@@ -254,10 +253,9 @@ It starts a normal briefing with **the card's headline as the focus**, for examp
 - **Backend (`backend/tests/test_hotspots.py`):**
   - Country matching: names, aliases, demonyms and capitals, plus every ambiguous case in 3.3 with both a should-match and a should-not-match example.
   - Counting once per article per country; dedupe; the 24-hour window and dropping undated articles; the hourly series; co-mention thresholds; cutoffs and tiers from shares and floors.
-  - Story-call parsing, including an out-of-range `source`, a missing country, malformed JSON, and the fence around untrusted text.
-  - The fallback path with no key.
+  - Representative-article choice, title suffix stripping, and the snippet trim to one sentence.
   - Cache, lock and stale-while-revalidate behaviour; 503 with no snapshot.
-  - Feeds and the LLM are mocked; no network in tests.
+  - Feeds are mocked; no network in tests.
 - **Calibration:** run the real snapshot builder a few times against live feeds and record the article totals, the top 10 counts and the resulting cutoffs in the plan. Adjust the share cutoffs (2.2) if High covers more than about 6 countries or none.
 - **Frontend (vitest):**
   - Scale and tier helpers, and the ramp endpoints.
@@ -284,7 +282,7 @@ It starts a normal briefing with **the card's headline as the focus**, for examp
 2. Tier cutoffs as a share of the day's articles, with floors, rather than fixed counts.
 3. "Change on yesterday" cut. The sparkline stays.
 4. Capitals and demonyms count as naming a country.
-5. Card summaries are labelled "Atlas summary of N headlines", and the fallback shows an outlet's own headline.
+5. Cards show the most widely covered article's own headline and snippet, with no model call (owner: "too expensive").
 6. "Brief me on…" uses the card's headline as the focus, not the country name.
 7. Stale-while-revalidate caching on the backend.
 8. A soft shadow on the lift, card and tooltip, as a Hotspots-only exception to the no-shadow rule.
