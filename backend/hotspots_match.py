@@ -64,6 +64,7 @@ _VETO_BEFORE = {
     "Mexico": re.compile(r"(?:New|Gulf of) $"),
     "Guinea": re.compile(r"New $"),
     "England": re.compile(r"New $"),
+    "Samoa": re.compile(r"American $"),
     **{t: re.compile(r"(?:Latin|South|North|Central) $") for t in ("America", "American", "Americans")},
 }
 _VETO_AFTER = {
