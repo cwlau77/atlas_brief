@@ -1,8 +1,12 @@
 /* Hotspots page. The map's SVG is drawn in cell units, so screen-pixel lengths are
    written as multiples of --px (one screen pixel in cell units, set on the SVG). */
 
-.hs-map {
+.hs-map,
+.hs-overlay,
+.hs-card {
   --hs-ease-lift: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.hs-map {
   position: relative;
 }
 
@@ -124,5 +128,351 @@
   .hs-readout {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Flags: 4:3, with a 1px inset ring at 14% ink so white flags keep their edge. */
+.hs-flag {
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 12px;
+  outline: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  outline-offset: -1px;
+}
+
+/* Tier tag: the word in its text token, the swatch in the ramp colour (--hs-sw, inline). */
+.hs-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.hs-tier::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--hs-sw);
+}
+.hs-tier.is-high {
+  color: var(--hot-ink);
+}
+.hs-tier.is-elevated {
+  color: var(--warm-ink);
+}
+.hs-tier.is-active,
+.hs-tier.is-quiet {
+  color: var(--ink-2);
+}
+
+/* The hover sequence over the map (Overlay.tsx), timed from hover start. Each element's
+   resting style is its final state; the animations fill backwards from the start state. */
+.hs-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.hs-pt {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hs-pop 0.2s cubic-bezier(0.2, 0.8, 0.2, 1.5) 320ms both;
+}
+.hs-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hs-ring 1.1s var(--hs-ease-lift) 320ms both;
+}
+.hs-leader {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 0.9;
+  stroke-dasharray: 1;
+  animation: hs-draw 0.3s cubic-bezier(0.4, 0, 0.2, 1) 500ms both;
+}
+/* Arc and end-ring delays are set inline: 950ms + 140ms per arc, end rings 600ms later. */
+.hs-arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 1;
+  animation: hs-draw 0.7s var(--hs-ease-lift) backwards;
+}
+.hs-arc-end {
+  fill: var(--paper);
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  animation: hs-fade 0.25s ease backwards;
+}
+@keyframes hs-pop {
+  from {
+    transform: scale(0);
+  }
+}
+@keyframes hs-ring {
+  from {
+    opacity: 0.5;
+    transform: scale(0.22);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+@keyframes hs-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+@keyframes hs-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The card: paper, corner brackets and a soft shadow (a Hotspots-only exception), no border.
+   It slides 12px in from the leader's side (--hs-fx, --hs-fy) once --hs-delay has passed. */
+.hs-card {
+  position: absolute;
+  z-index: 3;
+  width: 288px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    0 30px 50px -28px color-mix(in srgb, var(--ink) 55%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+  pointer-events: none;
+  animation:
+    hs-fade 0.22s ease var(--hs-delay) backwards,
+    hs-card-slide 0.45s var(--hs-ease-lift) var(--hs-delay) backwards;
+}
+@keyframes hs-card-slide {
+  from {
+    transform: translate(var(--hs-fx), var(--hs-fy));
+  }
+}
+.hs-card.is-pinned {
+  pointer-events: auto;
+}
+.hs-card:focus {
+  outline: none;
+}
+.hs-card::before,
+.hs-card::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  border: 0 solid var(--ink);
+  pointer-events: none;
+}
+.hs-card::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+.hs-card::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 1px 1px 0;
+}
+.hs-card.is-docked {
+  left: var(--space-4);
+  top: var(--space-4);
+}
+.hs-card.is-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  width: auto;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.hs-card-photo {
+  position: relative;
+  height: 112px;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+.hs-card-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hs-card-photo::after {
+  content: '';
+  position: absolute;
+  inset: 40% 0 0;
+  background: linear-gradient(transparent, color-mix(in srgb, var(--ink) 55%, transparent));
+}
+.hs-card-photo span {
+  position: absolute;
+  left: 10px;
+  bottom: 7px;
+  z-index: 1;
+  font-size: 0.68rem;
+  color: color-mix(in srgb, var(--paper) 88%, transparent);
+}
+
+.hs-card-body {
+  padding: var(--space-3) 14px 14px;
+}
+.hs-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+}
+.hs-card-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+.hs-card-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: end;
+  margin: 10px 0 var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.hs-card-n {
+  display: block;
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.hs-card-stat small {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.7rem;
+  color: var(--ink-3);
+}
+.hs-spark {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.hs-spark-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+.hs-spark-area {
+  fill: var(--ink);
+  fill-opacity: 0.06;
+}
+.hs-spark-cap {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.hs-card-headline {
+  margin: 0 0 var(--space-1);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.hs-card-blurb {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+.hs-card-attr {
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+.hs-card-source {
+  color: inherit;
+}
+.hs-card-source:hover {
+  color: var(--accent);
+}
+.hs-card-with {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+.hs-card-with .label {
+  font-size: inherit;
+  color: inherit;
+}
+.hs-card-with-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-2);
+}
+.hs-card-brief {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+}
+.hs-card-brief:hover {
+  color: var(--accent-press);
+}
+.hs-card-close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: var(--paper);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.hs-card-close:hover {
+  color: var(--accent);
+}
+
+.hs-overlay.is-reduced *,
+.hs-card.is-reduced {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-overlay *,
+  .hs-card {
+    animation: none !important;
   }
 }

@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite'
+import { realpathSync } from 'node:fs'
+import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // The SPA always calls the backend at /api/*. In production, vercel.json
@@ -7,6 +8,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    // node_modules may be a symlink (git worktrees share the main checkout's); its real
+    // path must be servable for asset imports such as the flag SVGs (?url).
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), realpathSync('node_modules')] },
     proxy: {
       '/api': {
         target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8000',
