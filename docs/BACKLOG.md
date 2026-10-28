@@ -63,12 +63,6 @@ Owner request, 2026-10-27. Analysts need to know which article a statistic came 
 - Likely a model change (e.g. `KeyDevelopment.key_figures: [{value, label, source}]`) with the source validated against the article list, like `enforce_url_allowlist` does for citations.
 - Open: how many figures per card, whether charts need several figures from the same source and period, and how saved briefings without figures render.
 
-### Hotspots tab
-Project 4 of the 2026-10-20 design-review roadmap (see `docs/superpowers/specs/2026-10-20-newsprint-identity-design.md`), the only one not started. A new top-level page with red/amber news-intensity markers on the globe, plus a flat-map view. Red and amber are reserved for heat, and the identity spec names "globe/hotspot heat markers" as one of their uses.
-- **Builds on:** the globe engine's `setHotspots`, `setArcs`, `focusOn` and `zoomTo`; briefing globes already draw hotspot markers, but in one accent colour, because all markers share one shader (the identity spec deferred the ink / `--hot` split).
-- **Main design question:** what "intensity" measures and where it comes from. `GET /trending` (Google News top stories grouped by Haiku) is one possible seed; GDELT volume or recent Atlas briefings are others.
-- **Open:** the flat-map projection and library, how often it refreshes, and its fallback when the backend is asleep.
-
 ## 1. Ask Atlas about this briefing (chat)
 
 A chat panel on the briefing page that answers questions about the current briefing: "Why does the Suez revenue drop matter?", "Which sources disagree about the tanker damage?", "What should I read first?"
@@ -146,3 +140,12 @@ Measured 2026-10-27: an uncached briefing costs about 5¢ on Haiku 4.5 ($1 / $5 
 
 - **Not a drop-in swap.** Haiku 5.5 thinks by default (effort defaults to `medium`), so it may be slower, and it needs a quality check on synthesis, the verbatim quote and figure checks, and rerank.
 - **How to try it:** every call already has its own model setting (`synthesis_model`, `outlook_model`, `figures_model`, `rerank_model`, `context_model`, `search_plan_model`, `trending_model`), so it can be switched one call at a time from `.env`. Compare briefing time against the 25–27s baseline, and compare output on the same focuses.
+
+## 9. Hotspots follow-ups (from the 2026-10-27 Hotspots spec)
+
+The Hotspots page shipped per `docs/superpowers/specs/2026-10-27-hotspots-design.md` (§12 lists these).
+
+- **Heat markers on the Home globe.** Plot `/hotspots` on the Home hero globe with `--hot` and `--warm` markers. All globe markers share one shader today, so this needs the marker colour split the identity spec deferred.
+- **Change on yesterday.** Show each country's count against the day before. Needs stored snapshots, so it waits for §4 (Supabase); the card's sparkline stays meanwhile.
+- **Multilingual feeds.** All 14 world desks publish in English, which skews coverage. Adding other-language desks needs matcher terms in those languages.
+- **Feed images on briefing cards.** Read `media:content`, `media:thumbnail` and `enclosure` in the shared `rss_source.py` so briefing cards get the outlet photo too. Hotspots has its own parser for this today, so the briefing path is unchanged.
