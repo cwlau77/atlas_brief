@@ -24,6 +24,7 @@ def test_countries_named_matches(text, expected):
 @pytest.mark.parametrize("text", [
     "How to roast a turkey for Thanksgiving",
     "Georgia governor signs election bill in Atlanta",
+    "Georgian voters head to polls in Atlanta suburbs",
     "Michael Jordan's sneakers sell at auction",
     "Chad Smith joins the board",
     "Washington state wildfire forces evacuations",
@@ -47,6 +48,7 @@ def test_world_atlas_ids_are_zero_padded():
 @pytest.mark.parametrize("text,expected", [
     ("Turkey dinner sales rise", set()),
     ("Georgia's government faces protests", {"GE"}),
+    ("Georgian government in Tbilisi", {"GE"}),
     ("Nigerian troops enter the Niger Delta", {"NG"}),
     ("Niger coup leaders meet Nigeria envoy", {"NE", "NG"}),
     ("Equatorial Guinea and Guinea-Bissau sign deal", {"GQ", "GW"}),

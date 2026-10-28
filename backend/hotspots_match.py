@@ -108,6 +108,8 @@ def _keep(term: str, text: str, start: int, end: int) -> bool:
         return not _NEXT_CAPITAL.match(after)  # "Jordan's King" passes, "Chad Smith" does not
     if term == "Georgia":
         return not _US_GEORGIA.search(text) and bool(_GEORGIA_COUNTRY.search(text))
+    if term in ("Georgian", "Georgians"):
+        return not _US_GEORGIA.search(text)  # "Georgian voters in Atlanta" are the US state's
     return True
 
 
