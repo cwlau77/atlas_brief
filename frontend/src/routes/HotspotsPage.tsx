@@ -160,10 +160,13 @@ export function HotspotsPage() {
     [snapshot],
   )
 
-  // Hover and focus preview only on desktop; a pinned card wins over both.
-  const activeIso2 = pinned ?? (desktop ? hovered : null)
+  // Hover and focus preview only on desktop; a pinned card wins over both. A pin on a country a
+  // fresh snapshot no longer has (pinned from the cached one) counts as no pin.
+  const pinnedIso2 = pinned && byIso2[pinned] ? pinned : null
+  if (pinned && !pinnedIso2) setPinned(null) // so it can't come back with a later snapshot
+  const activeIso2 = pinnedIso2 ?? (desktop ? hovered : null)
   const active = activeIso2 ? byIso2[activeIso2] : undefined
-  const isPinned = !!pinned && !!active
+  const isPinned = !!pinnedIso2
 
   // A new active country restarts the overlay's sequence.
   const [seq, setSeq] = useState({ iso2: null as string | null, n: 0 })
@@ -203,7 +206,7 @@ export function HotspotsPage() {
     const t = e.target as Element
     if (t.closest('.hs-card, .hs-legend, .hs-mapmsg')) return
     if (t.closest('.hs-hits path:not(.quiet)')) return
-    if (pinned) setPinned(null)
+    if (pinnedIso2) setPinned(null)
   }
 
   // Card placement and the overlay, in map pixels.

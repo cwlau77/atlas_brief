@@ -248,6 +248,28 @@ describe('HotspotsPage', () => {
     expect(card()!.classList.contains('is-docked')).toBe(true)
   })
 
+  const hit = (iso: string) => container.querySelector<SVGPathElement>(`.hs-hits path[data-iso="${iso}"]`)!
+  const pointer = (iso: string, type: 'pointerover' | 'pointerout') =>
+    act(() => hit(iso).dispatchEvent(new PointerEvent(type, { bubbles: true })))
+
+  it('a pin on a country the fresh snapshot dropped does not block hover', async () => {
+    cache(wire({ generated_at: '2026-10-27T13:05:00Z' }))
+    const f = deferredFetch()
+    render()
+    act(() => row('China').click())
+    expect(card()!.textContent).toContain('China headline')
+
+    const countries = (wire().countries as Wire[]).filter((c) => c.iso2 !== 'CN')
+    f.release(ok(wire({ countries })))
+    await settle()
+    expect(card()).toBeNull()
+    act(() => row('Russia').focus())
+    expect(card()!.textContent).toContain('Russia headline')
+    expect(card()!.getAttribute('role')).toBeNull() // a preview, not a pin
+    pointer('804', 'pointerover')
+    expect(card()!.textContent).toContain('Ukraine headline')
+  })
+
   it('uses the coverage hours in the eyebrow when under 24', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ok(wire({ coverage_hours: 6 }))))
     render()
