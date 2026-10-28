@@ -23,12 +23,19 @@ const OVERRIDES = {
 }
 
 const bboxOf = (ring) => {
-  let minX = 180, maxX = -180, minY = 90, maxY = -90
+  let minX = Infinity, maxX = -Infinity, minY = 90, maxY = -90
   for (const [x, y] of ring) {
     minX = Math.min(minX, x); maxX = Math.max(maxX, x)
     minY = Math.min(minY, y); maxY = Math.max(maxY, y)
   }
   return [minX, minY, maxX, maxY]
+}
+// A ring that crosses the antimeridian (Chukotka, Fiji) jumps between -180 and +180; a ray
+// cast against it flips parity along the jump. Shift its western points by +360 so it is
+// contiguous (its longitudes then run past 180), and test points at lng and lng + 360.
+const unwrap = (ring) => {
+  const crosses = ring.some(([x], i) => i > 0 && Math.abs(x - ring[i - 1][0]) > 180)
+  return crosses ? ring.map(([x, y]) => [x < 0 ? x + 360 : x, y]) : ring
 }
 const inRing = (x, y, ring) => {
   let inside = false
@@ -44,14 +51,18 @@ for (const f of countries) {
   if (f.id == null || f.id === '010') continue // no id; Antarctica is below the grid
   const g = f.geometry
   const list = g.type === 'Polygon' ? [g.coordinates] : g.coordinates
-  const polys = list.map((rings) => ({ rings, bbox: bboxOf(rings[0]) }))
+  const polys = list.map((rings) => {
+    const unwrapped = rings.map(unwrap)
+    return { rings: unwrapped, bbox: bboxOf(unwrapped[0]) }
+  })
   items.push({ id: String(f.id), polys })
 }
-const contains = (poly, lng, lat) => {
+const containsAt = (poly, lng, lat) => {
   const b = poly.bbox
   return lng >= b[0] && lng <= b[2] && lat >= b[1] && lat <= b[3] &&
     inRing(lng, lat, poly.rings[0]) && !poly.rings.slice(1).some((h) => inRing(lng, lat, h))
 }
+const contains = (poly, lng, lat) => containsAt(poly, lng, lat) || containsAt(poly, lng + 360, lat)
 
 const build = (cols) => {
   const cellDeg = 360 / cols
@@ -72,7 +83,8 @@ const build = (cols) => {
     if (cells[it.id]) continue
     const area = (p) => (p.bbox[2] - p.bbox[0]) * (p.bbox[3] - p.bbox[1])
     const big = it.polys.reduce((a, b) => (area(b) > area(a) ? b : a))
-    const lng = (big.bbox[0] + big.bbox[2]) / 2
+    const mid = (big.bbox[0] + big.bbox[2]) / 2
+    const lng = mid > 180 ? mid - 360 : mid // an unwrapped ring's centre can run past 180
     const lat = (big.bbox[1] + big.bbox[3]) / 2
     // The cell holding the centre, else the nearest free cell among its 8 neighbours.
     const fc = (lng - LNG_MIN) / cellDeg

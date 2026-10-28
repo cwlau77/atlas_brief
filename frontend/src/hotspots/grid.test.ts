@@ -42,4 +42,46 @@ describe('hotspot grid', () => {
     expect(c).toBeCloseTo((-98 + 180) / g.cellDeg, 1)
     expect(r).toBeCloseTo((80 - 39) / g.cellDeg, 1)
   })
+
+  // Rings that cross the antimeridian (Chukotka, Fiji) must not flip the point-in-polygon test.
+  const near = (g: HotspotGrid, id: string, lng: number, lat: number) => {
+    const c0 = Math.floor((lng + 180) / g.cellDeg)
+    const r0 = Math.floor((80 - lat) / g.cellDeg)
+    return (g.cells[id] ?? []).some((i) => {
+      const dc = Math.abs((i % g.cols) - c0)
+      return Math.min(dc, g.cols - dc) <= 1 && Math.abs(Math.floor(i / g.cols) - r0) <= 1
+    })
+  }
+
+  it.each(['desktop', 'mobile'] as GridDensity[])('Russia does not wrap across North America (%s)', (d) => {
+    const g = GRIDS[d]
+    const cell = at(g, -100, 66)
+    expect(g.cells['643']).not.toContain(cell)
+    const owner = Object.entries(g.cells).find(([, cs]) => cs.includes(cell))?.[0]
+    if (owner) expect(owner).toBe('124')
+    // Russia lies east of 19°E, apart from Chukotka's tip just west of the antimeridian.
+    for (const i of g.cells['643']) {
+      const lng = -180 + ((i % g.cols) + 0.5) * g.cellDeg
+      expect(lng > 19 || lng < -165, `Russia cell at ${lng}`).toBe(true)
+    }
+  })
+
+  it.each(['desktop', 'mobile'] as GridDensity[])('Russia keeps Chukotka (%s)', (d) => {
+    expect(near(GRIDS[d], '643', 175, 66)).toBe(true)
+  })
+
+  it.each(['desktop', 'mobile'] as GridDensity[])('Fiji sits near 178°E, 17°S (%s)', (d) => {
+    const g = GRIDS[d]
+    expect(g.cells['242']?.length).toBeGreaterThan(0)
+    for (const i of g.cells['242']) {
+      const lng = -180 + ((i % g.cols) + 0.5) * g.cellDeg
+      const lat = 80 - (Math.floor(i / g.cols) + 0.5) * g.cellDeg
+      expect(lng > 170 || lng < -175, `lng ${lng}`).toBe(true)
+      expect(lat).toBeGreaterThan(-23)
+      expect(lat).toBeLessThan(-11)
+    }
+    const [c] = g.anchors['242']
+    const anchorLng = -180 + c * g.cellDeg
+    expect(anchorLng > 170 || anchorLng < -175, `anchor lng ${anchorLng}`).toBe(true)
+  })
 })
