@@ -4,6 +4,7 @@ Reuses the briefing's feed list and fetcher; unlike the briefing parser it keeps
 every entry (no cap, no keyword filter) and reads each entry's feed image.
 """
 import asyncio
+import html
 import logging
 
 import feedparser
@@ -36,6 +37,10 @@ def _entry_image(entry) -> str | None:
     return None
 
 
+def _unescaped(value) -> str:
+    return html.unescape(value) if isinstance(value, str) else ""
+
+
 def parse_entries(outlet: str, content: str) -> list[Article]:
     """Every entry of an already-fetched feed as an Article, or [] when it is not a feed."""
     try:
@@ -50,17 +55,15 @@ def parse_entries(outlet: str, content: str) -> list[Article]:
         return []
     articles: list[Article] = []
     for entry in parsed.entries:
-        article = _entry_to_article(outlet, entry)
-        if article is None:
+        dated = _entry_to_article(outlet, entry)  # the shared parser's date rule
+        if dated is None:
             continue
-        image = _entry_image(entry)
-        if image:
-            # Re-run through make_article's https-only image rule.
-            rebuilt = make_article(article.raw_source_type, title=article.title, url=article.url,
-                                   snippet=article.snippet, outlet=outlet,
-                                   published_at=article.published_at, image_url=image)
-            article = rebuilt or article
-        articles.append(article)
+        # Unescape before make_article so its tag strip also catches escaped tags ("&lt;p&gt;").
+        article = make_article(dated.raw_source_type, title=_unescaped(getattr(entry, "title", "")),
+                               url=dated.url, snippet=_unescaped(getattr(entry, "summary", "")),
+                               outlet=outlet, published_at=dated.published_at, image_url=_entry_image(entry))
+        if article is not None:
+            articles.append(article)
     return articles
 
 

@@ -35,6 +35,17 @@ def test_parse_entries_keeps_every_entry_and_reads_images():
     assert arts[0].source == "BBC World"
 
 
+def test_parse_entries_unescapes_html_entities_before_stripping_tags():
+    feed = ('<?xml version="1.0"?><rss version="2.0"><channel><title>T</title><item>'
+            "<title>Mbappe&amp;#039;s goal &amp;amp; the &amp;lt;b&amp;gt;row&amp;lt;/b&amp;gt;</title>"
+            "<link>https://f.com/1</link>"
+            "<description>&amp;lt;p&amp;gt;Real Madrid&amp;#039;s striker &amp;amp; captain&amp;lt;/p&amp;gt;</description>"
+            "</item></channel></rss>")
+    [article] = parse_entries("BBC World", feed)
+    assert article.title == "Mbappe's goal & the row"
+    assert article.snippet == "Real Madrid's striker & captain"
+
+
 def test_unparseable_feed_yields_no_articles():
     assert parse_entries("BBC World", "<html><body>502 Bad Gateway</body></html>") == []
 
