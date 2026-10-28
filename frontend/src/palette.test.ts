@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ROUTE_COLORS } from './lib/routes'
+import { HEAT_STOPS } from './hotspots/heat'
 
 const files = import.meta.glob(['./**/*.{ts,tsx,css}', '!./**/*.test.*'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 const tokens = files['./styles/tokens.css']
@@ -116,5 +117,9 @@ describe('contrast', () => {
 
   it('declares each route colour in tokens.css with the same hex', () => {
     for (const c of ROUTE_COLORS) expect(token(c.token).toUpperCase()).toBe(c.hex.toUpperCase())
+  })
+
+  it('declares each heat stop in tokens.css with the same hex', () => {
+    HEAT_STOPS.forEach(([, hex], i) => expect(token(`--heat-${i}`).toUpperCase()).toBe(hex.toUpperCase()))
   })
 })

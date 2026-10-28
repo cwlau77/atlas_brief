@@ -29,6 +29,13 @@
   --route-3: #0B7FA8;
   --route-4: #717985;
   --route-5: #5A73EA;
+  /* Hotspots heat ramp only; the one place green appears. Must match HEAT_STOPS in hotspots/heat.ts. */
+  --heat-0: #5E9F6E;
+  --heat-1: #A3BF63;
+  --heat-2: #E2BE4E;
+  --heat-3: #E08A2A;
+  --heat-4: #E2381B;
+  --heat-5: #A3200B;
 
   --font-sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-display: var(--font-sans);
