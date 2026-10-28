@@ -108,6 +108,35 @@ async def test_cold_failure_returns_none_and_backs_off(feed):
 
 
 @pytest.mark.asyncio
+async def test_hung_build_times_out_as_a_failure(feed, monkeypatch):
+    async def hanging_fetch(client):
+        feed["fetch"] += 1
+        await asyncio.sleep(30)
+
+    monkeypatch.setattr(hotspots, "fetch_world_desks", hanging_fetch)
+    monkeypatch.setattr(hotspots, "BUILD_DEADLINE_S", 0.05)
+    assert await asyncio.wait_for(hotspots.get_hotspots(), 2) is None
+    assert await hotspots.get_hotspots() is None  # backed off, not queued behind the hung build
+    assert feed["fetch"] == 1
+
+
+@pytest.mark.asyncio
+async def test_hung_background_rebuild_frees_the_next_one(feed, monkeypatch):
+    monkeypatch.setattr(settings, "hotspots_ttl_minutes", 0)
+    first = await hotspots.get_hotspots()
+
+    async def hanging_fetch(client):
+        await asyncio.sleep(30)
+
+    monkeypatch.setattr(hotspots, "fetch_world_desks", hanging_fetch)
+    monkeypatch.setattr(hotspots, "BUILD_DEADLINE_S", 0.05)
+    assert await hotspots.get_hotspots() is first
+    await asyncio.wait_for(_drain(), 2)
+    assert hotspots._rebuild_task.done()
+    assert (await hotspots.get_hotspots()) is first
+
+
+@pytest.mark.asyncio
 async def test_zero_articles_is_a_failure(feed):
     feed["articles"] = []
     assert await hotspots.get_hotspots() is None

@@ -36,6 +36,7 @@ _BLURB_WORDS = 30
 FAILURE_TTL_SECONDS = 300
 COMMONS_BUDGET_S = 2.0
 COMMONS_CREDIT = "File photo · Wikimedia Commons"
+BUILD_DEADLINE_S = 45.0  # a trickling feed must not hold the rebuild (and its lock) forever
 
 Tier = Literal["quiet", "active", "elevated", "high"]
 
@@ -322,7 +323,7 @@ async def _refresh() -> Hotspots | None:
     """Rebuild and cache; on failure keep whatever snapshot there is and back off."""
     global _snapshot, _retry_after
     try:
-        snapshot = await _build()
+        snapshot = await asyncio.wait_for(_build(), BUILD_DEADLINE_S)
     except Exception as exc:  # a feed or parse failure must never take the page down
         logger.warning("hotspots status=failed detail=%s", type(exc).__name__)
         snapshot = None
