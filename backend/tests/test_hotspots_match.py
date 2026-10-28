@@ -60,6 +60,14 @@ def test_world_atlas_ids_are_zero_padded():
     ("South Sudan and Sudan agree truce", {"SS", "SD"}),
     ("Dominican Republic and Dominica", {"DO", "DM"}),
     ("Cyclone hits the Indian Ocean", set()),
+    ("New England Patriots win", set()),
+    ("Turks and Caicos election", set()),
+    ("American Airlines cancels flights", set()),
+    ("American football draft opens", set()),
+    ("Indian Wells final postponed", set()),
+    ("American Samoa storm", set()),
+    ("Turks rally in Ankara", {"TR"}),
+    ("American envoy visits England", {"US", "GB"}),
 ])
 def test_more_cases(text, expected):
     assert countries_named(text) == expected

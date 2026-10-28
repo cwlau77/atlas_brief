@@ -63,11 +63,14 @@ _PATTERN, _OWNER = _build()
 _VETO_BEFORE = {
     "Mexico": re.compile(r"(?:New|Gulf of) $"),
     "Guinea": re.compile(r"New $"),
+    "England": re.compile(r"New $"),
     **{t: re.compile(r"(?:Latin|South|North|Central) $") for t in ("America", "American", "Americans")},
 }
 _VETO_AFTER = {
     "Guinea": re.compile(r" pigs?\b"),
-    "Indian": re.compile(r" Ocean\b"),
+    "Indian": re.compile(r" (?:Ocean|Wells)\b"),
+    "Turks": re.compile(r" and Caicos\b"),
+    "American": re.compile(r" (?:Airlines|Express|football|Idol|Samoa)\b"),
 }
 _FOOD = re.compile(r"\b(?:dinner|roast|recipes?|thanksgiving|stuffing|gravy|sandwich(?:es)?|bacon|legs?|"
                    r"breasts?|farms?|farmers?|pardon|trot)\b", re.I)
