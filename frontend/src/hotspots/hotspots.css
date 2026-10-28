@@ -28,6 +28,11 @@
   pointer-events: none;
 }
 
+/* The halo's .35 lives on the group, so the focus fade on a path multiplies it (.35 × .4). */
+.hs-glow {
+  opacity: 0.35;
+}
+
 .hs-skel {
   fill: var(--rule-strong);
 }

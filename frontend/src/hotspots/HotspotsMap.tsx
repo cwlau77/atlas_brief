@@ -88,7 +88,7 @@ const CountryCells = memo(function CountryCells({ shape, grid, on, delay }: { sh
 })
 
 const GlowPath = memo(function GlowPath({ shape, grid, on, filter }: { shape: Shape; grid: HotspotGrid; on: boolean; filter: string }) {
-  return <path data-iso={shape.iso} className={on ? 'on' : undefined} d={cellsPath(grid, shape.cells)} fill={shape.colour ?? undefined} filter={filter} opacity={0.35} />
+  return <path data-iso={shape.iso} className={on ? 'on' : undefined} d={cellsPath(grid, shape.cells)} fill={shape.colour ?? undefined} filter={filter} />
 })
 
 export function HotspotsMap(props: HotspotsMapProps) {

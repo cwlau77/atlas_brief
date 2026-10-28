@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HotspotCountry, HotspotSnapshot, Tier } from './data'
 import { GRIDS } from './grid'
 import { HotspotsMap, type HotspotsMapProps } from './HotspotsMap'
+import css from './hotspots.css?raw'
 
 const country = (isoNumeric: string, iso2: string, name: string, n: number, tier: Tier): HotspotCountry => ({
   isoNumeric, iso2, name, n, tier, hourly: [], with: [], story: null,
@@ -137,6 +138,16 @@ describe('HotspotsMap', () => {
     expect(iso).toBe('250')
     // The tooltip sits on the country's anchor, in pixels (cell units × px per cell).
     expect(at![0] / at![1]).toBeCloseTo(anchorCol / anchorRow, 5)
+  })
+
+  it('fades other glows under focus rather than brightening them', () => {
+    render({ active: '804', reduced: true })
+    const glows = [...container.querySelectorAll('.hs-glow path')]
+    expect(glows.length).toBeGreaterThan(1)
+    // The .35 sits on the group in CSS; a path-level opacity attribute would lose to the .4 fade rule.
+    expect(glows.every((p) => !p.hasAttribute('opacity'))).toBe(true)
+    expect(css).toMatch(/\.hs-glow \{\s*opacity: 0\.35;/)
+    expect(glows.filter((p) => !p.classList.contains('on')).map((p) => p.getAttribute('data-iso')).sort()).toEqual(['156', '643'])
   })
 
   it('labels the map with the top countries', () => {
