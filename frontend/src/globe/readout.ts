@@ -1,6 +1,7 @@
 import { countryAt } from '../lib/places'
 
-const fmtCoord = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(2)}° ${v >= 0 ? pos : neg}`
+/** "48.20° N": one coordinate to two decimals with its hemisphere. */
+export const fmtCoord = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(2)}° ${v >= 0 ? pos : neg}`
 
 const clocks = new Map<string, Intl.DateTimeFormat>()
 function localTime(timeZone: string, now: Date): string {

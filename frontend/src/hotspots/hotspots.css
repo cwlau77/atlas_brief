@@ -1,0 +1,123 @@
+/* Hotspots page. The map's SVG is drawn in cell units, so screen-pixel lengths are
+   written as multiples of --px (one screen pixel in cell units, set on the SVG). */
+
+.hs-map {
+  --hs-ease-lift: cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.hs-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.hs-backgrid {
+  fill: none;
+  stroke: var(--ink);
+  stroke-opacity: 0.055;
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.hs-glow,
+.hs-base,
+.hs-top {
+  pointer-events: none;
+}
+
+.hs-skel {
+  fill: var(--rule-strong);
+}
+
+/* Focus: everything but the active country fades back. */
+.hs-cg,
+.hs-glow path {
+  transition: opacity 0.35s ease;
+}
+.hs-svg.is-focus .hs-cg:not(.on),
+.hs-svg.is-focus .hs-glow path:not(.on) {
+  opacity: 0.4;
+}
+
+/* Enter: quiet countries first, each fading in and dropping 12px. */
+.hs-cg.enter {
+  animation: hs-drop 0.9s var(--hs-ease-lift) backwards;
+  animation-delay: calc(var(--d) * 1ms);
+}
+@keyframes hs-drop {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-12 * var(--px)));
+  }
+}
+
+/* Lift: the active country rises off its slot over a soft shadow, and settles back on leave. */
+.hs-slot {
+  fill: var(--ink);
+  fill-opacity: 0.07;
+}
+.hs-shadow {
+  fill: var(--ink);
+  opacity: 0;
+  transition: opacity 0.45s ease, transform 0.45s var(--hs-ease-lift);
+}
+.hs-tile {
+  transform-box: fill-box;
+  transform-origin: 50% 70%;
+  transition: transform 0.45s var(--hs-ease-lift);
+}
+.hs-lift.up .hs-shadow {
+  opacity: 0.3;
+  transform: translate(calc(6 * var(--px)), calc(12 * var(--px)));
+}
+.hs-lift.up .hs-tile {
+  transform: translateY(calc(-12 * var(--px))) scale(1.07);
+}
+
+/* Hit layer: flat country shapes that never move, so a rising tile can't make hover flicker. */
+.hs-hits path {
+  fill: transparent;
+  stroke: none;
+  cursor: pointer;
+}
+.hs-hits path.quiet {
+  cursor: default;
+}
+
+/* Coordinate readout, bottom-left while the pointer is over the map. */
+.hs-readout {
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-2);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-quick);
+}
+.hs-readout[data-visible='true'] {
+  opacity: 1;
+}
+@media (hover: none) {
+  .hs-readout {
+    display: none;
+  }
+}
+
+.hs-svg.is-reduced *,
+.hs-svg.is-reduced {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-map *,
+  .hs-readout {
+    animation: none !important;
+    transition: none !important;
+  }
+}
