@@ -524,10 +524,13 @@
 }
 
 /* The stage: the map, with the Top countries panel over its right 300px on desktop.
-   The map refits to the width left beside the open panel. */
+   The map refits to the width left beside the open panel. Clipped sideways only, so the
+   closed panel (translated right) stays hidden while top-row tooltips and arcs can rise
+   above the stage. clip, unlike hidden, leaves overflow-y visible. */
 .hs-stage {
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   border-bottom: 1px solid var(--rule);
 }
 .hs-stage.is-desktop.is-open {
