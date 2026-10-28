@@ -270,6 +270,31 @@ describe('HotspotsPage', () => {
     expect(card()!.textContent).toContain('Ukraine headline')
   })
 
+  it('hovering a quiet country while a card is pinned shows no tooltip', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ok(wire())))
+    render()
+    await settle()
+    pointer('250', 'pointerover')
+    expect(container.querySelector('.hs-tip')!.textContent).toContain('France')
+    pointer('250', 'pointerout')
+    act(() => row('Ukraine').click())
+    pointer('250', 'pointerover')
+    expect(container.querySelector('.hs-tip')).toBeNull()
+  })
+
+  it('a country absent from the snapshot shows a 0 articles tooltip', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ok(wire())))
+    render()
+    await settle()
+    pointer('276', 'pointerover')
+    const tip = container.querySelector('.hs-tip')!
+    expect(tip.textContent).toBe('Germany · 0 articles')
+    expect(tip.querySelector('img.hs-flag')).not.toBeNull()
+    expect(card()).toBeNull()
+    pointer('276', 'pointerout')
+    expect(container.querySelector('.hs-tip')).toBeNull()
+  })
+
   it('uses the coverage hours in the eyebrow when under 24', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ok(wire({ coverage_hours: 6 }))))
     render()

@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest'
+import { COUNTRY_NAMES } from './countryNames'
 import { GRIDS, type GridDensity, type HotspotGrid } from './grid'
 
 const at = (g: HotspotGrid, lng: number, lat: number) =>
   Math.floor((80 - lat) / g.cellDeg) * g.cols + Math.floor((lng + 180) / g.cellDeg)
 
 describe('hotspot grid', () => {
+  it('names every grid country with its ISO2 code', () => {
+    for (const g of Object.values(GRIDS)) {
+      for (const iso of Object.keys(g.cells)) {
+        expect(COUNTRY_NAMES[iso]?.iso2, iso).toMatch(/^[A-Z]{2}$/)
+        expect(COUNTRY_NAMES[iso]?.name, iso).toBeTruthy()
+      }
+    }
+    expect(COUNTRY_NAMES['276']).toEqual({ iso2: 'DE', name: 'Germany' })
+    expect(COUNTRY_NAMES['304']).toEqual({ iso2: 'GL', name: 'Greenland' })
+  })
+
   it('desktop grid is 132 columns from 180°W, 80°N to 58°S', () => {
     expect(GRIDS.desktop.cols).toBe(132)
     expect(GRIDS.desktop.rows).toBe(Math.ceil(138 / (360 / 132)))

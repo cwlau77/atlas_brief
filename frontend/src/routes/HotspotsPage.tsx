@@ -5,6 +5,7 @@ import { Flag } from '../hotspots/Flag'
 import { GRIDS, type GridDensity } from '../hotspots/grid'
 import { HotspotCard, type HotspotCardProps } from '../hotspots/HotspotCard'
 import { HotspotsMap } from '../hotspots/HotspotsMap'
+import { COUNTRY_NAMES } from '../hotspots/countryNames'
 import { arcPoints, placeCard, type Box, type Pt } from '../hotspots/layout'
 import { Legend } from '../hotspots/Legend'
 import { Overlay } from '../hotspots/Overlay'
@@ -102,7 +103,7 @@ export function HotspotsPage() {
   const [pinned, setPinned] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(true)
   const [layout, setLayout] = useState<MapLayout | null>(null)
-  const [tip, setTip] = useState<{ iso2: string; at: Pt } | null>(null)
+  const [tip, setTip] = useState<{ iso2: string; name: string; n: number; at: Pt } | null>(null)
   const [cardH, setCardH] = useState(CARD_H_GUESS)
   // The country whose card, photo included, measured taller than the placement area.
   const [compactFor, setCompactFor] = useState<string | null>(null)
@@ -191,16 +192,19 @@ export function HotspotsPage() {
     if (c) pin(c.iso2, mapboxRef.current)
   }
   const onQuietHover = (iso: string | null, at: Pt | null) => {
-    const c = iso ? byNumeric.get(iso) : undefined
+    // A country absent from the snapshot is quiet too: named from the grid's lookup, with 0 articles.
+    const c = iso ? (byNumeric.get(iso) ?? (COUNTRY_NAMES[iso] && { ...COUNTRY_NAMES[iso], n: 0 })) : undefined
+    const next = c && at ? { iso2: c.iso2, name: c.name, n: c.n, at } : null
     if (!desktop) {
       // Touch: a tap shows the tooltip, which then holds; the leave that follows is ignored.
-      if (!c || !at) return
+      if (!next) return
       clearTimeout(tipTimer.current)
-      setTip({ iso2: c.iso2, at })
+      setTip(next)
       tipTimer.current = setTimeout(() => setTip(null), TIP_HOLD_MS)
       return
     }
-    setTip(c && at ? { iso2: c.iso2, at } : null)
+    // While a card is pinned, hovering does nothing.
+    setTip(pinnedIso2 ? null : next)
   }
   const onMapClick = (e: MouseEvent<HTMLDivElement>) => {
     const t = e.target as Element
@@ -276,7 +280,6 @@ export function HotspotsPage() {
   }, [desktop, layout, panelOpen, areaTop, placed, active, compact, areaH, cardH])
 
   const hours = snapshot && snapshot.coverageHours < 24 ? snapshot.coverageHours : 24
-  const tipCountry = tip ? byIso2[tip.iso2] : undefined
   const asOf = snapshot ? formatTime(snapshot.generatedAt, tz) : ''
   const statusLine =
     status === 'loading'
@@ -351,10 +354,10 @@ export function HotspotsPage() {
             onLayout={setLayout}
           />
           <Overlay anchor={anchor} box={box} side={side} arcs={ends} reduced={reduced} seq={seq.n} />
-          {tip && tipCountry && (
+          {tip && (
             <div className="hs-tip" style={{ left: `${tip.at[0]}px`, top: `${tip.at[1] - 6}px` }} aria-hidden="true">
-              <Flag iso2={tipCountry.iso2} />
-              {tipCountry.name} <span>· {articles(tipCountry.n)}</span>
+              <Flag iso2={tip.iso2} />
+              {tip.name} <span>· {articles(tip.n)}</span>
             </div>
           )}
           {active && snapshot && (
