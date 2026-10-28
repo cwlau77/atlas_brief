@@ -33,6 +33,12 @@ describe('NavBar lockup', () => {
     expect(link.getAttribute('href')).toBe('/')
   })
 
+  it('links to Hotspots between Briefing and Archive', () => {
+    const links = [...container.querySelectorAll('.nav-links a')].map((a) => a.textContent)
+    expect(links).toEqual(['Briefing', 'Hotspots', 'Archive', 'Settings'])
+    expect(container.querySelector('.nav-links a[href="/hotspots"]')!.textContent).toBe('Hotspots')
+  })
+
   it('no longer shows the clock', () => {
     expect(container.querySelector('.nav-clock')).toBeNull()
   })

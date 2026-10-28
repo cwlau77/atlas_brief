@@ -1,5 +1,5 @@
 import { Analytics } from '@vercel/analytics/react'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Route, Routes } from 'react-router'
 import { Footer } from './components/Footer'
 import { NavBar } from './components/NavBar'
@@ -17,6 +17,9 @@ import { AppStateProvider } from './state/AppState'
 import { useAppState } from './state/hooks'
 import './app.css'
 
+// The Hotspots grid data is large; only the Hotspots page loads it.
+const HotspotsPage = lazy(() => import('./routes/HotspotsPage').then((m) => ({ default: m.HotspotsPage })))
+
 function Shell() {
   useRouteFocus()
   useEffect(() => warmBackend(), [])
@@ -32,6 +35,7 @@ function Shell() {
             <Route index element={<StoryTab />} />
             <Route path="signals" element={<SignalsTab />} />
           </Route>
+          <Route path="/hotspots" element={<Suspense fallback={null}><HotspotsPage /></Suspense>} />
           <Route path="/archive" element={<ArchivePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />

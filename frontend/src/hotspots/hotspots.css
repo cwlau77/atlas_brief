@@ -476,3 +476,394 @@
     animation: none !important;
   }
 }
+
+/* ---------- The page: header, stage, panel, legend, tooltip, states (HotspotsPage.tsx) ---------- */
+.hs-page {
+  --hs-ease-lift: cubic-bezier(0.2, 0.8, 0.2, 1);
+  gap: var(--space-5);
+}
+.hs-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule);
+}
+.hs-head-text {
+  display: grid;
+  gap: 10px;
+}
+.hs-eyebrow {
+  display: flex;
+  align-items: center;
+  color: var(--ink-2);
+}
+.hs-meta {
+  text-align: right;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+.hs-meta strong {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.hs-retry {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* The stage: the map, with the Top countries panel over its right 300px on desktop.
+   The map refits to the width left beside the open panel. */
+.hs-stage {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--rule);
+}
+.hs-stage.is-desktop.is-open {
+  padding-right: 300px;
+}
+.hs-mapbox {
+  position: relative;
+  margin-block: var(--space-3);
+}
+.hs-mapbox:focus {
+  outline: none;
+}
+/* Room for the card beside a short map (MAPBOX_MIN_H in HotspotsPage.tsx). */
+.hs-stage.is-desktop .hs-mapbox {
+  min-height: 460px;
+}
+/* The readout anchors to the map box, so it sits under the legend at the bottom-left. */
+.hs-mapbox .hs-map {
+  position: static;
+}
+
+.hs-panel.is-collapsible {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  background: var(--paper);
+  box-shadow: -1px 0 0 var(--rule);
+  transform: translateX(100%);
+  transition: transform 0.35s var(--hs-ease-lift);
+}
+.hs-panel.is-collapsible.is-open {
+  transform: none;
+}
+.hs-panel-tab {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 0;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transform: translateX(-100%);
+}
+.hs-panel-tab::after {
+  content: '›';
+  transition: transform 0.3s;
+}
+.hs-panel.is-open .hs-panel-tab::after {
+  transform: rotate(180deg);
+}
+.hs-panel-tab:hover {
+  color: var(--accent);
+}
+.hs-panel-tab:focus-visible,
+.hs-rows button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.hs-panel-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.hs-panel-head {
+  padding: 14px 16px 10px;
+}
+.hs-panel-head h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.hs-panel-head p {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+.hs-rows {
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.hs-rows li {
+  border-bottom: 1px solid var(--rule);
+}
+.hs-rows button {
+  display: grid;
+  grid-template-columns: 18px 16px minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.hs-rows button:hover,
+.hs-rows li.is-on button {
+  background: var(--accent-wash);
+}
+.hs-row-rank {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+.hs-row-name {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.hs-row-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.hs-row-country {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hs-row-line .hs-tier {
+  font-size: 0.72rem;
+}
+.hs-row-bar {
+  height: 3px;
+  transform-origin: left;
+  animation: hs-grow 0.9s var(--hs-ease-lift) backwards;
+  animation-delay: calc(var(--i) * 45ms + 0.5s);
+}
+@keyframes hs-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+.hs-row-n {
+  font-size: 0.8rem;
+  text-align: right;
+  color: var(--ink-2);
+}
+.hs-rows li.is-skel {
+  padding: var(--space-2) var(--space-4);
+}
+.hs-row-skel {
+  display: block;
+  height: 1.7rem;
+  background: var(--paper-deep);
+}
+
+/* Legend: bottom-left of the map on desktop, a block under it on mobile. Corner brackets, no outline. */
+.hs-legend {
+  position: relative;
+  padding: 10px 12px;
+  font-size: clamp(0.68rem, 0.9vw, 0.78rem);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+}
+.hs-legend.is-desktop {
+  position: absolute;
+  left: var(--space-4);
+  bottom: 30px;
+  z-index: 2;
+  width: clamp(190px, 21vw, 240px);
+}
+.hs-legend.is-mobile {
+  padding: 10px var(--space-4);
+  font-size: 0.75rem;
+}
+.hs-legend::before,
+.hs-legend::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 0 solid var(--ink);
+  pointer-events: none;
+}
+.hs-legend::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+.hs-legend::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 1px 1px 0;
+}
+.hs-legend h2 {
+  margin: 0 0 1px;
+  font-size: 1em;
+  font-weight: 600;
+}
+.hs-legend p {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-3);
+}
+.hs-legend-ramp {
+  height: 10px;
+}
+.hs-legend-ticks {
+  position: relative;
+  height: 1.3em;
+  margin-top: 3px;
+  color: var(--ink-3);
+}
+.hs-legend-ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.hs-legend-ticks span:first-child {
+  transform: none;
+}
+.hs-legend-ticks span:last-child {
+  transform: translateX(-100%);
+}
+.hs-legend-tiers {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hs-legend .hs-tier {
+  font-size: inherit;
+}
+.hs-legend .hs-tier::before {
+  width: var(--hs-sz);
+  height: var(--hs-sz);
+}
+
+/* Quiet country tooltip: paper with the Hotspots soft shadow. */
+.hs-tip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  background: var(--paper);
+  box-shadow:
+    0 10px 22px -12px color-mix(in srgb, var(--ink) 45%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 4px));
+  animation: hs-fade 0.15s ease;
+}
+.hs-tip span {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+/* Cold start and failure, over the skeleton map. */
+.hs-mapmsg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  pointer-events: none;
+}
+.hs-mapmsg p {
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  color: var(--ink-2);
+}
+.hs-mapmsg button {
+  pointer-events: auto;
+}
+
+.hs-under {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.hs-how {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 72ch;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.hs-how h2 {
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+}
+
+@media (max-width: 819.98px) {
+  .hs-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hs-meta {
+    text-align: left;
+  }
+}
+
+.hs-page.is-reduced .hs-panel,
+.hs-page.is-reduced .hs-panel *,
+.hs-page.is-reduced .hs-tip {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-panel,
+  .hs-panel *,
+  .hs-tip {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* In the full-width bottom sheet the sparkline keeps its card size. */
+.hs-card.is-sheet .hs-card-stat {
+  grid-template-columns: auto minmax(0, 220px);
+  justify-content: space-between;
+}

@@ -28,6 +28,7 @@ export function NavBar() {
           >
             Briefing
           </Link>
+          <NavLink className={linkClass} to="/hotspots">Hotspots</NavLink>
           <NavLink className={linkClass} to="/archive">Archive</NavLink>
           <NavLink className={linkClass} to="/settings">Settings</NavLink>
         </nav>
