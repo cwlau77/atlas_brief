@@ -39,7 +39,8 @@ export function placeCard(args: {
 }): { box: Box; side: Side } {
   const { anchor, bounds, card, area, avoid, arcs, gap = 64 } = args
   const { w, h } = card
-  const midTop = Math.min(Math.max(area.y, anchor[1] - 110), area.y + area.h - h)
+  // A card taller than the area keeps its top (name, count, close button) in view.
+  const midTop = Math.max(area.y, Math.min(Math.max(area.y, anchor[1] - 110), area.y + area.h - h))
 
   const score = (x: number, y: number): number => {
     if (x < area.x || x + w > area.x + area.w || y < area.y || y + h > area.y + area.h) return Infinity

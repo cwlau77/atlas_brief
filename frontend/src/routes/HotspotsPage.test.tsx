@@ -293,6 +293,78 @@ describe('HotspotsPage', () => {
     expect(container.querySelector('.hs-stage')!.classList.contains('is-open')).toBe(false)
   })
 
+  describe('card fit (desktop)', () => {
+    // jsdom has no layout: the map is 132 x 51 cells at 8px (408px, so the 460px minimum box applies),
+    // the panel tab's bottom edge is put 36px below the map box's top, and the card reports
+    // FULL_H with its photo and COMPACT_H without.
+    const TAB_BOTTOM = 36
+    const MAP_H = 460
+    const FULL_H = 500
+    const COMPACT_H = 380
+    const withPhoto = (over: Wire = {}) =>
+      wire({
+        countries: [
+          wireCountry('UA', '804', 'Ukraine', 412, 'high', {
+            story: {
+              headline: 'Ukraine headline',
+              blurb: 'Ukraine blurb.',
+              article: { title: 'Ukraine headline', url: 'https://example.com/UA', outlet: 'BBC World', published_at: '2026-10-27T12:05:00Z' },
+              image: { url: 'https://example.com/ua.jpg', credit: 'BBC World' },
+            },
+          }),
+          wireCountry('RU', '643', 'Russia', 336, 'high'),
+          wireCountry('CN', '156', 'China', 298, 'high'),
+        ],
+        ...over,
+      })
+    let fullH = FULL_H
+    beforeEach(() => {
+      fullH = FULL_H
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+        if (!this.classList.contains('hs-card')) return 0
+        return this.querySelector('.hs-card-photo') ? fullH : COMPACT_H
+      })
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+        const bottom = this.classList.contains('hs-panel-tab') ? TAB_BOTTOM : 0
+        return { x: 0, y: 0, top: 0, left: 0, right: 0, bottom, width: 0, height: bottom, toJSON() {} } as DOMRect
+      })
+    })
+    afterEach(() => vi.restoreAllMocks())
+    const box = () => ({ top: parseFloat(card()!.style.top), h: card()!.offsetHeight })
+
+    it('a card taller than the map drops its photo and stays inside the area', async () => {
+      vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
+      render()
+      await settle()
+      act(() => row('Ukraine').focus())
+      expect(card()!.querySelector('.hs-card-photo')).toBeNull()
+      expect(card()!.textContent).toContain('Ukraine headline')
+      const { top, h } = box()
+      expect(top).toBeGreaterThanOrEqual(TAB_BOTTOM + 8)
+      expect(top + h).toBeLessThanOrEqual(MAP_H - 12)
+    })
+
+    it('a card that fits keeps its photo', async () => {
+      fullH = 300
+      vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
+      render()
+      await settle()
+      act(() => row('Ukraine').focus())
+      expect(card()!.querySelector('.hs-card-photo')).not.toBeNull()
+    })
+
+    it('places the card below the panel tab', async () => {
+      fullH = 300
+      vi.stubGlobal('fetch', vi.fn(async () => ok(withPhoto())))
+      render()
+      await settle()
+      for (const name of ['Ukraine', 'Russia', 'China']) {
+        act(() => row(name).focus())
+        expect(box().top, name).toBeGreaterThanOrEqual(TAB_BOTTOM + 8)
+      }
+    })
+  })
+
   describe('mobile', () => {
     beforeEach(() => stubMedia({ desktop: false }))
 

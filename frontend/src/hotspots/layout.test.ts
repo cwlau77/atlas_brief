@@ -39,6 +39,11 @@ describe('placeCard', () => {
     expect(box.x).toBeGreaterThanOrEqual(area.x)
     expect(box.y + box.h).toBeLessThanOrEqual(area.y + area.h)
   })
+  it('keeps the top of a card taller than the area inside it', () => {
+    const short: Box = { x: 12, y: 44, w: 800, h: 300 }
+    const { box } = placeCard({ anchor: [400, 300], bounds: { x: 360, y: 260, w: 80, h: 80 }, card: { w: 288, h: 360 }, area: short, avoid: [], arcs: [] })
+    expect(box.y).toBe(short.y)
+  })
   it('clamps into the area when every candidate is outside', () => {
     const tiny: Box = { x: 0, y: 0, w: 320, h: 400 }
     const { box } = placeCard({ anchor: [160, 200], bounds: { x: 120, y: 160, w: 80, h: 80 }, card, area: tiny, avoid: [], arcs: [] })

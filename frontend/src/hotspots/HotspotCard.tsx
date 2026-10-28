@@ -12,6 +12,8 @@ export interface HotspotCardProps {
   /** 'docked' = top-left of the map (a country with no cells); 'sheet' = mobile bottom sheet. */
   placement: { box: Box; side: Side } | 'docked' | 'sheet'
   pinned: boolean
+  /** Leave out the photo so the card fits beside a short map. */
+  compact?: boolean
   reduced: boolean
   timeZone: string
   onClose(): void
@@ -78,7 +80,7 @@ function Sparkline({ values, colour }: { values: number[]; colour: string }) {
 }
 
 export function HotspotCard(p: HotspotCardProps) {
-  const { country, snapshot, byIso2, placement, pinned, reduced, onClose, onBrief } = p
+  const { country, snapshot, byIso2, placement, pinned, compact, reduced, onClose, onBrief } = p
   const ref = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
   useEffect(() => {
@@ -128,7 +130,7 @@ export function HotspotCard(p: HotspotCardProps) {
       inert={!pinned}
       {...(pinned ? { role: 'dialog', 'aria-modal': false, 'aria-label': `${country.name}: ${focus}` } : {})}
     >
-      {story?.image && <Photo image={story.image} />}
+      {story?.image && !compact && <Photo image={story.image} />}
       <div className="hs-card-body">
         <div className="hs-card-head">
           <span className="hs-card-name">

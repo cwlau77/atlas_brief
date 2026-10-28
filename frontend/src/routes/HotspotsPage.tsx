@@ -29,6 +29,8 @@ const CARD_W = 288
 const CARD_H_GUESS = 392
 /** Desktop map box minimum height (matches .hs-stage.is-desktop .hs-mapbox in hotspots.css), so the card fits beside a short map. */
 const MAPBOX_MIN_H = 460
+/** Clear space between the Top countries panel tab and a card placed below it. */
+const TAB_GAP = 8
 /** On a touch screen the map sends a leave right after a tap; the quiet tooltip stays this long. */
 const TIP_HOLD_MS = 2000
 
@@ -95,6 +97,10 @@ export function HotspotsPage() {
   const [layout, setLayout] = useState<MapLayout | null>(null)
   const [tip, setTip] = useState<{ iso2: string; at: Pt } | null>(null)
   const [cardH, setCardH] = useState(CARD_H_GUESS)
+  // The country whose card, photo included, measured taller than the placement area.
+  const [compactFor, setCompactFor] = useState<string | null>(null)
+  // Placement area's top in map px: below the panel tab on desktop (measured).
+  const [areaTop, setAreaTop] = useState(INSET)
   const pinOrigin = useRef<HTMLElement | null>(null)
   const mapboxRef = useRef<HTMLDivElement>(null)
   const tipTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -200,6 +206,12 @@ export function HotspotsPage() {
   const cells = active?.isoNumeric ? grid.cells[active.isoNumeric] : undefined
   const anchorCell = active?.isoNumeric ? grid.anchors[active.isoNumeric] : undefined
 
+  const area: Box = {
+    x: INSET,
+    y: desktop ? areaTop : INSET,
+    w: mapW - 2 * INSET,
+    h: Math.max(mapH, MAPBOX_MIN_H) - INSET - (desktop ? areaTop : INSET),
+  }
   let placement: HotspotCardProps['placement'] = desktop ? 'docked' : 'sheet'
   let anchor: Pt | null = null
   let ends: Pt[] = []
@@ -222,20 +234,36 @@ export function HotspotsPage() {
         anchor: from,
         bounds: cellBounds(cells, grid.cols, s),
         card: { w: CARD_W, h: cardH },
-        area: { x: INSET, y: INSET, w: mapW - 2 * INSET, h: Math.max(mapH, MAPBOX_MIN_H) - 2 * INSET },
+        area,
         avoid,
         arcs: ends.flatMap((e) => arcPoints(from, e)),
       })
     }
   }
+  const placed = typeof placement === 'object'
+  const compact = placed && !!active && compactFor === active.iso2
+  const areaH = area.h
   const box = typeof placement === 'object' ? placement.box : null
   const side = typeof placement === 'object' ? placement.side : null
 
-  // Measure the rendered card so placement uses its real height (one extra render per country).
+  // Measure the panel tab and the rendered card (an extra render or two per country): placement
+  // starts below the tab, and a placed card taller than the area drops its photo.
   useLayoutEffect(() => {
-    const h = mapboxRef.current?.querySelector<HTMLElement>('.hs-card')?.offsetHeight
-    if (h && Math.abs(h - cardH) > 1) setCardH(h)
-  }, [active, cardH, desktop])
+    const mapbox = mapboxRef.current
+    if (!mapbox) return
+    const tab = desktop ? mapbox.parentElement?.querySelector<HTMLElement>('.hs-panel-tab') : null
+    const top = tab
+      ? Math.max(INSET, Math.round(tab.getBoundingClientRect().bottom - mapbox.getBoundingClientRect().top) + TAB_GAP)
+      : INSET
+    if (top !== areaTop) setAreaTop(top)
+    const h = mapbox.querySelector<HTMLElement>('.hs-card')?.offsetHeight
+    if (!h) return
+    if (placed && active && !compact && h > areaH) {
+      setCompactFor(active.iso2)
+      return
+    }
+    if (Math.abs(h - cardH) > 1) setCardH(h)
+  }, [desktop, layout, panelOpen, areaTop, placed, active, compact, areaH, cardH])
 
   const hours = snapshot && snapshot.coverageHours < 24 ? snapshot.coverageHours : 24
   const tipCountry = tip ? byIso2[tip.iso2] : undefined
@@ -321,6 +349,7 @@ export function HotspotsPage() {
               byIso2={byIso2}
               placement={placement}
               pinned={isPinned}
+              compact={compact}
               reduced={reduced}
               timeZone={tz}
               onClose={unpin}
