@@ -128,11 +128,47 @@ def test_story_blurb_cut_at_thirty_words():
     assert story.blurb == " ".join(f"word{i}" for i in range(30)) + "…"
 
 
-def test_story_strips_outlet_suffix_from_headline():
-    arts = [art("Kyiv grid attacked - Reuters", outlet="A"), art("Kyiv grid attacked again", outlet="B"),
-            art("Kyiv grid repairs", outlet="C")]
+def test_story_strips_its_own_outlet_suffix_from_headline():
+    arts = [art("Kyiv grid attacked overnight - BBC World", outlet="BBC World", hours_ago=1),
+            art("Kyiv grid attacked again", outlet="B", hours_ago=2),
+            art("Kyiv grid attacked once more", outlet="C", hours_ago=3)]
     story = by_iso(build_snapshot(store_of(arts), feeds=3, now=NOW))["UA"].story
-    assert " - Reuters" not in story.headline
+    assert story.article.title == "Kyiv grid attacked overnight - BBC World"
+    assert story.headline == "Kyiv grid attacked overnight"
+
+
+def test_story_keeps_a_headline_tail_that_is_not_its_outlet():
+    arts = [art("Kyiv grid attacked overnight – what we know", outlet="BBC World", hours_ago=1),
+            art("Kyiv grid attacked again", outlet="B", hours_ago=2),
+            art("Kyiv grid attacked once more", outlet="C", hours_ago=3)]
+    story = by_iso(build_snapshot(store_of(arts), feeds=3, now=NOW))["UA"].story
+    assert story.headline == "Kyiv grid attacked overnight – what we know"
+
+
+def _blurb_for(snippet):
+    arts = [art("Ukraine power grid alpha", outlet="A", hours_ago=1, snippet=snippet),
+            art("Ukraine power grid bravo", outlet="B", hours_ago=2),
+            art("Ukraine power grid charlie", outlet="C", hours_ago=3)]
+    story = by_iso(build_snapshot(store_of(arts), feeds=3, now=NOW))["UA"].story
+    assert story.article.title == "Ukraine power grid alpha"
+    return story.blurb
+
+
+def test_blurb_does_not_stop_at_initialisms():
+    assert _blurb_for("The U.S. military said it struck a depot. Officials gave no toll.") == (
+        "The U.S. military said it struck a depot.")
+    assert _blurb_for("Talks with the U.K. Foreign Office resumed. More later.") == (
+        "Talks with the U.K. Foreign Office resumed.")
+
+
+def test_blurb_does_not_stop_at_titles():
+    assert _blurb_for("Mr. Netanyahu met Gen. Smith and Dr. Jones on Monday. They spoke.") == (
+        "Mr. Netanyahu met Gen. Smith and Dr. Jones on Monday.")
+
+
+def test_blurb_does_not_stop_before_a_lowercase_word():
+    assert _blurb_for("Prices rose 3.5 p.c. on average in Kyiv. Then fell.") == (
+        "Prices rose 3.5 p.c. on average in Kyiv.")
 
 
 def test_blurb_is_none_when_snippet_is_just_the_title():

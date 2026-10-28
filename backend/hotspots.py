@@ -50,7 +50,10 @@ _STOPWORDS = frozenset(
 _OUTLET_SUFFIX = re.compile(r"\s+[-–—|]\s+[^-–—|]+$")
 _PUNCT = re.compile(r"[^\w\s]")
 _WORD = re.compile(r"[^\W_]+")
-_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+_SENTENCE_END = re.compile(r"[.!?]\s+(?=[^\W\d_])")
+# A dot that ends one of these does not end the sentence: U.S., U.K., J. Smith, Mr. Netanyahu.
+_INITIALISM = re.compile(r"(?:[A-Z]\.)+")
+_TITLES = frozenset("Mr Mrs Ms Dr Gen Sen Gov St Prof Rep Lt Col".split())
 
 
 class StoryArticle(BaseModel):
@@ -124,7 +127,16 @@ def merge_store(store: dict[str, Article], fresh: list[Article], now: datetime) 
 
 
 def _strip_outlet(title: str) -> str:
+    """Any trailing " - Outlet" segment; loose, for dedupe keys only."""
     return _OUTLET_SUFFIX.sub("", title).strip()
+
+
+def _strip_own_outlet(title: str, outlet: str) -> str:
+    """The headline word for word, minus a trailing " - Outlet" only when it names its own outlet."""
+    m = _OUTLET_SUFFIX.search(title)
+    if m and m.group(0).strip().lstrip("-–—|").strip().casefold() == outlet.strip().casefold():
+        return title[: m.start()].strip()
+    return title.strip()
 
 
 def _title_key(title: str) -> str:
@@ -169,11 +181,23 @@ def _content_words(title: str, own_terms: set[str]) -> set[str]:
     }
 
 
+def _first_sentence(text: str) -> str:
+    for m in _SENTENCE_END.finditer(text):
+        if not text[m.end()].isupper():
+            continue
+        if text[m.start()] == ".":
+            token = text[: m.start() + 1].rsplit(None, 1)[-1].lstrip("(\"'“‘")
+            if _INITIALISM.fullmatch(token) or token[:-1] in _TITLES:
+                continue
+        return text[: m.start() + 1]
+    return text
+
+
 def _blurb(article: Article, headline: str) -> str | None:
     snippet = " ".join(article.snippet.split())
     if not snippet or _title_key(snippet) == _title_key(article.title) or _title_key(snippet) == _title_key(headline):
         return None
-    sentence = _SENTENCE_END.split(snippet, maxsplit=1)[0]
+    sentence = _first_sentence(snippet)
     words = sentence.split()
     if len(words) > _BLURB_WORDS:
         return " ".join(words[:_BLURB_WORDS]) + "…"
@@ -190,7 +214,7 @@ def _story(iso2: str, articles: list[Article]) -> Story:
         if best_key is None or key > best_key:
             best_i, best_key = i, key
     pick = articles[best_i]
-    headline = _strip_outlet(pick.title)
+    headline = _strip_own_outlet(pick.title, pick.source)
     return Story(
         headline=headline,
         blurb=_blurb(pick, headline),
