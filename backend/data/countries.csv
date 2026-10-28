@@ -1,0 +1,199 @@
+iso2,iso_numeric,name,aliases,demonyms,capital
+AF,004,Afghanistan,,Afghan|Afghans,Kabul
+AL,008,Albania,,Albanian|Albanians,Tirana
+DZ,012,Algeria,,Algerian|Algerians,Algiers
+AD,020,Andorra,,Andorran|Andorrans,Andorra la Vella
+AO,024,Angola,,Angolan|Angolans,Luanda
+AG,028,Antigua and Barbuda,Antigua|Barbuda,Antiguan|Barbudan,
+AR,032,Argentina,,Argentine|Argentines|Argentinian|Argentinians,Buenos Aires
+AM,051,Armenia,,Armenian|Armenians,Yerevan
+AU,036,Australia,,Australian|Australians,Canberra
+AT,040,Austria,,Austrian|Austrians,Vienna
+AZ,031,Azerbaijan,,Azerbaijani|Azerbaijanis|Azeri,Baku
+BS,044,Bahamas,The Bahamas,Bahamian|Bahamians,
+BH,048,Bahrain,,Bahraini|Bahrainis,Manama
+BD,050,Bangladesh,,Bangladeshi|Bangladeshis,Dhaka
+BB,052,Barbados,,Barbadian|Barbadians,Bridgetown
+BY,112,Belarus,,Belarusian|Belarusians,Minsk
+BE,056,Belgium,,Belgian|Belgians,Brussels
+BZ,084,Belize,,Belizean|Belizeans,Belmopan
+BJ,204,Benin,,Beninese,Porto-Novo
+BT,064,Bhutan,,Bhutanese,Thimphu
+BO,068,Bolivia,,Bolivian|Bolivians,La Paz
+BA,070,Bosnia and Herzegovina,Bosnia|Herzegovina,Bosnian|Bosnians,Sarajevo
+BW,072,Botswana,,Batswana|Motswana,Gaborone
+BR,076,Brazil,,Brazilian|Brazilians,Brasilia
+BN,096,Brunei,,Bruneian,Bandar Seri Begawan
+BG,100,Bulgaria,,Bulgarian|Bulgarians,Sofia
+BF,854,Burkina Faso,,Burkinabe,Ouagadougou
+BI,108,Burundi,,Burundian|Burundians,Gitega
+CV,132,Cape Verde,Cabo Verde,Cape Verdean,Praia
+KH,116,Cambodia,,Cambodian|Cambodians,Phnom Penh
+CM,120,Cameroon,,Cameroonian|Cameroonians,Yaounde
+CA,124,Canada,,Canadian|Canadians,Ottawa
+CF,140,Central African Republic,,Central African,Bangui
+TD,148,Chad,,Chadian|Chadians,N'Djamena
+CL,152,Chile,,Chilean|Chileans,Santiago
+CN,156,China,People's Republic of China,Chinese,Beijing
+CO,170,Colombia,,Colombian|Colombians,Bogota
+KM,174,Comoros,,Comoran|Comorian,Moroni
+CD,180,DR Congo,Democratic Republic of the Congo|Democratic Republic of Congo|DRC|DR Congo|Congo-Kinshasa|Congo|Congo Kinshasa,Congolese,Kinshasa
+CG,178,Congo,Republic of the Congo|Republic of Congo|Congo-Brazzaville|Congo Brazzaville,,Brazzaville
+CR,188,Costa Rica,,Costa Rican|Costa Ricans,
+CI,384,Ivory Coast,Cote d'Ivoire|Côte d'Ivoire,Ivorian|Ivorians,Yamoussoukro
+HR,191,Croatia,,Croatian|Croatians,Zagreb
+CU,192,Cuba,,Cuban|Cubans,Havana
+CY,196,Cyprus,,Cypriot|Cypriots,Nicosia
+CZ,203,Czechia,Czech Republic,Czech|Czechs,Prague
+DK,208,Denmark,,Danish|Dane|Danes,Copenhagen
+DJ,262,Djibouti,,Djiboutian,
+DM,212,Dominica,,,Roseau
+DO,214,Dominican Republic,,Dominican|Dominicans,Santo Domingo
+EC,218,Ecuador,,Ecuadorian|Ecuadorians,Quito
+EG,818,Egypt,,Egyptian|Egyptians,Cairo
+SV,222,El Salvador,,Salvadoran|Salvadorans,San Salvador
+GQ,226,Equatorial Guinea,,Equatoguinean,Malabo
+ER,232,Eritrea,,Eritrean|Eritreans,Asmara
+EE,233,Estonia,,Estonian|Estonians,Tallinn
+SZ,748,Eswatini,Swaziland,Swazi,Mbabane
+ET,231,Ethiopia,,Ethiopian|Ethiopians,Addis Ababa
+FJ,242,Fiji,,Fijian|Fijians,Suva
+FI,246,Finland,,Finnish|Finn|Finns,Helsinki
+FR,250,France,,French,Paris
+GA,266,Gabon,,Gabonese,Libreville
+GM,270,Gambia,The Gambia,Gambian|Gambians,Banjul
+GE,268,Georgia,,Georgian|Georgians,Tbilisi
+DE,276,Germany,,German|Germans,Berlin
+GH,288,Ghana,,Ghanaian|Ghanaians,Accra
+GR,300,Greece,,Greek|Greeks,Athens
+GD,308,Grenada,,Grenadian,
+GT,320,Guatemala,,Guatemalan|Guatemalans,Guatemala City
+GN,324,Guinea,,Guinean|Guineans,Conakry
+GW,624,Guinea-Bissau,,Bissau-Guinean,Bissau
+GY,328,Guyana,,Guyanese,
+HT,332,Haiti,,Haitian|Haitians,Port-au-Prince
+VA,336,Vatican City,Vatican|Holy See,,
+HN,340,Honduras,,Honduran|Hondurans,Tegucigalpa
+HU,348,Hungary,,Hungarian|Hungarians,Budapest
+IS,352,Iceland,,Icelandic|Icelander|Icelanders,Reykjavik
+IN,356,India,,Indian|Indians,New Delhi
+ID,360,Indonesia,,Indonesian|Indonesians,Jakarta
+IR,364,Iran,Islamic Republic of Iran,Iranian|Iranians,Tehran
+IQ,368,Iraq,,Iraqi|Iraqis,Baghdad
+IE,372,Ireland,Republic of Ireland,Irish,Dublin
+IL,376,Israel,Tel Aviv,Israeli|Israelis,Jerusalem
+IT,380,Italy,,Italian|Italians,Rome
+JM,388,Jamaica,,Jamaican|Jamaicans,
+JP,392,Japan,,Japanese,Tokyo
+JO,400,Jordan,,Jordanian|Jordanians,Amman
+KZ,398,Kazakhstan,,Kazakh|Kazakhstani,Astana
+KE,404,Kenya,,Kenyan|Kenyans,Nairobi
+KI,296,Kiribati,,I-Kiribati,Tarawa
+KP,408,North Korea,DPRK|Democratic People's Republic of Korea,North Korean|North Koreans,Pyongyang
+KR,410,South Korea,Republic of Korea,South Korean|South Koreans,Seoul
+XK,,Kosovo,,Kosovar|Kosovars|Kosovan,Pristina
+KW,414,Kuwait,,Kuwaiti|Kuwaitis,Kuwait City
+KG,417,Kyrgyzstan,Kyrgyz Republic,Kyrgyz,Bishkek
+LA,418,Laos,,Laotian|Lao,Vientiane
+LV,428,Latvia,,Latvian|Latvians,Riga
+LB,422,Lebanon,,Lebanese,Beirut
+LS,426,Lesotho,,Basotho,Maseru
+LR,430,Liberia,,Liberian|Liberians,Monrovia
+LY,434,Libya,,Libyan|Libyans,Tripoli
+LI,438,Liechtenstein,,,Vaduz
+LT,440,Lithuania,,Lithuanian|Lithuanians,Vilnius
+LU,442,Luxembourg,,Luxembourgish,
+MG,450,Madagascar,,Malagasy,Antananarivo
+MW,454,Malawi,,Malawian|Malawians,Lilongwe
+MY,458,Malaysia,,Malaysian|Malaysians,Kuala Lumpur
+MV,462,Maldives,,Maldivian|Maldivians,
+ML,466,Mali,,Malian|Malians,Bamako
+MT,470,Malta,,Maltese,Valletta
+MH,584,Marshall Islands,,Marshallese,Majuro
+MR,478,Mauritania,,Mauritanian|Mauritanians,Nouakchott
+MU,480,Mauritius,,Mauritian,Port Louis
+MX,484,Mexico,,Mexican|Mexicans,Mexico City
+FM,583,Micronesia,Federated States of Micronesia,Micronesian,Palikir
+MD,498,Moldova,,Moldovan|Moldovans,Chisinau
+MC,492,Monaco,,Monegasque,
+MN,496,Mongolia,,Mongolian|Mongolians,Ulaanbaatar
+ME,499,Montenegro,,Montenegrin|Montenegrins,Podgorica
+MA,504,Morocco,,Moroccan|Moroccans,Rabat
+MZ,508,Mozambique,,Mozambican|Mozambicans,Maputo
+MM,104,Myanmar,Burma,Burmese,Naypyidaw
+NA,516,Namibia,,Namibian|Namibians,Windhoek
+NR,520,Nauru,,Nauruan,Yaren
+NP,524,Nepal,,Nepali|Nepalese,Kathmandu
+NL,528,Netherlands,The Netherlands|Holland,Dutch,Amsterdam
+NZ,554,New Zealand,,New Zealander|New Zealanders,Wellington
+NI,558,Nicaragua,,Nicaraguan|Nicaraguans,Managua
+NE,562,Niger,,Nigerien,Niamey
+NG,566,Nigeria,Niger Delta,Nigerian|Nigerians,Abuja
+MK,807,North Macedonia,Macedonia,Macedonian|Macedonians,Skopje
+NO,578,Norway,,Norwegian|Norwegians,Oslo
+OM,512,Oman,,Omani|Omanis,Muscat
+PK,586,Pakistan,,Pakistani|Pakistanis,Islamabad
+PW,585,Palau,,Palauan,Ngerulmud
+PS,275,Palestine,Gaza|Gaza Strip|West Bank|Palestinian territories|Palestinian Territories,Palestinian|Palestinians,Ramallah
+PA,591,Panama,,Panamanian|Panamanians,Panama City
+PG,598,Papua New Guinea,,Papua New Guinean,Port Moresby
+PY,600,Paraguay,,Paraguayan|Paraguayans,Asuncion
+PE,604,Peru,,Peruvian|Peruvians,Lima
+PH,608,Philippines,The Philippines,Philippine|Filipino|Filipinos,Manila
+PL,616,Poland,,Polish|Poles,Warsaw
+PT,620,Portugal,,Portuguese,Lisbon
+QA,634,Qatar,,Qatari|Qataris,Doha
+RO,642,Romania,,Romanian|Romanians,Bucharest
+RU,643,Russia,Russian Federation,Russian|Russians,Moscow
+RW,646,Rwanda,,Rwandan|Rwandans,Kigali
+KN,659,Saint Kitts and Nevis,St Kitts and Nevis|Saint Kitts|St Kitts,,Basseterre
+LC,662,Saint Lucia,St Lucia,,Castries
+VC,670,Saint Vincent and the Grenadines,St Vincent and the Grenadines,,Kingstown
+WS,882,Samoa,,Samoan|Samoans,Apia
+SM,674,San Marino,,Sammarinese,
+ST,678,Sao Tome and Principe,São Tomé and Príncipe,,Sao Tome
+SA,682,Saudi Arabia,KSA,Saudi|Saudis,Riyadh
+SN,686,Senegal,,Senegalese,Dakar
+RS,688,Serbia,,Serbian|Serbians|Serbs,Belgrade
+SC,690,Seychelles,,Seychellois,
+SL,694,Sierra Leone,,Sierra Leonean|Sierra Leoneans,Freetown
+SG,702,Singapore,,Singaporean|Singaporeans,
+SK,703,Slovakia,Slovak Republic,Slovak|Slovaks,Bratislava
+SI,705,Slovenia,,Slovenian|Slovenians,Ljubljana
+SB,090,Solomon Islands,,,Honiara
+SO,706,Somalia,,Somali|Somalis,Mogadishu
+ZA,710,South Africa,,South African|South Africans,Pretoria
+SS,728,South Sudan,,South Sudanese,Juba
+ES,724,Spain,,Spanish|Spaniard|Spaniards,Madrid
+LK,144,Sri Lanka,,Sri Lankan|Sri Lankans,Colombo
+SD,729,Sudan,,Sudanese,Khartoum
+SR,740,Suriname,,Surinamese,Paramaribo
+SE,752,Sweden,,Swedish|Swede|Swedes,Stockholm
+CH,756,Switzerland,,Swiss,Bern
+SY,760,Syria,,Syrian|Syrians,Damascus
+TW,158,Taiwan,,Taiwanese,Taipei
+TJ,762,Tajikistan,,Tajik|Tajiks,Dushanbe
+TZ,834,Tanzania,,Tanzanian|Tanzanians,Dodoma
+TH,764,Thailand,,Thai,Bangkok
+TL,626,Timor-Leste,East Timor,Timorese,Dili
+TG,768,Togo,,Togolese,Lome
+TO,776,Tonga,,Tongan|Tongans,
+TT,780,Trinidad and Tobago,Trinidad,Trinidadian,Port of Spain
+TN,788,Tunisia,,Tunisian|Tunisians,Tunis
+TR,792,Turkey,Türkiye|Turkiye|Istanbul,Turkish|Turks,Ankara
+TM,795,Turkmenistan,,Turkmen,Ashgabat
+TV,798,Tuvalu,,Tuvaluan,Funafuti
+UG,800,Uganda,,Ugandan|Ugandans,Kampala
+UA,804,Ukraine,Kiev,Ukrainian|Ukrainians,Kyiv
+AE,784,United Arab Emirates,UAE|Emirates|Dubai,Emirati|Emiratis,Abu Dhabi
+GB,826,United Kingdom,UK|U.K.|Britain|Great Britain|England|Scotland|Wales|Northern Ireland,British|Briton|Britons|Scottish|Welsh,London
+US,840,United States,United States of America|US|USA|U.S.|U.S.A.|America|Washington D.C.|Washington DC,American|Americans,
+UY,858,Uruguay,,Uruguayan|Uruguayans,Montevideo
+UZ,860,Uzbekistan,,Uzbek|Uzbeks,Tashkent
+VU,548,Vanuatu,,Ni-Vanuatu,Port Vila
+VE,862,Venezuela,,Venezuelan|Venezuelans,Caracas
+VN,704,Vietnam,Viet Nam,Vietnamese,Hanoi
+YE,887,Yemen,,Yemeni|Yemenis,Sanaa
+ZM,894,Zambia,,Zambian|Zambians,Lusaka
+ZW,716,Zimbabwe,,Zimbabwean|Zimbabweans,Harare
+HK,344,Hong Kong,,Hong Konger|Hong Kongers,
