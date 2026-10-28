@@ -116,6 +116,13 @@ describe('HotspotCard', () => {
     expect(props.onClose).toHaveBeenCalledTimes(2)
   })
 
+  it('pinning another country while one is pinned moves focus to the new card', () => {
+    render({ pinned: true })
+    const { card } = render({ pinned: true, country: { ...POLAND, story: UKRAINE.story } })
+    expect(card.getAttribute('aria-label')).toBe('Poland: Drone strikes hit Kyiv power grid')
+    expect(document.activeElement).toBe(card)
+  })
+
   it('Brief me on calls onBrief with the story headline', () => {
     const { card, props } = render({ pinned: true })
     const btn = [...card.querySelectorAll('button')].find((b) => b.textContent === 'Brief me on this story →')!

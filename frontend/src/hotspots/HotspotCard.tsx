@@ -93,7 +93,8 @@ export function HotspotCard(p: HotspotCardProps) {
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [pinned])
+    // iso2: the root is keyed by country, so pinning another one mounts a new node to focus.
+  }, [pinned, country.iso2])
 
   const { story } = country
   const hours = snapshot.coverageHours
