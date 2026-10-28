@@ -162,7 +162,7 @@ The mockups showed "▲ 38% on yesterday". That's cut: we keep no history across
 ### 3.7 Caching and refresh
 
 - **In-process cache** like `trending.py`: one snapshot, a lock so only one rebuild runs at a time, and a TTL of `hotspots_ttl_minutes = 60`. A failed rebuild keeps serving the last good snapshot if there is one; with nothing to serve it returns 503, so the frontend shows its fallback (section 7). Failures are retried after `FAILURE_TTL_SECONDS`, the same as trending.
-- **Stale-while-revalidate:** once a snapshot exists and has expired, the request that notices gets the stale snapshot immediately and starts a rebuild in the background. Only a cold start (no snapshot at all) waits for the build. *(My call, so a visitor never waits on 27 feeds once the process is warm.)*
+- **Stale-while-revalidate:** once a snapshot exists and has expired, the request that notices gets the stale snapshot immediately and starts a rebuild in the background. Only a cold start (no snapshot at all) waits for the build. *(My call, so a visitor never waits on 14 feeds once the process is warm.)*
 - **Rate limit:** the per-IP limiter in `main.py` should not count `/hotspots` against the briefing quota. Give it the same treatment as `/trending`.
 
 ## 4. Hover and pin
