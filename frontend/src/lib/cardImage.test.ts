@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardImages } from './cardImage'
+import { cardImages, photosTaken } from './cardImage'
 import type { CommonsImage, SourceCitation } from './types'
 
 const src = (over: Partial<SourceCitation> = {}): SourceCitation =>
@@ -46,5 +46,30 @@ describe('cardImages', () => {
     ], commons)
     expect(list.map((i) => i.src)).toEqual(['https://img/1.jpg', 'https://img/2.jpg', commons.url])
     expect(list.map((i) => i.by)).toEqual(['Reuters', 'AP', 'Jane Doe, CC BY-SA 4.0, Wikimedia Commons'])
+  })
+})
+
+describe('no photo leads two cards', () => {
+  const shared = src({ url: 'https://r.eu/shared', image_url: 'https://img/shared.jpg' })
+  const own = src({ url: 'https://r.eu/own', image_url: 'https://img/own.jpg' })
+
+  it('moves a taken photo behind the card\'s other photos', () => {
+    const srcs = cardImages([shared, own], commons, ['https://img/shared.jpg']).map((i) => i.src)
+    expect(srcs).toEqual(['https://img/own.jpg', commons.url, 'https://img/shared.jpg'])
+  })
+
+  it('lets the earlier card keep a shared photo and the later one lead with its next', () => {
+    const taken = photosTaken([
+      { sources: [shared], commonsImage: null },
+      { sources: [shared, own], commonsImage: null },
+      { sources: [shared], commonsImage: commons },
+    ])
+    expect(taken).toEqual([[], ['https://img/shared.jpg'], ['https://img/shared.jpg']])
+    expect(cardImages([shared], commons, taken[2])[0].src).toBe(commons.url)
+  })
+
+  it('keeps a shared photo when the card has nothing else', () => {
+    const taken = photosTaken([{ sources: [shared], commonsImage: null }, { sources: [shared], commonsImage: null }])
+    expect(cardImages([shared], null, taken[1]).map((i) => i.src)).toEqual(['https://img/shared.jpg'])
   })
 })

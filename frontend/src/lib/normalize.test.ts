@@ -167,6 +167,31 @@ describe('commons images', () => {
   })
 })
 
+describe('shared photos', () => {
+  const photo = 'https://img.bbc/1.jpg'
+  const cite = { outlet: 'BBC World', url: 'https://b.bc/1', published_at: null, image_url: photo }
+  const api: ApiBriefing = {
+    ...FIXTURE,
+    key_developments: FIXTURE.key_developments.map((d) => ({ ...d, sources: [cite] })),
+    priority_alerts: [{ ...FIXTURE.priority_alerts[0], sources: [cite] }],
+  }
+
+  it('lets only the first card lead with a photo several cards cite', () => {
+    const b = normalizeBriefing(api, 'daily')
+    expect(b.keyDevelopments.map((d) => d.photosTaken)).toEqual([[], [photo]])
+    expect(b.alerts[0].photosTaken).toEqual([photo])
+  })
+
+  it('marks them on briefings saved before the field existed', () => {
+    const current = normalizeBriefing(api, 'daily')
+    const old = JSON.parse(JSON.stringify({
+      ...current,
+      keyDevelopments: current.keyDevelopments.map(({ photosTaken: _p, ...rest }) => rest),
+    })) as SavedBriefing
+    expect(withDefaults(old).keyDevelopments[1].photosTaken).toEqual([photo])
+  })
+})
+
 describe('related developments', () => {
   it('carries related_developments as relatedDevelopments', () => {
     const api: ApiBriefing = {

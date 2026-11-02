@@ -11,7 +11,8 @@ export interface CardImage {
   filePhoto: boolean
 }
 
-export function cardImages(sources: SourceCitation[], commons: CommonsImage | null): CardImage[] {
+/** `taken` lists photos another card already leads with; they move to the back, shown only when nothing else loads. */
+export function cardImages(sources: SourceCitation[], commons: CommonsImage | null, taken: readonly string[] = []): CardImage[] {
   const out: CardImage[] = []
   for (const s of sources) {
     if (!s.image_url || out.some((i) => i.src === s.image_url)) continue
@@ -22,5 +23,24 @@ export function cardImages(sources: SourceCitation[], commons: CommonsImage | nu
     const by = `${commons.author}, ${commons.license}, Wikimedia Commons`
     out.push({ src: commons.url, credit: `File photo: ${by}`, by, href: commons.page_url, filePhoto: true })
   }
-  return out
+  if (!taken.length) return out
+  return [...out.filter((i) => !taken.includes(i.src)), ...out.filter((i) => taken.includes(i.src))]
+}
+
+interface Pictured { sources: SourceCitation[]; commonsImage: CommonsImage | null }
+
+/**
+ * Per item, the photos an earlier item already leads with, so no photo leads two cards.
+ * Items are claimed in the order given (developments by index, then alerts): each takes
+ * its first photo nobody has yet.
+ */
+export function photosTaken(items: Pictured[]): string[][] {
+  const used = new Set<string>()
+  return items.map((item) => {
+    const srcs = cardImages(item.sources, item.commonsImage).map((i) => i.src)
+    const lead = srcs.find((src) => !used.has(src))
+    const taken = srcs.filter((src) => used.has(src))
+    if (lead) used.add(lead)
+    return taken
+  })
 }

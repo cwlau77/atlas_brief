@@ -1,6 +1,7 @@
 // API briefing -> SavedBriefing, the persisted view-model. Its shape must stay
 // readable by entries already sitting in users' localStorage.
 
+import { photosTaken } from './cardImage'
 import { upperFirst } from './text'
 import type { ApiBriefing, ApiPlace, CommonsImage, Contradiction, KeyFigure, OutlookItem, SourceCitation } from './types'
 
@@ -13,6 +14,8 @@ export interface ViewAlert {
   description: string
   sources: SourceCitation[]
   commonsImage: CommonsImage | null
+  /** Photos an earlier card leads with (see `photosTaken`); absent on old saves until loaded. */
+  photosTaken?: string[]
 }
 
 export interface ViewDevelopment {
@@ -26,6 +29,8 @@ export interface ViewDevelopment {
   leadImage: string | null
   place: ApiPlace | null
   commonsImage: CommonsImage | null
+  /** Photos an earlier card leads with (see `photosTaken`); absent on old saves until loaded. */
+  photosTaken?: string[]
   keyFigures: ViewKeyFigure[]
 }
 
@@ -174,7 +179,7 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
     outletCounts[outlet] = (outletCounts[outlet] || 0) + 1
   }
 
-  return {
+  return withPhotosTaken({
     id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
     area: apiBriefing.focus,
     frequency,
@@ -229,12 +234,23 @@ export function normalizeBriefing(apiBriefing: ApiBriefing, frequency: string): 
     })),
     trends: (apiBriefing.trends || []).map(viewOutlook),
     implications: (apiBriefing.implications || []).map(viewOutlook),
+  })
+}
+
+/** Marks photos a card shares with an earlier one, so each photo leads one card only. */
+function withPhotosTaken(b: SavedBriefing): SavedBriefing {
+  const taken = photosTaken([...b.keyDevelopments, ...b.alerts])
+  const devs = b.keyDevelopments.length
+  return {
+    ...b,
+    keyDevelopments: b.keyDevelopments.map((d, i) => ({ ...d, photosTaken: taken[i] })),
+    alerts: b.alerts.map((a, i) => ({ ...a, photosTaken: taken[devs + i] })),
   }
 }
 
 /** Briefings saved before a field existed read back without it; fill the gaps on load. */
 export function withDefaults(b: SavedBriefing): SavedBriefing {
-  return {
+  return withPhotosTaken({
     ...b,
     alerts: (b.alerts ?? []).map((a) => ({ ...a, commonsImage: a.commonsImage ?? null })),
     keyDevelopments: b.keyDevelopments.map((d) => ({
@@ -248,5 +264,5 @@ export function withDefaults(b: SavedBriefing): SavedBriefing {
     contradictions: (b.contradictions ?? []).map((c) => ({ ...c, relatedDevelopments: c.relatedDevelopments ?? null })),
     trends: (b.trends ?? []).map((t) => ({ ...t, basis: basisOf(t.basis) })),
     implications: (b.implications ?? []).map((t) => ({ ...t, basis: basisOf(t.basis) })),
-  }
+  })
 }

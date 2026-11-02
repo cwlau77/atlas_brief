@@ -19,7 +19,7 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
   variant?: 'strip' | 'compact'
 }) {
   const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set())
-  const images = useMemo(() => cardImages(dev.sources, dev.commonsImage), [dev.sources, dev.commonsImage])
+  const images = useMemo(() => cardImages(dev.sources, dev.commonsImage, dev.photosTaken), [dev.sources, dev.commonsImage, dev.photosTaken])
   const image = images.find((i) => !failed.has(i.src))
   const where = dev.place?.name ?? dev.regions[0] ?? ''
   return (

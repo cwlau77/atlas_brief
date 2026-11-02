@@ -49,7 +49,7 @@ export function AlertCallout({ alerts }: { alerts: ViewAlert[] }) {
       <ul className="alert-list" ref={listRef}>
         {alerts.map((a, i) => (
           <li key={`${a.title}-${i}`} className={`alert alert-${a.type}${hidden && i >= TOP ? ' is-overflow' : ''}`}>
-            <CardImage images={cardImages(a.sources, a.commonsImage)} variant="top" />
+            <CardImage images={cardImages(a.sources, a.commonsImage, a.photosTaken)} variant="top" />
             <PriorityMark priority={PRIORITY[a.type]} label={a.label} />
             <h3 className="alert-title">{a.title}</h3>
             <p id={`alert-body-${i}`} data-i={i} className={expanded.has(i) ? 'alert-body open' : 'alert-body clamp-2'}>{a.description}</p>

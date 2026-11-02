@@ -37,7 +37,7 @@ export function DevelopmentCard({
   const pressedAt = useRef(-Infinity)
   const titleId = `dev-${index}-title`
   const contextId = `dev-${index}-context`
-  const images = cardImages(dev.sources, dev.commonsImage)
+  const images = cardImages(dev.sources, dev.commonsImage, dev.photosTaken)
   const timed = !Number.isNaN(Date.parse(dev.timestamp))
   const className = ['dev', highlight === 'lit' && 'is-lit', highlight === 'dim' && 'is-dim'].filter(Boolean).join(' ')
   return (
