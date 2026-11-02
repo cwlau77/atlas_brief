@@ -31,7 +31,7 @@ describe('Overlay', () => {
     expect(svg.querySelector('.hs-ring')).not.toBeNull()
     const arcs = [...svg.querySelectorAll<SVGPathElement>('.hs-arc')]
     expect(arcs.map((a) => a.style.animationDelay)).toEqual(['950ms', '1090ms'])
-    expect(arcs[0].getAttribute('d')).toMatch(/^M200,150 Q[\d.-]+,[\d.-]+ 500,120$/)
+    expect(arcs[0].getAttribute('d')).toMatch(/^M200,150 L500,120$/)
     const ends = [...svg.querySelectorAll<SVGCircleElement>('.hs-arc-end')]
     expect(ends.map((e) => e.style.animationDelay)).toEqual(['1550ms', '1690ms'])
     expect(svg.classList.contains('is-reduced')).toBe(false)

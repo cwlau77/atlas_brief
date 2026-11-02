@@ -1,4 +1,4 @@
-import { arcControl, leaderPath, type Box, type Pt, type Side } from './layout'
+import { leaderPath, type Box, type Pt, type Side } from './layout'
 
 export interface OverlayProps {
   anchor: Pt | null
@@ -29,13 +29,12 @@ export function Overlay({ anchor, box, side, arcs, reduced, seq }: OverlayProps)
       {anchor && (
         <g key={seq}>
           {arcs.map((end, j) => {
-            const [cx, cy] = arcControl(anchor, end)
             const start = ARC_START_MS + j * ARC_STAGGER_MS
             return (
               <g key={j}>
                 <path
                   className="hs-arc"
-                  d={`M${r1(anchor[0])},${r1(anchor[1])} Q${r1(cx)},${r1(cy)} ${r1(end[0])},${r1(end[1])}`}
+                  d={`M${r1(anchor[0])},${r1(anchor[1])} L${r1(end[0])},${r1(end[1])}`}
                   pathLength={1}
                   style={{ animationDelay: `${start}ms` }}
                 />

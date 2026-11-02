@@ -285,21 +285,29 @@ def reset_cache() -> None:
 
 
 async def _attach_images(snapshot: Hotspots, client: httpx.AsyncClient) -> None:
-    """The article's own photo wins; stories without one get a Commons photo within one shared budget."""
+    """The article's own photo wins; stories without one get a Commons photo within one shared budget.
+
+    No photo is shown on two stories: countries are in heat order, so the hotter one keeps a shared
+    article photo and the other falls back to Commons, taking its first candidate not yet used.
+    """
     stories = [c.story for c in snapshot.countries if c.story is not None]
+    used: set[str] = set()
     missing: list[Story] = []
     for story in stories:
-        if story.article.image_url:
-            story.image = StoryImage(url=story.article.image_url, credit=story.article.outlet)
+        url = story.article.image_url
+        if url and url not in used:
+            used.add(url)
+            story.image = StoryImage(url=url, credit=story.article.outlet)
         else:
             missing.append(story)
     if not missing or not settings.commons_images_enabled:
         return
     found = await fetch_candidates([s.headline for s in missing], client, COMMONS_BUDGET_S)
     for story in missing:
-        candidates = found.get(story.headline) or []
-        if candidates:
-            story.image = StoryImage(url=candidates[0].url, credit=COMMONS_CREDIT)
+        pick = next((c for c in found.get(story.headline) or [] if c.url not in used), None)
+        if pick is not None:
+            used.add(pick.url)
+            story.image = StoryImage(url=pick.url, credit=COMMONS_CREDIT)
 
 
 async def _build() -> Hotspots | None:

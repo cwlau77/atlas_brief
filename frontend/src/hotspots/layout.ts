@@ -1,4 +1,4 @@
-// Pure geometry for the hotspot card, its leader line, the arcs and the sparkline.
+// Pure geometry for the hotspot card, its leader line, the co-mention lines and the sparkline.
 // Everything is in pixels in the map's own coordinate space.
 
 export type Pt = [number, number]
@@ -10,20 +10,12 @@ const LEADER_ELBOW_Y = 56
 const VERTICAL_GAP = 36
 const ARC_PAD = 16
 
-export function arcControl(from: Pt, to: Pt): Pt {
-  const dist = Math.hypot(to[0] - from[0], to[1] - from[1])
-  return [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2 - Math.min(130, 0.35 * dist)]
-}
-
+/** Points along the straight co-mention line, so the card can stay off it. */
 export function arcPoints(from: Pt, to: Pt, steps = 20): Pt[] {
-  const [cx, cy] = arcControl(from, to)
   const pts: Pt[] = []
   for (let i = 0; i <= steps; i++) {
     const s = i / steps
-    const a = (1 - s) ** 2
-    const b = 2 * (1 - s) * s
-    const c = s * s
-    pts.push([a * from[0] + b * cx + c * to[0], a * from[1] + b * cy + c * to[1]])
+    pts.push([from[0] + (to[0] - from[0]) * s, from[1] + (to[1] - from[1]) * s])
   }
   return pts
 }

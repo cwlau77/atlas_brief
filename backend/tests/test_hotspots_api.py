@@ -43,8 +43,8 @@ def feed(monkeypatch, make_article):
     async def fake_candidates(queries, client, budget_s=1.5):
         state["commons"] += 1
         state["budget"] = budget_s
-        return {q: [CommonsImage(url="https://upload.example/p.jpg", page_url="https://c/p",
-                                 author="A", license="CC BY")] for q in queries}
+        return {q: [CommonsImage(url=f"https://upload.example/{name}.jpg", page_url="https://c/p",
+                                 author="A", license="CC BY") for name in ("p", "q")] for q in queries}
 
     monkeypatch.setattr(hotspots, "fetch_world_desks", fake_fetch)
     monkeypatch.setattr(hotspots, "fetch_candidates", fake_candidates)
@@ -142,22 +142,35 @@ async def test_zero_articles_is_a_failure(feed):
     assert await hotspots.get_hotspots() is None
 
 
+def _images(snap):
+    """Russia and Ukraine share every article; Russia sorts first at equal heat."""
+    stories = {c.iso2: c.story for c in snap.countries if c.iso2 in ("RU", "UA")}
+    return stories["RU"].image, stories["UA"].image
+
+
 @pytest.mark.asyncio
 async def test_article_image_beats_commons(feed, make_article):
     feed["articles"] = _articles(make_article, image_url="https://img.example/a.jpg")
-    snap = await hotspots.get_hotspots()
-    story = next(c for c in snap.countries if c.iso2 == "UA").story
-    assert story.image.url == "https://img.example/a.jpg"
-    assert story.image.credit == "BBC World"
-    assert feed["commons"] == 0
+    first, _ = _images(await hotspots.get_hotspots())
+    assert first.url == "https://img.example/a.jpg"
+    assert first.credit == "BBC World"
+
+
+@pytest.mark.asyncio
+async def test_no_photo_is_shown_on_two_stories(feed, make_article):
+    feed["articles"] = _articles(make_article, image_url="https://img.example/a.jpg")
+    first, second = _images(await hotspots.get_hotspots())
+    assert first.url == "https://img.example/a.jpg"
+    assert second.url == "https://upload.example/p.jpg"
+    assert second.credit == "File photo · Wikimedia Commons"
 
 
 @pytest.mark.asyncio
 async def test_commons_photo_used_when_article_has_none(feed):
-    snap = await hotspots.get_hotspots()
-    story = next(c for c in snap.countries if c.iso2 == "UA").story
-    assert story.image.url == "https://upload.example/p.jpg"
-    assert story.image.credit == "File photo · Wikimedia Commons"
+    first, second = _images(await hotspots.get_hotspots())
+    assert first.url == "https://upload.example/p.jpg"
+    assert first.credit == "File photo · Wikimedia Commons"
+    assert second.url == "https://upload.example/q.jpg"
     assert feed["budget"] == 2.0
 
 

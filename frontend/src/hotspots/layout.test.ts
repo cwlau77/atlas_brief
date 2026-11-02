@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { arcControl, arcPoints, leaderPath, placeCard, sparklinePath, type Box, type Pt } from './layout'
+import { arcPoints, leaderPath, placeCard, sparklinePath, type Box, type Pt } from './layout'
 
 const area: Box = { x: 0, y: 0, w: 1000, h: 600 }
 const card = { w: 288, h: 392 }
@@ -7,15 +7,16 @@ const bounds: Box = { x: 450, y: 250, w: 100, h: 80 }
 const anchor: Pt = [500, 290]
 
 describe('arcs', () => {
-  it('raises the midpoint by min(130, 0.35 * distance)', () => {
-    expect(arcControl([0, 100], [100, 100])).toEqual([50, 65])
-    expect(arcControl([0, 500], [1000, 500])).toEqual([500, 370])
-  })
   it('samples from start to end', () => {
     const pts = arcPoints([0, 0], [100, 0], 10)
     expect(pts).toHaveLength(11)
     expect(pts[0]).toEqual([0, 0])
     expect(pts[10]).toEqual([100, 0])
+  })
+  it('runs straight between the two ends', () => {
+    const pts = arcPoints([0, 100], [200, 300], 4)
+    expect(pts[2]).toEqual([100, 200])
+    expect(pts.every(([x, y]) => y - x === 100)).toBe(true)
   })
 })
 
