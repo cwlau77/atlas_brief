@@ -19,7 +19,7 @@
   left: var(--space-2);
   bottom: var(--space-2);
   padding: 2px var(--space-2);
-  background: rgba(245, 245, 241, 0.88);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
   color: var(--ink-2);
   font-size: 0.68rem;
   max-width: calc(100% - 2 * var(--space-2));
@@ -173,9 +173,10 @@
   margin: auto;
   border-radius: 50%;
   background: var(--rule-strong);
-  transition: width var(--dur-mid) var(--ease-out), background-color var(--dur-mid);
+  transition: transform var(--dur-mid) var(--ease-out), background-color var(--dur-mid);
 }
-.carousel-dots button[aria-current="true"]::before { width: 16px; border-radius: 999px; background: var(--accent); }
+/* The active dot stretches to a 16px pill by scale, so no layout property animates. */
+.carousel-dots button[aria-current="true"]::before { transform: scaleX(2.667); background: var(--accent); }
 
 /* Compact card (globe carousel, and Top stories beside the globe): square thumbnail beside the text. */
 .story-card-compact { grid-template-rows: none; grid-template-columns: 104px minmax(0, 1fr); }

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { HotspotCountry, HotspotSnapshot } from './data'
+import { ChevronIcon } from '../components/icons'
 import { Flag } from './Flag'
 import { heatColour, heatT, TIER_LABEL } from './heat'
 
@@ -41,6 +42,7 @@ export function TopCountries(p: TopCountriesProps) {
       {collapsible && (
         <button type="button" className="hs-panel-tab" aria-expanded={open} aria-controls="hs-panel-body" onClick={onToggle}>
           Top countries
+          <ChevronIcon size={12} className="hs-panel-tab-glyph" />
         </button>
       )}
       <div id="hs-panel-body" className="hs-panel-body" inert={collapsible && !open}>

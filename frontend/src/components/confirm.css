@@ -8,7 +8,7 @@
   background: var(--paper);
   color: var(--ink);
 }
-.confirm::backdrop { background: rgba(14, 17, 22, 0.35); }
+.confirm::backdrop { background: color-mix(in srgb, var(--ink) 35%, transparent); }
 .confirm-title { font-size: 1.25rem; margin-bottom: var(--space-2); }
 .confirm-body { color: var(--ink-2); }
 .confirm-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); }

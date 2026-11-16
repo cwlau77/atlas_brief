@@ -73,7 +73,7 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background:
-    radial-gradient(rgba(63, 71, 82, 0.35) 1px, transparent 1.5px) 0 0 / 9px 9px,
+    radial-gradient(color-mix(in srgb, var(--ink-2) 35%, transparent) 1px, transparent 1.5px) 0 0 / 9px 9px,
     radial-gradient(circle at 35% 30%, var(--paper), var(--paper-deep) 72%);
   box-shadow: inset 0 0 0 1px var(--rule);
 }
@@ -103,8 +103,8 @@
 /* Briefing globes fade at the canvas edge so the zoomed view has no hard square crop.
    The fade starts outside the whole globe's silhouette, so the unzoomed view is untouched. */
 .globe-briefing .globe-canvas {
-  -webkit-mask-image: radial-gradient(closest-side, #000 80%, transparent 100%);
-  mask-image: radial-gradient(closest-side, #000 80%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, var(--ink) 80%, transparent 100%);
+  mask-image: radial-gradient(closest-side, var(--ink) 80%, transparent 100%);
 }
 
 .globe-readout {

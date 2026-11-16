@@ -82,7 +82,7 @@ function HowCounted({ hours }: { hours: number }) {
           : 'Some feeds hold less than a day of stories; when the counts cover less, the page says how many hours they reach.'}
       </p>
       <p>Articles come from {DESKS.length} world news desks: {DESKS.join(', ')}.</p>
-      <p>Each card shows the most widely covered article about the country, with its headline and first sentence in the outlet's own words.</p>
+      <p>Each card shows the most widely covered article about the country, with its headline and first sentence in the outlet’s own words.</p>
     </section>
   )
 }
@@ -309,7 +309,7 @@ export function HotspotsPage() {
         <div className="hs-head-text">
           <h1 className="page-title">Where the news is now</h1>
           <p className="page-lede">
-            Countries shaded by how many of today's articles mention them. {desktop ? 'Hover' : 'Tap'} one to see what's driving it.
+            Countries shaded by today’s article mentions. {desktop ? 'Hover' : 'Tap'} one to see what’s driving it.
           </p>
         </div>
         {snapshot && (

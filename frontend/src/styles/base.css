@@ -11,6 +11,7 @@ html {
   color-scheme: light;
   background: var(--paper);
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -21,7 +22,7 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Paper grain: one static turbulence tile multiplied over the page. */
@@ -64,7 +65,7 @@ input, select, textarea { font: inherit; color: inherit; }
 /* Headings take programmatic focus on route change; no ring for those. */
 [tabindex="-1"]:focus { outline: none; }
 
-::selection { background: rgba(31, 63, 224, 0.18); color: var(--ink); }
+::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--ink); }
 
 .wrap {
   width: 100%;
@@ -102,10 +103,10 @@ input, select, textarea { font: inherit; color: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 600;
   font-size: 0.95rem;
-  padding: 12px 20px;
+  padding: var(--space-3) 20px;
   border-radius: 0;
   border: 1px solid transparent;
   text-decoration: none;
@@ -153,9 +154,9 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 
 @media print {
-  html, body { background: #fff; color: #000; }
+  html, body { background: var(--paper); color: var(--ink); }
   body::after { display: none; }
   .nav, .footer, .ask, .tabs, .story-globe, .globe-view, .toast-host, .skip-link, .wire { display: none !important; }
-  .dev, .alert { break-inside: avoid; border: 1px solid #ccc; }
-  a { color: #000; }
+  .dev, .alert { break-inside: avoid; border: 1px solid var(--rule-strong); }
+  a { color: var(--ink); }
 }

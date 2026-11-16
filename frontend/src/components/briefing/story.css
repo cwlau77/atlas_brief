@@ -218,6 +218,8 @@
 }
 .alert-urgent { box-shadow: inset 0 3px 0 var(--hot); }
 .alert .card-img { margin-bottom: var(--space-1); }
+/* A photo-less alert sits on the cell's bottom edge, so its text lines up with its neighbours' text. */
+.alert:not(:has(> .card-img)) { align-content: end; }
 .alert-title { font-size: 1.12rem; }
 .alert-body { color: var(--ink-2); }
 .alert-more { justify-self: start; }

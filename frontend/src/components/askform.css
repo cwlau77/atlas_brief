@@ -36,7 +36,7 @@
   gap: 12px;
   padding: 12px 14px;
   border-radius: var(--radius-sm);
-  background: rgba(226, 56, 27, 0.08);
+  background: color-mix(in srgb, var(--hot) 8%, transparent);
   color: var(--ink);
 }
 .ask-error p { flex: 1 1 260px; }

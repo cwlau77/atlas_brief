@@ -580,11 +580,10 @@
   cursor: pointer;
   transform: translateX(-100%);
 }
-.hs-panel-tab::after {
-  content: '›';
+.hs-panel-tab-glyph {
   transition: transform 0.3s;
 }
-.hs-panel.is-open .hs-panel-tab::after {
+.hs-panel.is-open .hs-panel-tab-glyph {
   transform: rotate(180deg);
 }
 .hs-panel-tab:hover {

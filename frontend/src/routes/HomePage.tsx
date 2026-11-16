@@ -141,7 +141,7 @@ export function HomePage() {
             loading={globeLoading}
             label="A globe of the world drawn in fine grain, slowly turning."
           />
-          {loadingScreen && <p className="home-globe-hint label">Drag to look around. Your briefing opens when it's ready.</p>}
+          {loadingScreen && <p className="home-globe-hint label">Drag to look around. Your briefing opens when it’s ready.</p>}
         </div>
       </div>
       <HowAtlasReads info={sources} />
