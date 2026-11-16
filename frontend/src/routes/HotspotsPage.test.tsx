@@ -132,14 +132,14 @@ describe('HotspotsPage', () => {
     const f = deferredFetch()
     render()
     expect(meta()).toContain('900 articles')
-    expect(meta()).toContain('As of 13:05 UTC · refreshing…')
+    expect(meta()).toContain('As of 13:05 UTC, refreshing…')
     expect(rows()).toHaveLength(5)
     expect(row('Ukraine').getAttribute('aria-label')).toBe('Ukraine, High, 412 articles')
 
     f.release(ok(wire()))
     await settle()
     expect(meta()).toContain('2,140 articles from 14 world news desks')
-    expect(meta()).toContain('Updated 14:05 UTC · refreshes hourly')
+    expect(meta()).toContain('Updated 14:05 UTC, refreshes hourly')
     expect(meta()).not.toContain('refreshing')
     expect(f.fetchMock).toHaveBeenCalledTimes(1)
   })
@@ -147,7 +147,7 @@ describe('HotspotsPage', () => {
   it('shows the skeleton and waking message on a cold start', () => {
     deferredFetch()
     render()
-    expect(container.textContent).toContain('Waking the server… this can take up to a minute.')
+    expect(container.textContent).toContain('Waking the server. This can take up to a minute.')
     expect(container.querySelectorAll('.hs-rows .is-skel')).toHaveLength(8)
     expect(container.querySelector('.hs-base rect.hs-skel')).not.toBeNull()
   })
@@ -176,7 +176,7 @@ describe('HotspotsPage', () => {
     vi.stubGlobal('fetch', vi.fn(async () => unavailable()))
     render()
     await settle()
-    expect(meta()).toContain("As of 13:05 UTC · couldn't refresh")
+    expect(meta()).toContain("As of 13:05 UTC, couldn't refresh")
     expect(container.querySelector('.hs-meta button')!.textContent).toBe('Retry')
     expect(container.querySelector('.hs-base rect.hs-skel')).toBeNull()
     expect(rows()).toHaveLength(5)
@@ -187,7 +187,7 @@ describe('HotspotsPage', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ok(wire({ feeds: 3 }))))
     render()
     await settle()
-    expect(meta()).toContain('Updated 14:05 UTC · refreshes hourly · partial coverage')
+    expect(meta()).toContain('Updated 14:05 UTC, refreshes hourly, partial coverage')
   })
 
   it('focusing a row previews and Enter pins the card', async () => {
@@ -288,18 +288,17 @@ describe('HotspotsPage', () => {
     await settle()
     pointer('276', 'pointerover')
     const tip = container.querySelector('.hs-tip')!
-    expect(tip.textContent).toBe('Germany · 0 articles')
+    expect(tip.textContent).toBe('Germany, 0 articles')
     expect(tip.querySelector('img.hs-flag')).not.toBeNull()
     expect(card()).toBeNull()
     pointer('276', 'pointerout')
     expect(container.querySelector('.hs-tip')).toBeNull()
   })
 
-  it('uses the coverage hours in the eyebrow when under 24', async () => {
+  it('uses the coverage hours in the legend when under 24', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ok(wire({ coverage_hours: 6 }))))
     render()
     await settle()
-    expect(container.querySelector('.hs-eyebrow')!.textContent).toBe('Hotspots · last 6 hours')
     expect(container.querySelector('.hs-legend h2')!.textContent).toBe('Mentions, last 6 hours')
   })
 

@@ -44,7 +44,7 @@ describe('TensionIndex', () => {
   const visibleRows = () => rows().filter((r) => !r.closest('li')!.classList.contains('is-overflow'))
 
   it('renders top 3 and reveals the rest', () => {
-    expect(container.querySelector('h2')!.textContent).toBe('Tensions · 4')
+    expect(container.querySelector('h2')!.textContent).toBe('Tensions 4')
     expect(visibleRows()).toHaveLength(3)
     const more = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Show 1 more')!
     expect(more.classList.contains('text-btn')).toBe(true)

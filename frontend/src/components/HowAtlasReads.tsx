@@ -46,7 +46,6 @@ export function HowAtlasReads({ info }: { info: SourcesInfo | null }) {
   return (
     <section id="how-atlas-reads" className="har" aria-labelledby="har-title">
       <div className="har-inner wrap">
-        <p className="har-kicker label">How Atlas reads the news</p>
         <h2 id="har-title" className="har-title">{title}</h2>
         <div className="har-points">
           {POINTS.map((p) => (

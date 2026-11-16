@@ -27,18 +27,17 @@ describe('LoadingLedger', () => {
   const text = () => (container.textContent ?? '').replace(/\s+/g, ' ')
   const grid = () => [...container.querySelectorAll('.ledger-sources li')].map((li) => (li.textContent ?? '').replace(/\s+/g, ' ').trim())
 
-  it('heads with the kicker and the focus', () => {
+  it('heads with the focus', () => {
     render(ledgerOf([]))
-    expect(container.querySelector('.ledger-kicker')?.textContent).toBe('Preparing your briefing')
     expect(container.querySelector('h1')?.textContent).toBe('Sudan ceasefire talks')
   })
 
   it('names the place and query count, or the count alone', () => {
     render(ledgerOf([plan('Sudan')]))
-    expect(text()).toContain('Sudan · 5 queries')
+    expect(text()).toContain('Sudan, 5 queries')
     render(ledgerOf([plan(null)]))
     expect(text()).toContain('5 queries')
-    expect(text()).not.toContain('· 5 queries')
+    expect(text()).not.toContain(', 5 queries')
   })
 
   it('tallies sources as they come in, one grid line each', () => {
@@ -47,7 +46,7 @@ describe('LoadingLedger', () => {
       { type: 'source', name: 'rss', count: 6, status: 'ok', outlets: outlets(6, 'feed') },
       { type: 'source', name: 'guardian', count: 34, status: 'ok', outlets: outlets(6, 'g') },
     ]))
-    expect(text()).toContain('2 of 9 sources in · 40 articles from 12 outlets')
+    expect(text()).toContain('2 of 9 sources in, 40 articles from 12 outlets')
     expect(grid()).toContain('Newsroom feeds 6')
     expect(grid()).toContain('The Guardian 34')
     expect(grid()).toContain('GDELT 2.0 …')
@@ -66,7 +65,7 @@ describe('LoadingLedger', () => {
   it('shows the ranking, then ticks off each section', () => {
     const ranked = ledgerOf([plan('Sudan'), { type: 'ranked', merged: 214, deduped: 190, kept: 58, outlets: 63 }, { type: 'section', name: 'developments' }])
     render(ranked)
-    expect(text()).toContain('214 → 58 kept')
+    expect(text()).toContain('214 merged, 58 kept')
     expect(container.querySelector('[data-section="developments"]')?.getAttribute('data-done')).toBe('true')
     expect(container.querySelector('[data-section="signals"]')?.getAttribute('data-done')).toBe('false')
     render(reduceLedger(reduceLedger(ranked, { type: 'section', name: 'signals' }), { type: 'section', name: 'alerts' }))

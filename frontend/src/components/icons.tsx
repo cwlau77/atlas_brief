@@ -33,6 +33,14 @@ export function StarIcon({ size = 18, className, filled = false }: IconProps & {
   )
 }
 
+export function ChevronIcon({ size = 14, className, dir = 'right' }: IconProps & { dir?: 'left' | 'right' }) {
+  return (
+    <Svg size={size} className={className}>
+      <F points={dir === 'left' ? '14,5 16,7 11,12 16,17 14,19 7,12' : '10,5 8,7 13,12 8,17 10,19 17,12'} />
+    </Svg>
+  )
+}
+
 export function ExternalIcon({ size = 14, className }: IconProps) {
   return (
     <Svg size={size} className={className}>

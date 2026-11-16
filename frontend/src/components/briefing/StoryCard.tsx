@@ -37,7 +37,7 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
             className={`story-card-credit label${image.filePhoto ? ' story-card-credit-file' : ''}`}
             title={image.filePhoto ? image.credit : undefined}
           >
-            <span className="story-card-credit-prefix">{image.filePhoto ? 'File photo · ' : 'Photo · '}</span>{image.by}
+            <span className="story-card-credit-prefix">{image.filePhoto ? 'File photo: ' : 'Photo: '}</span>{image.by}
           </span>
         )}
       </div>
@@ -52,10 +52,10 @@ export function StoryCard({ dev, index, timeZone, onOpen, variant = 'strip' }: {
           </button>
         </h3>
         <p className="story-card-foot label">
-          {where && <><span className="story-card-place">{where}</span> · </>}
+          {where && <><span className="story-card-place">{where}</span>, </>}
           {plural(dev.sources.length, 'source')}
         </p>
-        <span className="story-card-cta" aria-hidden="true">Read in timeline →</span>
+        <span className="story-card-cta" aria-hidden="true">Read in timeline</span>
       </div>
     </article>
   )

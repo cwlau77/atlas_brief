@@ -160,7 +160,7 @@ export function HotspotCard(p: HotspotCardProps) {
             {story.blurb && <p className="hs-card-blurb">{story.blurb}</p>}
             <div className="hs-card-attr">
               <a className="hs-card-source" href={story.url} target="_blank" rel="noopener noreferrer">
-                {story.outlet} · {relativeTime(story.publishedAt)}
+                {story.outlet}, {relativeTime(story.publishedAt)}
               </a>
               <div className="mono">
                 1 of {country.n} articles naming {country.name}
@@ -180,7 +180,7 @@ export function HotspotCard(p: HotspotCardProps) {
           </div>
         )}
         <button type="button" className="hs-card-brief" onClick={() => onBrief(focus)}>
-          {story ? 'Brief me on this story →' : `Brief me on ${country.name} →`}
+          {story ? 'Brief me on this story' : `Brief me on ${country.name}`}
         </button>
       </div>
       {pinned && (

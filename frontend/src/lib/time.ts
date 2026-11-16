@@ -112,7 +112,7 @@ export function zoneLabel(tz: string, now: Date = new Date()): string {
   const raw = parts(now, zone, { timeZoneName: 'longOffset' }).timeZoneName ?? 'GMT'
   const offset = raw === 'GMT' ? 'UTC+00:00' : raw.replace('GMT', 'UTC')
   const city = zone === 'UTC' ? 'Coordinated Universal Time' : (zone.split('/').pop() ?? zone).replace(/_/g, ' ')
-  return `${city} · ${offset}`
+  return `${city}, ${offset}`
 }
 
 export function listTimeZones(): string[] {

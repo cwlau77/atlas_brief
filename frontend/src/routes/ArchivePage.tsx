@@ -104,7 +104,7 @@ export function ArchivePage() {
     <div className="page wrap archive">
       <header className="page-head page-head-row">
         <h1 className="page-title">Your threads</h1>
-        <p className="page-meta label">{plural(threads.length, 'thread')} · Up to 4 briefings per topic and 24 in total are kept in this browser.</p>
+        <p className="page-meta label">{plural(threads.length, 'thread')}. Up to 4 briefings per topic and 24 in total are kept in this browser.</p>
       </header>
 
       {saved.length === 0 ? (
@@ -175,7 +175,7 @@ export function ArchivePage() {
                         />
                       )}
                       <h2 className="thread-title">{upperFirst(t.area)}{anyStar && <StarIcon size={14} filled className="thread-star" />}</h2>
-                      <p className="label">{plural(t.briefings.length, 'briefing')} · since {formatDayMonth(t.briefings[0].generatedAt, tz)}</p>
+                      <p className="label">{plural(t.briefings.length, 'briefing')}, since {formatDayMonth(t.briefings[0].generatedAt, tz)}</p>
                     </div>
                     <ol className="thread-string">
                       {t.briefings.map((b) => {
@@ -249,7 +249,7 @@ export function ArchivePage() {
 
           {pair.length === 2 && (
             <section className="compare-panel" aria-labelledby="compare-h">
-              <h2 id="compare-h" className="label label-mark">Side by side</h2>
+              <h2 id="compare-h" className="label">Side by side</h2>
               <div className="compare-split">
                 <CompareColumn briefing={pair[0]} timeZone={tz} />
                 <CompareColumn briefing={pair[1]} timeZone={tz} />

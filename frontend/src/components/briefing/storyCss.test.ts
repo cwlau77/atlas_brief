@@ -117,9 +117,9 @@ describe('story styles', () => {
     expect(decls).not.toContain('background: var(--paper-deep)')
   })
 
-  it('makes From the archive an ink rule with a two-line teaser', () => {
+  it('makes From the archive an ink rule whose teaser stays off screen', () => {
     expect(rulesFor(storyCss, '.dev-context').join(';')).toContain('border-left: 2px solid var(--ink)')
-    expect(rulesFor(storyCss, '.dev-context-teaser').join(';')).toContain('line-clamp: 2')
+    expect(rulesFor(storyCss, '.dev-context-teaser').join(';')).toContain('display: none')
   })
 
   // WCAG AA: a dimmed card keeps its text legible; only the picture, mark, chips and rule recede.
@@ -179,7 +179,7 @@ describe('story styles', () => {
 
   it('marks Atlas assessments with a dashed rule and never with heat colours', () => {
     expect(rulesFor(storyCss, '.outlook-item.assessment').join(';')).toMatch(/border:\s*1px dashed/)
-    expect(rulesFor(storyCss, '.outlook-item.reported').join(';')).toMatch(/border-left:\s*3px solid var\(--ink\)/)
+    expect(rulesFor(storyCss, '.outlook-item.reported').join(';')).toMatch(/border:\s*1px solid var\(--ink-2\)/)
     const start = storyCss.indexOf('/* Trends & implications */')
     expect(start).toBeGreaterThan(-1)
     const block = storyCss.slice(start, storyCss.indexOf('/* Read first', start))

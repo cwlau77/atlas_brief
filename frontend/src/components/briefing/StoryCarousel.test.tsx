@@ -92,7 +92,7 @@ describe('StoryCarousel', () => {
 
   it('closes from Back to world and from Escape', () => {
     const { onClose } = render()
-    act(() => button('← Back to world')!.click())
+    act(() => button('Back to world')!.click())
     expect(onClose).toHaveBeenCalledTimes(1)
     key('Escape')
     expect(onClose).toHaveBeenCalledTimes(2)

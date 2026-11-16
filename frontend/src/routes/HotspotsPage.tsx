@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { fetchSnapshot, isPartial, isStale, readCachedSnapshot, type HotspotCountry, type HotspotSnapshot } from '../hotspots/data'
 import { Flag } from '../hotspots/Flag'
@@ -69,7 +69,7 @@ function cellBounds(cells: number[], cols: number, s: number): Box {
 function HowCounted({ hours }: { hours: number }) {
   return (
     <section className="hs-how" aria-labelledby="hs-how-h">
-      <h2 id="hs-how-h" className="label label-mark">How this is counted</h2>
+      <h2 id="hs-how-h" className="label">How this is counted</h2>
       <p>
         An article names a country when its headline or summary mentions it by name, by a common short form (US, UK),
         by its people (Ukrainian) or by its capital (Kyiv). Each article counts once for every country it names, however
@@ -283,10 +283,10 @@ export function HotspotsPage() {
   const asOf = snapshot ? formatTime(snapshot.generatedAt, tz) : ''
   const statusLine =
     status === 'loading'
-      ? `As of ${asOf} · refreshing…`
+      ? `As of ${asOf}, refreshing…`
       : status === 'failed'
-        ? `As of ${asOf} · couldn't refresh`
-        : `Updated ${asOf} · refreshes hourly`
+        ? `As of ${asOf}, couldn't refresh`
+        : `Updated ${asOf}, refreshes hourly`
 
   const list = (
     <TopCountries
@@ -307,7 +307,6 @@ export function HotspotsPage() {
     <div className={`page wrap hs-page${reduced ? ' is-reduced' : ''}`}>
       <header className="hs-head">
         <div className="hs-head-text">
-          <p className="hs-eyebrow label label-mark">Hotspots · last {hours} hours</p>
           <h1 className="page-title">Where the news is now</h1>
           <p className="page-lede">
             Countries shaded by how many of today's articles mention them. {desktop ? 'Hover' : 'Tap'} one to see what's driving it.
@@ -321,7 +320,7 @@ export function HotspotsPage() {
             </p>
             <p className="mono">
               {statusLine}
-              {isPartial(snapshot) ? ' · partial coverage' : ''}
+              {isPartial(snapshot) ? ', partial coverage' : ''}
               {status === 'failed' && (
                 <>
                   {' '}
@@ -341,7 +340,7 @@ export function HotspotsPage() {
           ref={mapboxRef}
           tabIndex={-1}
           onClick={onMapClick}
-          style={desktop ? { minHeight: `${MAPBOX_MIN_H}px` } : undefined}
+          style={{ ...(desktop ? { minHeight: `${MAPBOX_MIN_H}px` } : null), '--hs-map-h': `${mapH}px` } as CSSProperties}
         >
           <HotspotsMap
             snapshot={snapshot}
@@ -357,7 +356,7 @@ export function HotspotsPage() {
           {tip && (
             <div className="hs-tip" style={{ left: `${tip.at[0]}px`, top: `${tip.at[1] - 6}px` }} aria-hidden="true">
               <Flag iso2={tip.iso2} />
-              {tip.name} <span>· {articles(tip.n)}</span>
+              {tip.name}<span>, {articles(tip.n)}</span>
             </div>
           )}
           {active && snapshot && (
@@ -385,7 +384,7 @@ export function HotspotsPage() {
                   </button>
                 </>
               ) : (
-                <p>Waking the server… this can take up to a minute.</p>
+                <p>Waking the server. <span>This can take up to a minute.</span></p>
               )}
             </div>
           )}

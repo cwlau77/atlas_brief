@@ -113,7 +113,7 @@ export function TopicWire({ fallback, onPick, disabled = false, timeZone }: {
               >
                 {live && <span className="wire-time mono">{time}</span>}
                 <span className="wire-topic">{topic}</span>
-                <span className="wire-go" aria-hidden="true">Brief me →</span>
+                <span className="wire-go" aria-hidden="true">Brief me</span>
               </button>
             </li>
           )

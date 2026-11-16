@@ -145,8 +145,8 @@ export function StoryTab() {
     <div className="story">
       <AlertCallout alerts={briefing.alerts} />
       <section id="key-developments" className="kd wrap" aria-labelledby="timeline-h">
-        <h2 id="timeline-h" className="section-label label label-mark">
-          Key developments · {count} event{count === 1 ? '' : 's'}
+        <h2 id="timeline-h" className="section-label label">
+          Key developments <span className="section-count">{count} event{count === 1 ? '' : 's'}</span>
         </h2>
         <div className="kd-cols">
           <div className="kd-main">

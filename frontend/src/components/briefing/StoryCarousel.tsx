@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { SavedBriefing } from '../../lib/normalize'
 import { usePrefersReducedMotion } from '../../lib/useMediaQuery'
+import { ChevronIcon } from '../icons'
 import { StoryCard } from './StoryCard'
 import './cards.css'
 
@@ -109,10 +110,10 @@ export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, o
       tabIndex={-1} onKeyDown={onKeyDown} inert={closing}
     >
       <div className="carousel-head">
-        <button type="button" className="carousel-back label" onClick={onClose}>← Back to world</button>
+        <button type="button" className="carousel-back label" onClick={onClose}>Back to world</button>
         <div className="carousel-arrows">
-          <button type="button" aria-label="Previous story" disabled={current <= 0} onClick={() => centre(current - 1)}>‹</button>
-          <button type="button" aria-label="Next story" disabled={current >= n - 1} onClick={() => centre(current + 1)}>›</button>
+          <button type="button" aria-label="Previous story" disabled={current <= 0} onClick={() => centre(current - 1)}><ChevronIcon dir="left" size={16} /></button>
+          <button type="button" aria-label="Next story" disabled={current >= n - 1} onClick={() => centre(current + 1)}><ChevronIcon size={16} /></button>
         </div>
       </div>
       {n === 0 && <p className="carousel-empty">Tagged in this briefing's regions without a linked story.</p>}

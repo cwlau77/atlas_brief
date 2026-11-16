@@ -18,7 +18,7 @@ describe('applyReadout', () => {
 
 describe('formatReadout', () => {
   it('names the country and its local time where it has one zone', () => {
-    expect(formatReadout(15.33, 38.93, new Date('2026-10-22T11:32:00Z'))).toBe('Eritrea · 14:32 local · 15.33° N  38.93° E')
+    expect(formatReadout(15.33, 38.93, new Date('2026-10-22T11:32:00Z'))).toBe('Eritrea, 14:32 local, 15.33° N  38.93° E')
   })
 
   it('shows coordinates only over open ocean', () => {
@@ -26,6 +26,6 @@ describe('formatReadout', () => {
   })
 
   it('names a multi-zone country without a time', () => {
-    expect(formatReadout(39.8, -98.6, new Date('2026-10-22T11:32:00Z'))).toBe('United States · 39.80° N  98.60° W')
+    expect(formatReadout(39.8, -98.6, new Date('2026-10-22T11:32:00Z'))).toBe('United States, 39.80° N  98.60° W')
   })
 })

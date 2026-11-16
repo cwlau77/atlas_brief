@@ -127,7 +127,7 @@ export function figureGroups(figures: ViewKeyFigure[], timeZone: string): Figure
   const span = dateSpan(charted, timeZone)
   const tail = span ? `${outlets}, ${span}` : outlets
   // Neutral words: the model may tag a growth rate as a share, so the caption never claims "share".
-  const caption = meter ? `Percentages on a 0–100% scale · ${tail}` : `${CHARTED[kind]} · one scale from zero · ${tail}`
+  const caption = meter ? `Percentages on a 0–100% scale. ${tail}` : `${CHARTED[kind]} on one scale from zero. ${tail}`
   return {
     chart: { scale: meter ? 'meter' : 'bars', rows, caption },
     plain: figures.filter((_, i) => !inChart[i]),

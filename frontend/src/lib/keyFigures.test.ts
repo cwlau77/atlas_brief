@@ -37,7 +37,7 @@ describe('figureGroups', () => {
     expect(widths[0]).toBe(100)
     expect(widths[1]).toBeCloseTo(57.35, 1)
     expect(widths[2]).toBeCloseTo(41.18, 1)
-    expect(g.chart!.caption).toBe('People · one scale from zero · 3 outlets, 21–26 Oct')
+    expect(g.chart!.caption).toBe('People on one scale from zero. 3 outlets, 21–26 Oct')
     expect(g.plain).toEqual([])
   })
 
@@ -46,7 +46,7 @@ describe('figureGroups', () => {
     expect(g.chart?.scale).toBe('meter')
     expect(g.chart!.rows.map((r) => r.width)).toEqual([8, 20, null])
     expect(g.chart!.rows.map((r) => r.note)).toEqual([null, null, 'a limit, not charted'])
-    expect(g.chart!.caption).toBe('Percentages on a 0–100% scale · 1 outlet, 26 Oct')
+    expect(g.chart!.caption).toBe('Percentages on a 0–100% scale. 1 outlet, 26 Oct')
   })
 
   it.each([
@@ -85,13 +85,13 @@ describe('figureGroups', () => {
 
   it('leaves undated figures out of the date span', () => {
     const g = figureGroups([fig('34 million', 'people', 'a.org', null), fig('19.5 million', 'people', 'b.org')], 'UTC')
-    expect(g.chart!.caption).toBe('People · one scale from zero · 2 outlets, 26 Oct')
+    expect(g.chart!.caption).toBe('People on one scale from zero. 2 outlets, 26 Oct')
   })
 
   it('spans months in full', () => {
     const g = figureGroups([
       fig('34 million', 'people', 'a.org', '2026-09-30T00:00:00Z'), fig('19.5 million', 'people', 'b.org', '2026-10-02T00:00:00Z'),
     ], 'UTC')
-    expect(g.chart!.caption).toBe('People · one scale from zero · 2 outlets, 30 Sep–2 Oct')
+    expect(g.chart!.caption).toBe('People on one scale from zero. 2 outlets, 30 Sep–2 Oct')
   })
 })

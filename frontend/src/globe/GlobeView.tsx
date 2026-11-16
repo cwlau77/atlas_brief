@@ -382,7 +382,7 @@ export default function GlobeView({
                         <span className="gp-title">{s.title}</span>
                         <span className="gp-meta mono">
                           {formatTime(s.timestamp, timeZone)}
-                          {s.sources.length > 0 && ` · ${s.sources.slice(0, 3).map((x) => x.outlet).join(', ')}`}
+                          {s.sources.length > 0 && `, ${s.sources.slice(0, 3).map((x) => x.outlet).join(', ')}`}
                           {s.sources.length > 3 && ` +${s.sources.length - 3}`}
                         </span>
                       </button>
@@ -392,7 +392,7 @@ export default function GlobeView({
               ) : (
                 <p className="gp-none">Tagged in this briefing's regions without a linked story.</p>
               )}
-              {pinned && <p className="gp-hint label">Pinned · Esc to close</p>}
+              {pinned && <p className="gp-hint label">Pinned. Esc to close</p>}
             </div>
           )}
           <div className="visually-hidden">

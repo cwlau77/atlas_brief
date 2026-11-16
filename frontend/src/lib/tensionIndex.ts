@@ -61,12 +61,12 @@ export function buildTensionIndex(b: IndexInput, order: TimelineEntry[]): IndexI
   return items.map(({ i: _i, ...item }) => item)
 }
 
-/** "2 tensions", "1 tension · 1 contradiction", or null when nothing links to the development. */
+/** "2 tensions", "1 tension, 1 contradiction", or null when nothing links to the development. */
 export function connectionLabel(items: IndexItem[], devIndex: number): string | null {
   const linked = items.filter((item) => item.devs.includes(devIndex))
   const count = (kind: IndexItem['kind']) => linked.filter((item) => item.kind === kind).length
   const parts = ([['tension', count('tension')], ['contradiction', count('contradiction')]] as const)
     .filter(([, n]) => n > 0)
     .map(([kind, n]) => `${n} ${kind}${n === 1 ? '' : 's'}`)
-  return parts.length ? parts.join(' · ') : null
+  return parts.length ? parts.join(', ') : null
 }

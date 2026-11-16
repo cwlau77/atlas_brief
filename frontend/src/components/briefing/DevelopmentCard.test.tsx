@@ -23,7 +23,7 @@ describe('DevelopmentCard', () => {
   const render = (over: Partial<Parameters<typeof DevelopmentCard>[0]> = {}) => act(() => root.render(
     <DevelopmentCard
       dev={briefing.keyDevelopments[0]} index={0} showContext timeZone="UTC"
-      connection="1 tension · 1 contradiction" indexId="tension-index" onTag={() => {}}
+      connection="1 tension, 1 contradiction" indexId="tension-index" onTag={() => {}}
       {...over}
     />,
   ))
@@ -68,7 +68,7 @@ describe('DevelopmentCard', () => {
     const onTag = vi.fn()
     render({ onTag })
     const tag = container.querySelector<HTMLButtonElement>('.dev-conn')!
-    expect(tag.textContent).toBe('1 tension · 1 contradiction')
+    expect(tag.textContent).toBe('1 tension, 1 contradiction')
     act(() => tag.click())
     expect(onTag).toHaveBeenCalledTimes(1)
   })

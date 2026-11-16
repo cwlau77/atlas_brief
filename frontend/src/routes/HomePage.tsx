@@ -11,7 +11,6 @@ import { Globe } from '../globe/Globe'
 import { findPlaceIn, resolveRegion } from '../lib/centroids'
 import { markIntroPlayed, shouldPlayIntro } from '../lib/intro'
 import { liveServiceCount, useSources } from '../lib/sources'
-import { useClock } from '../lib/useClock'
 import { useFocusOnArrival } from '../lib/useFocusOnArrival'
 import { usePrefersReducedMotion } from '../lib/useMediaQuery'
 import { useTypewriter } from '../lib/useTypewriter'
@@ -33,7 +32,6 @@ export function HomePage() {
   const reduced = usePrefersReducedMotion()
   const { settings } = useAppState()
   const sources = useSources()
-  const clock = useClock(settings.timeZone, 15_000)
   const { generate, retry, cancel, loading, error, ledger } = useGenerateBriefing()
   useFocusOnArrival('home-ask')
   const [prefill, setPrefill] = useState<{ text: string; n: number }>()
@@ -115,7 +113,6 @@ export function HomePage() {
           {loadingScreen && <LoadingLedger ledger={ledger} labels={labels} reduced={reduced} onCancel={cancel} />}
           {(!loadingScreen || copyLeaving) && (
             <div className={`home-copy ${copyLeaving ? 'home-copy-leaving' : ''}`} aria-hidden={copyLeaving || undefined} inert={copyLeaving || undefined}>
-              <p className="eyebrow label"><span>{clock.day}</span><span>{clock.time}</span><span>Global intelligence</span></p>
               <RotatingHeadline />
               <HomeLede />
               <div className="home-ask">
@@ -131,7 +128,7 @@ export function HomePage() {
                   if (!target) return
                   e.preventDefault()
                   target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
-                }}>How Atlas reads ↓</a>
+                }}>How Atlas reads</a>
               </p>
             </div>
           )}

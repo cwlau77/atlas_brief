@@ -49,14 +49,10 @@ describe('KeyFigures', () => {
     expect(b).toBeCloseTo(57.35, 1)
     expect(c).toBeCloseTo(41.18, 1)
     expect([...container.querySelectorAll('.kf-bar')].every((el) => el.getAttribute('aria-hidden') === 'true')).toBe(true)
-    expect(container.querySelector('.kf-cap')?.textContent).toBe('People · one scale from zero · 3 outlets, 21–26 Oct')
-    const link = container.querySelector<HTMLAnchorElement>('.kf-src')!
-    expect(link.textContent).toBe('news.un.org, 21 Oct')
-    expect(link.querySelector('svg')).not.toBeNull()
-    expect(container.textContent).not.toContain('↗')
-    expect(link.target).toBe('_blank')
-    expect(link.rel).toBe('noopener noreferrer')
-    expect(link.getAttribute('aria-label')).toBe('Read in news.un.org: 34 million people need humanitarian support')
+    expect(container.querySelector('.kf-cap')?.textContent).toBe('People on one scale from zero. 3 outlets, 21–26 Oct')
+    // The card's source chips already link the article; a figure only names its outlet.
+    expect(container.querySelector('.kf-src')?.textContent).toBe(', news.un.org')
+    expect(container.querySelector('.kf a')).toBeNull()
   })
 
   it('draws shares as meters, marks a limit and shows the period', () => {
@@ -64,12 +60,12 @@ describe('KeyFigures', () => {
     expect(container.querySelectorAll('.kf-bar.meter')).toHaveLength(2)
     expect(bars()).toEqual([8, 20])
     expect(container.querySelectorAll('.kf-row')[2].querySelector('.kf-bar')?.textContent).toBe('a limit, not charted')
-    expect(container.querySelector('.kf-period')?.textContent).toBe(' · before 2018')
+    expect(container.querySelector('.kf-period')?.textContent).toBe(', before 2018')
   })
 
-  it('links an undated figure by outlet alone, with no bar or caption for a single figure', () => {
+  it('names no outlet and draws no bar or caption for a single figure', () => {
     render([fig('$5 billion', 'Chinese investment in the Suez Canal zone', 'money', 'thediplomat.com', null)])
-    expect(container.querySelector('.kf-src')?.textContent).toBe('thediplomat.com')
+    expect(container.querySelector('.kf-src')).toBeNull()
     expect(container.querySelector('.kf-bar')).toBeNull()
     expect(container.querySelector('.kf-cap')).toBeNull()
   })
@@ -77,6 +73,6 @@ describe('KeyFigures', () => {
   it('puts the chart rows first and the odd one out after the caption', () => {
     render([SUDAN[0], fig('$5 billion', 'pledged', 'money', 'a.org', null), SUDAN[1]])
     const order = [...container.querySelectorAll('.kf-fig, .kf-cap')].map((el) => el.textContent)
-    expect(order).toEqual(['34 million people', '19.5 million', 'People · one scale from zero · 2 outlets, 21–26 Oct', '$5 billion'])
+    expect(order).toEqual(['34 million people', '19.5 million', 'People on one scale from zero. 2 outlets, 21–26 Oct', '$5 billion'])
   })
 })
