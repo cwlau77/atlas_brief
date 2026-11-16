@@ -61,7 +61,7 @@ export function TimeZonePicker({ value, onChange }: { value: string; onChange: (
             onChange(AUTO_ZONE)
           }}
         >
-          Use my device's time zone
+          Use my device’s time zone
         </button>
       </div>
       <datalist id={listId}>

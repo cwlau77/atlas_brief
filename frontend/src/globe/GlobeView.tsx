@@ -390,7 +390,7 @@ export default function GlobeView({
                   ))}
                 </ul>
               ) : (
-                <p className="gp-none">Tagged in this briefing's regions without a linked story.</p>
+                <p className="gp-none">Tagged in this briefing’s regions without a linked story.</p>
               )}
               {pinned && <p className="gp-hint label">Pinned. Esc to close</p>}
             </div>

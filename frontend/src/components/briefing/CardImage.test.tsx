@@ -34,7 +34,7 @@ describe('CardImage', () => {
     expect(container.innerHTML).toBe('')
   })
 
-  it('renders a lazy decorative image with a linked credit', () => {
+  it('renders a lazy decorative image with its credit for screen readers only', () => {
     render([OUTLET], 'top')
     const img = container.querySelector('img')!
     expect(img.getAttribute('src')).toBe(OUTLET.src)
@@ -43,11 +43,11 @@ describe('CardImage', () => {
     expect(img.getAttribute('alt')).toBe('')
     expect(img.getAttribute('referrerpolicy')).toBe('no-referrer')
     expect(container.querySelector('.card-img')!.classList.contains('card-img-top')).toBe(true)
-    const a = container.querySelector('a')!
-    expect(a.textContent).toBe('Photo: Reuters')
-    expect(a.getAttribute('href')).toBe(OUTLET.href)
-    expect(a.getAttribute('target')).toBe('_blank')
-    expect(a.getAttribute('rel')).toBe('noopener noreferrer')
+    // The article is one of the card's source chips; the credit stays as hidden text, not a second link.
+    const credit = container.querySelector('.card-img-credit')!
+    expect(credit.textContent).toBe('Photo: Reuters')
+    expect(credit.classList.contains('visually-hidden')).toBe(true)
+    expect(container.querySelector('a')).toBeNull()
   })
 
   it('renders a plain credit without a link when there is no href', () => {

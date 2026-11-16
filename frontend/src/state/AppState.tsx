@@ -68,7 +68,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const now = Date.now()
     if (now - lastFailure.current < 1000) return
     lastFailure.current = now
-    pushToast("Couldn't save in this browser. Storage is full or turned off.", 'error', 4000)
+    pushToast("Couldn’t save in this browser. Storage is full or turned off.", 'error', 4000)
   }, [pushToast])
 
   usePersist(KEYS.saved, saved, storageFailed)

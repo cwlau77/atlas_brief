@@ -116,7 +116,7 @@ export function StoryCarousel({ title, devIndexes, briefing, timeZone, onOpen, o
           <button type="button" aria-label="Next story" disabled={current >= n - 1} onClick={() => centre(current + 1)}><ChevronIcon size={16} /></button>
         </div>
       </div>
-      {n === 0 && <p className="carousel-empty">Tagged in this briefing's regions without a linked story.</p>}
+      {n === 0 && <p className="carousel-empty">Tagged in this briefing’s regions without a linked story.</p>}
       <ul className="carousel-track" ref={trackRef}>
         {order.map((devIndex, i) => (
           <li key={devIndex} ref={(el) => { itemRefs.current[i] = el }} aria-current={i === current ? 'true' : undefined}>

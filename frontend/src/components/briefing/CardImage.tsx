@@ -19,8 +19,10 @@ export function CardImage({ images, variant }: { images: CardImageData[]; varian
         />
         {image.filePhoto && <span className="card-img-label label">File photo</span>}
       </div>
-      <figcaption className="card-img-credit">
-        {image.href
+      {/* An outlet photo's article is one of the card's source chips, so its credit is for screen readers
+          only. A Commons photo's licence and author must stay visible, and linked. */}
+      <figcaption className={image.filePhoto ? 'card-img-credit' : 'card-img-credit visually-hidden'}>
+        {image.filePhoto && image.href
           ? <a href={image.href} target="_blank" rel="noopener noreferrer">{image.credit}</a>
           : image.credit}
       </figcaption>

@@ -5,7 +5,7 @@ export function NotFound() {
     <section className="page wrap empty-state">
       <img className="brand-object" src="/brand/atlas-mark.svg" alt="" width="96" height="96" />
       <h1 className="page-title">Page not found</h1>
-      <p className="page-lede">That address doesn't match any page in Atlas.</p>
+      <p className="page-lede">That address doesn’t match any page in Atlas.</p>
       <div className="actions">
         <Link className="btn btn-primary" to="/">Go to Home</Link>
       </div>

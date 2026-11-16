@@ -91,7 +91,7 @@
 .wire-time { font-size: 0.8rem; color: var(--ink-3); }
 .wire-topic { font-size: 0.95rem; font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
 .wire-go { font-size: 0.75rem; color: var(--ink-3); opacity: 0; }
-.wire-line:hover:not(:disabled) .wire-go, .wire-line:focus-visible .wire-go { opacity: 1; }
+.wire-line:hover .wire-go, .wire-line:focus-visible .wire-go { opacity: 1; }
 .wire-line:hover:not(:disabled) .wire-topic { color: var(--accent); }
 .wire-line:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .wire-line:disabled { opacity: 0.5; cursor: not-allowed; }
