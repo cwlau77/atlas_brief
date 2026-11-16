@@ -20,3 +20,6 @@ brandkit/*.png
 
 # Brainstorm visual companion sessions
 .superpowers/
+
+# Impeccable design hook: local config and consent
+.impeccable/
