@@ -67,7 +67,7 @@ describe('connectionLabel', () => {
   it('pluralises and joins', () => {
     expect(connectionLabel([item('tension', [0])], 0)).toBe('1 tension')
     expect(connectionLabel([item('tension', [0]), item('tension', [0, 1])], 0)).toBe('2 tensions')
-    expect(connectionLabel([item('tension', [0]), item('contradiction', [0])], 0)).toBe('1 tension · 1 contradiction')
+    expect(connectionLabel([item('tension', [0]), item('contradiction', [0])], 0)).toBe('1 tension, 1 contradiction')
     expect(connectionLabel([item('tension', [1])], 0)).toBeNull()
   })
 })

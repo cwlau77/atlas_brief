@@ -87,7 +87,7 @@ export function TensionIndex({ id, items, highlight, timeZone, onOpen }: {
 
   return (
     <section ref={sectionRef} id={id} className="tension-index" aria-labelledby="tension-index-h">
-      <h2 id="tension-index-h" className="section-label label label-mark">Tensions · {items.length}</h2>
+      <h2 id="tension-index-h" className="section-label label">Tensions <span className="section-count">{items.length}</span></h2>
       <ul ref={listRef} className="index-list">
         {items.map((item, i) => {
           const open = expanded.has(item.key)

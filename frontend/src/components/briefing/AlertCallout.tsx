@@ -45,7 +45,7 @@ export function AlertCallout({ alerts }: { alerts: ViewAlert[] }) {
   const hidden = showAll ? 0 : Math.max(0, alerts.length - TOP)
   return (
     <section className="alerts wrap" aria-labelledby="alerts-h">
-      <h2 id="alerts-h" className="section-label label label-mark">Read first · {alerts.length} alert{alerts.length === 1 ? '' : 's'}</h2>
+      <h2 id="alerts-h" className="section-label label">Read first <span className="section-count">{alerts.length} alert{alerts.length === 1 ? '' : 's'}</span></h2>
       <ul className="alert-list" ref={listRef}>
         {alerts.map((a, i) => (
           <li key={`${a.title}-${i}`} className={`alert alert-${a.type}${hidden && i >= TOP ? ' is-overflow' : ''}`}>

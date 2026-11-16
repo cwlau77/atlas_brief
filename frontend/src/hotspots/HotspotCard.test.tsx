@@ -74,7 +74,7 @@ describe('HotspotCard', () => {
     expect(card.textContent).toContain('Russian drones struck energy sites overnight.')
     const link = card.querySelector<HTMLAnchorElement>('a.hs-card-source')!
     expect(link.href).toBe('https://example.com/kyiv')
-    expect(link.textContent).toBe('BBC World · 2h ago')
+    expect(link.textContent).toBe('BBC World, 2h ago')
     expect(card.textContent).toContain('1 of 412 articles naming Ukraine')
     expect(card.querySelector('.hs-card-n')?.textContent).toBe('412')
     expect(card.querySelector('.hs-tier')?.textContent).toBe('High')
@@ -125,7 +125,7 @@ describe('HotspotCard', () => {
 
   it('Brief me on calls onBrief with the story headline', () => {
     const { card, props } = render({ pinned: true })
-    const btn = [...card.querySelectorAll('button')].find((b) => b.textContent === 'Brief me on this story →')!
+    const btn = [...card.querySelectorAll('button')].find((b) => b.textContent === 'Brief me on this story')!
     act(() => btn.click())
     expect(props.onBrief).toHaveBeenCalledWith('Drone strikes hit Kyiv power grid')
   })

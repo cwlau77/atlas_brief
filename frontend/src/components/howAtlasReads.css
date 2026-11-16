@@ -1,6 +1,5 @@
 .har { position: relative; z-index: 1; padding-block: var(--space-8); }
 .har-inner { display: grid; gap: var(--space-5); border-top: 2px solid var(--ink); padding-top: var(--space-5); }
-.har-kicker { color: var(--ink-3); }
 .har-title {
   font-family: var(--font-display);
   font-weight: 600;

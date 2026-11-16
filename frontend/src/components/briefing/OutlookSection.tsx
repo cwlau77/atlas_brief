@@ -37,7 +37,7 @@ export function OutlookSection({ trends, implications, timeZone, preview, onOpen
           <span className="outlook-basis label">{BASIS_LABELS[row.basis]}</span>
           {row.basis === 'reported' && row.source && (
             <a className="label" href={row.source.url} target="_blank" rel="noopener noreferrer" aria-label={`Read in ${row.source.outlet}: ${row.statement}`}>
-              {date ? `${row.source.outlet} · ${date}` : row.source.outlet}
+              {date ? `${row.source.outlet}, ${date}` : row.source.outlet}
             </a>
           )}
         </p>
@@ -55,11 +55,7 @@ export function OutlookSection({ trends, implications, timeZone, preview, onOpen
 
   return (
     <section id="outlook" className="outlook" aria-labelledby="outlook-h">
-      <h2 id="outlook-h" className="section-label label label-mark">Trends &amp; implications</h2>
-      <p className="outlook-legend">
-        <span><span className="outlook-swatch reported" aria-hidden="true" />Reported: an outlet says it, quoted and linked</span>
-        <span><span className="outlook-swatch assessment" aria-hidden="true" />Atlas assessment: Atlas's own reading, not reported fact</span>
-      </p>
+      <h2 id="outlook-h" className="section-label label">Trends &amp; implications</h2>
       {trends.length > 0 && (
         <>
           <h3 className="outlook-h3 label">Trends</h3>

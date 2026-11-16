@@ -77,13 +77,13 @@ describe('formatClock', () => {
 
 describe('zoneLabel', () => {
   it('labels a city zone with its offset', () => {
-    expect(zoneLabel('America/New_York', new Date(WINTER))).toBe('New York · UTC-05:00')
+    expect(zoneLabel('America/New_York', new Date(WINTER))).toBe('New York, UTC-05:00')
   })
   it('handles half-hour offsets', () => {
-    expect(zoneLabel('Asia/Kolkata', new Date(AUTUMN))).toBe('Kolkata · UTC+05:30')
+    expect(zoneLabel('Asia/Kolkata', new Date(AUTUMN))).toBe('Kolkata, UTC+05:30')
   })
   it('names UTC in words', () => {
-    expect(zoneLabel('UTC', new Date(AUTUMN))).toBe('Coordinated Universal Time · UTC+00:00')
+    expect(zoneLabel('UTC', new Date(AUTUMN))).toBe('Coordinated Universal Time, UTC+00:00')
   })
 })
 

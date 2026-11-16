@@ -13,7 +13,7 @@ export function TopStories({ briefing, timeZone, onOpen }: {
   if (order.length === 0) return null
   return (
     <section className="top-stories wrap" aria-labelledby="top-stories-h">
-      <h2 id="top-stories-h" className="section-label label label-mark">Top stories</h2>
+      <h2 id="top-stories-h" className="section-label label">Top stories</h2>
       <ol className="story-strip">
         {order.map((i) => (
           <li key={i}>

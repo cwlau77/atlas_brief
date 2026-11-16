@@ -13,12 +13,12 @@ function localTime(timeZone: string, now: Date): string {
   return clock.format(now)
 }
 
-/** "Eritrea · 14:32 local · 15.50° N  41.80° E": the place and its time only where they're certain. */
+/** "Eritrea, 14:32 local, 15.50° N  41.80° E": the place and its time only where they're certain. */
 export function formatReadout(lat: number, lng: number, now: Date): string {
   const coords = `${fmtCoord(lat, 'N', 'S')}  ${fmtCoord(lng, 'E', 'W')}`
   const place = countryAt(lat, lng)
   if (!place) return coords
-  return place.timeZone ? `${place.name} · ${localTime(place.timeZone, now)} local · ${coords}` : `${place.name} · ${coords}`
+  return place.timeZone ? `${place.name}, ${localTime(place.timeZone, now)} local, ${coords}` : `${place.name}, ${coords}`
 }
 
 /** Writes the live globe coordinates into the corner readout without a React render. */

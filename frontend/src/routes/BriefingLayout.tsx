@@ -23,8 +23,8 @@ export function BriefingLayout() {
         <div className="masthead-row">
           <h1 className="masthead-title">{upperFirst(briefing.area)}</h1>
           <p className="masthead-meta label">
-            Issued {formatDateTime(briefing.generatedAt, settings.timeZone)} · {briefing.frequency} ·{' '}
-            {plural(briefing.stats.articles, 'article')} · {plural(briefing.stats.sources, 'source')}
+            Issued {formatDateTime(briefing.generatedAt, settings.timeZone)}, {briefing.frequency},{' '}
+            {plural(briefing.stats.articles, 'article')} from {plural(briefing.stats.sources, 'source')}
           </p>
         </div>
         <nav className="tabs" aria-label="Briefing sections">

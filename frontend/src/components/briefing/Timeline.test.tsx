@@ -66,7 +66,7 @@ describe('Timeline', () => {
     const tags = (id: string) => [...container.querySelectorAll(`#${id} .dev-conn`)]
     // Dev 0 (Yemen, Red Sea) links tension 0 and the contradiction.
     expect(tags('dev-0')).toHaveLength(1)
-    expect(tags('dev-0')[0].textContent).toBe('1 tension · 1 contradiction')
+    expect(tags('dev-0')[0].textContent).toBe('1 tension, 1 contradiction')
     expect(tags('dev-2')).toHaveLength(1)
     expect(tags('dev-2')[0].textContent).toBe('1 tension')
     for (const card of cards()) expect(card.querySelectorAll('.dev-conn').length).toBeLessThanOrEqual(1)

@@ -68,19 +68,18 @@ export function LoadingLedger({ ledger, labels, reduced, onCancel }: {
 
   return (
     <div className={`ledger ${reduced ? '' : 'ledger-enter'}`}>
-      <p className="ledger-kicker label">Preparing your briefing</p>
       <h1 className="ledger-focus" tabIndex={-1} ref={heading}>{ledger.focus}</h1>
       <p className="ledger-announce visually-hidden" role="status">{stage}</p>
       <ol className="ledger-rows">
         <Row
           step="Plan"
           state={planState}
-          detail={plan ? (plan.place ? `${plan.place} · ${plural(plan.queries, 'query', 'queries')}` : plural(plan.queries, 'query', 'queries')) : streaming ? 'Planning the search…' : WORKING}
+          detail={plan ? (plan.place ? `${plan.place}, ${plural(plan.queries, 'query', 'queries')}` : plural(plan.queries, 'query', 'queries')) : streaming ? 'Planning the search…' : WORKING}
         />
         <Row
           step="Sources"
           state={sourcesState}
-          detail={plan ? `${sourcesIn} of ${plural(sourceNames.length, 'source')} in · ${plural(ledger.articles, 'article')} from ${plural(ledger.outlets.size, 'outlet')}` : streaming ? '' : WORKING}
+          detail={plan ? `${sourcesIn} of ${plural(sourceNames.length, 'source')} in, ${plural(ledger.articles, 'article')} from ${plural(ledger.outlets.size, 'outlet')}` : streaming ? '' : WORKING}
         >
           {ledger.coldStart && <p className="ledger-cold">{COLD_NOTE}</p>}
           {plan && (
@@ -93,7 +92,7 @@ export function LoadingLedger({ ledger, labels, reduced, onCancel }: {
             </ul>
           )}
         </Row>
-        <Row step="Remove duplicates, rank" state={rankState} detail={ranked ? `${ranked.merged} → ${ranked.kept} kept` : streaming ? '' : WORKING} />
+        <Row step="Remove duplicates, rank" state={rankState} detail={ranked ? `${ranked.merged} merged, ${ranked.kept} kept` : streaming ? '' : WORKING} />
         <Row step="Write" state={writeState} detail={written ? 'Adding context and photos…' : streaming ? undefined : WORKING}>
           {streaming && !written && (
             <ul className="ledger-sections">

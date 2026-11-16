@@ -26,7 +26,7 @@ export function Legend({ snapshot, density }: LegendProps) {
   return (
     <section className={`hs-legend is-${density}`} aria-labelledby="hs-legend-h">
       <h2 id="hs-legend-h">Mentions, last {hours} hours</h2>
-      <p>Articles naming the country · bigger, redder cells, more mentions</p>
+      <p>Articles naming the country. Bigger, redder cells mean more mentions.</p>
       <div className="hs-legend-ramp" style={{ background: GRADIENT }} aria-hidden="true" />
       {c && (
         <div className="hs-legend-ticks mono" aria-label={`Cutoffs: Active from ${c.active}, Elevated from ${c.elevated}, High from ${c.high} articles`}>

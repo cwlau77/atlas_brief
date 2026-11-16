@@ -13,7 +13,7 @@ export function StaticGlobe({ label, regions = [], onSelectStory }: {
         <ul className="globe-static-list">
           {regions.map((r) => (
             <li key={r.name}>
-              <span className="label">{r.name} · {r.count}</span>
+              <span className="label">{r.name}, {r.count}</span>
               <ul>
                 {r.stories.map((s) => (
                   <li key={s.anchorId}>

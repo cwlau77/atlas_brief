@@ -42,7 +42,7 @@ describe('SettingsPage', () => {
   })
 
   it('summarises stored data', () => {
-    expect(container.querySelector('#data')!.textContent).toContain('2 briefings · 1 starred')
+    expect(container.querySelector('#data')!.textContent).toContain('2 briefings, 1 starred')
   })
 
   it('clears the archive only after confirming, keeping settings', () => {
@@ -54,7 +54,7 @@ describe('SettingsPage', () => {
 
     act(() => button('Clear archive').click())
     act(() => [...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Clear archive')!.click())
-    expect(container.querySelector('#data')!.textContent).toContain('0 briefings · 0 starred')
+    expect(container.querySelector('#data')!.textContent).toContain('0 briefings, 0 starred')
     expect(JSON.parse(localStorage.getItem(KEYS.settings)!).compactMode).toBe(true)
   })
 })

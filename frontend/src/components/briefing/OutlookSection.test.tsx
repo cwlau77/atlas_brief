@@ -30,12 +30,10 @@ describe('OutlookSection', () => {
   afterEach(() => { act(() => root.unmount()); container.remove() })
   const items = () => [...container.querySelectorAll<HTMLLIElement>('li.outlook-item')]
 
-  it('renders the heading, the legend and a heading per non-empty list', () => {
+  it('renders the heading and a heading per non-empty list', () => {
     render([reported()], [])
     expect(container.querySelector('section#outlook h2')!.textContent).toBe('Trends & implications')
-    const legend = container.querySelector('.outlook-legend')!.textContent
-    expect(legend).toContain('Reported: an outlet says it, quoted and linked')
-    expect(legend).toContain("Atlas assessment: Atlas's own reading, not reported fact")
+    expect(container.querySelector('.outlook-legend')).toBeNull()
     expect([...container.querySelectorAll('h3')].map((h) => h.textContent)).toEqual(['Trends'])
   })
 
@@ -47,7 +45,7 @@ describe('OutlookSection', () => {
     expect(r.querySelector('q')!.textContent).toBe('the third strike in six days')
     const a = r.querySelector('a')!
     expect(a.getAttribute('href')).toBe('https://r.eu/9')
-    expect(a.textContent).toBe('Reuters · 26 Oct')
+    expect(a.textContent).toBe('Reuters, 26 Oct')
     expect(a.getAttribute('aria-label')).toBe('Read in Reuters: Strikes are moving north.')
     expect(a.getAttribute('target')).toBe('_blank')
     expect(a.getAttribute('rel')).toContain('noopener')

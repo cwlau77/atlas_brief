@@ -59,7 +59,7 @@ describe('StoryCard', () => {
     const dev = { ...briefing.keyDevelopments[0] }
     dev.sources = [{ ...dev.sources[0], image_outlet: 'AP' }, ...dev.sources.slice(1)]
     act(() => root.render(<StoryCard dev={dev} index={0} timeZone="UTC" onOpen={() => {}} />))
-    expect(container.querySelector('.story-card-credit')?.textContent).toBe('Photo · AP')
+    expect(container.querySelector('.story-card-credit')?.textContent).toBe('Photo: AP')
   })
 
   const fallback = () => container.querySelector<HTMLElement>('.story-card-media [data-image-fallback]')
@@ -97,7 +97,7 @@ describe('StoryCard', () => {
     act(() => root.render(<StoryCard dev={{ ...briefing.keyDevelopments[1], commonsImage: COMMONS }} index={1} timeZone="UTC" onOpen={() => {}} />))
     expect(container.querySelector('img')!.getAttribute('src')).toBe(COMMONS.url)
     const credit = container.querySelector('.story-card-credit')!
-    expect(credit.textContent).toBe('File photo · Jane Doe, CC BY-SA 4.0, Wikimedia Commons')
+    expect(credit.textContent).toBe('File photo: Jane Doe, CC BY-SA 4.0, Wikimedia Commons')
     expect(credit.getAttribute('title')).toBe('File photo: Jane Doe, CC BY-SA 4.0, Wikimedia Commons')
     expect(credit.classList.contains('story-card-credit-file')).toBe(true)
   })

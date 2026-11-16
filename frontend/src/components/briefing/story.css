@@ -173,16 +173,12 @@
 
 /* Trends & implications */
 .outlook { display: grid; gap: var(--space-3); }
-.outlook-legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); color: var(--ink-3); font-size: 0.85rem; }
-.outlook-legend > span { display: inline-flex; align-items: center; gap: var(--space-2); }
-.outlook-swatch { flex: none; width: 22px; height: 12px; border: 1px solid var(--ink-2); }
-.outlook-swatch.assessment { border-style: dashed; border-color: var(--ink-3); }
 .outlook-h3 { margin-top: var(--space-2); font-weight: 600; }
 .outlook-list { list-style: none; display: grid; gap: var(--space-2); }
 .outlook-item { display: grid; gap: var(--space-1); padding: 10px 12px; min-width: 0; }
 .outlook-item:hover, .outlook-item:focus-within { background: var(--accent-wash); }
 /* Reported reads as drawn from the record: a solid box with an ink edge. */
-.outlook-item.reported { border: 1px solid var(--rule); border-left: 3px solid var(--ink); }
+.outlook-item.reported { border: 1px solid var(--ink-2); }
 /* Atlas's own reading: dashed, the usual mark of a projection, and readable in print and greyscale. */
 .outlook-item.assessment { border: 1px dashed var(--rule-strong); }
 .outlook-tag { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
@@ -284,10 +280,10 @@
 .dev:has(> .card-img) { grid-template-columns: 160px minmax(0, 1fr); }
 /* Inert cell: hover darkens the rule instead of lifting the card. */
 .dev:hover { box-shadow: inset 0 0 0 1px var(--rule-strong); }
-/* Lit by the tension index: an ultramarine rule and bar. Dim: the cards it does not touch recede,
+/* Lit by the tension index: an ultramarine rule. Dim: the cards it does not touch recede,
    but only their picture, priority mark, chips and rule. Text stays at --ink-3 or darker, which
    holds 4.5:1 on paper (WCAG AA), so the card is never faded as a whole. */
-.dev.is-lit { box-shadow: inset 3px 0 0 var(--accent), inset 0 0 0 1px var(--accent); }
+.dev.is-lit { box-shadow: inset 0 0 0 1px var(--accent); }
 .dev.is-dim { box-shadow: inset 0 0 0 1px var(--paper-deep); }
 .dev.is-dim .card-img img { opacity: 0.4; filter: grayscale(1); }
 .dev.is-dim .prio-square { opacity: 0.4; }
@@ -316,7 +312,7 @@
   color: var(--ink-2);
 }
 .dev-context .label { color: var(--ink); font-weight: 600; }
-.dev-context-teaser { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.dev-context-teaser { display: none; }
 .dev-context-full { max-width: 72ch; }
 /* Key figures: verbatim figures with their sources. Comparable ones get ink bars on one scale
    from zero, or 0–100% meters, in the same rows. Never accent (bars aren't controls), never heat. */
@@ -328,10 +324,7 @@
 .kf-fig { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
 .kf-what { grid-column: 1 / -1; color: var(--ink-2); font-size: 0.9rem; overflow-wrap: anywhere; }
 .kf-period { color: var(--ink-3); }
-.kf-src { color: var(--ink-3); text-decoration: none; border-bottom: 1px solid var(--rule-strong); }
-.kf-src-ext { margin-left: 3px; vertical-align: -1px; opacity: 0.6; }
-.kf-src:hover, .kf-src:focus-visible { color: var(--accent); border-color: var(--accent); }
-.kf-src:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kf-src { color: var(--ink-3); }
 .kf-bar { position: relative; height: 10px; }
 .kf-bar > b { position: absolute; inset: 0 auto 0 0; background: var(--ink-2); }
 .kf-bar.meter { background: var(--rule); }
@@ -365,6 +358,7 @@
 .source-chip-time { font-size: 0.7rem; color: var(--ink-3); }
 .chip:hover .source-chip-time { color: inherit; }
 .source-chip-ext { opacity: 0.6; }
+.source-chips .is-extra { display: none; }
 
 .reading { display: grid; }
 .reading-list { list-style: none; border-top: 1px solid var(--rule); }
@@ -398,6 +392,7 @@
 @media print {
   .dev-context-teaser { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
   .text-btn, .dev-conn { display: none !important; }
+  .source-chips .is-extra { display: list-item; }
   /* Every alert and index row prints, in full, without the screen-only reveal controls. */
   .index-item.is-overflow, .alert.is-overflow { display: grid; }
   .clamp-2, .index-why { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }

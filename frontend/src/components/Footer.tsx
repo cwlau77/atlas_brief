@@ -57,7 +57,7 @@ export function Footer() {
       <MountainBand height="footer">
         <div className="wrap footer-base label">
           <span>© 2026 Atlas</span>
-          <span>13 sources · last 24 hours</span>
+          <span>13 sources, last 24 hours</span>
         </div>
       </MountainBand>
     </footer>

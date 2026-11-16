@@ -1,35 +1,24 @@
 import { figureGroups, type ChartRow } from '../../lib/keyFigures'
 import type { ViewKeyFigure } from '../../lib/normalize'
-import { formatDayMonth } from '../../lib/time'
-import { ExternalIcon } from '../icons'
 
 /**
  * A development's key figures, each copied word for word from an article the card cites and
- * linked to it. Comparable figures get bars (one scale from zero) or 0–100% meters in the same
+ * attributed to it. Comparable figures get bars (one scale from zero) or 0–100% meters in the same
  * rows; the list itself is the chart's table, so no value hides behind hover.
  */
 export function KeyFigures({ figures, timeZone }: { figures: ViewKeyFigure[]; timeZone: string }) {
   if (!figures.length) return null
   const { chart, plain } = figureGroups(figures, timeZone)
 
-  const what = (f: ViewKeyFigure) => {
-    const date = f.source.published_at ? formatDayMonth(f.source.published_at, timeZone) : null
-    return (
-      <span className="kf-what">
-        {f.label}
-        {f.period && <span className="kf-period"> · {f.period}</span>}
-        {' · '}
-        <a
-          className="kf-src" href={f.source.url} target="_blank" rel="noopener noreferrer"
-          aria-label={`Read in ${f.source.outlet}: ${f.figure} ${f.label}`}
-        >
-          {date ? `${f.source.outlet}, ${date}` : f.source.outlet}
-          {/* An SVG, not "↗": iOS draws that character as an emoji. */}
-          <ExternalIcon size={11} className="kf-src-ext" />
-        </a>
-      </span>
-    )
-  }
+  // The article is one of the card's source chips, so the figure only names its outlet, and only
+  // where several figures sit side by side and the reader needs to tell them apart.
+  const what = (f: ViewKeyFigure) => (
+    <span className="kf-what">
+      {f.label}
+      {f.period && <span className="kf-period">, {f.period}</span>}
+      {figures.length > 1 && <span className="kf-src">, {f.source.outlet}</span>}
+    </span>
+  )
 
   const chartRow = ({ figure, width, note }: ChartRow, i: number) => (
     <li key={`c${i}`} className="kf-row">
